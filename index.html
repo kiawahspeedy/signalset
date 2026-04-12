@@ -7787,7 +7787,14 @@ function JourneyBuilderLightbox({ open, onClose, context, onSave }) {
 // ═══════════════════════════════════════════════════════════════
 
 function MarketingDesk() {
-  const [tab, setTab] = useState('audience');
+  const [tab, setTab] = useState(() => {
+    const t = window._signalsetTab;
+    if (t) { window._signalsetTab = null; return t; }
+    return 'audience';
+  });
+  React.useEffect(() => {
+    if (window._signalsetTab) { setTab(window._signalsetTab); window._signalsetTab = null; }
+  });
   const [selectedCreative, setSelectedCreative] = useState(null);
   const [orchStatus, setOrchStatus] = useState(ORCH_DESTS.map(d => ({
     ...d
@@ -13302,7 +13309,14 @@ const CMN_SEGMENTS = ['Explorers (High Intent)', 'Revelers (Brand Affinity)', 'L
 const CMN_CATEGORIES = ['Airline spend ≥3× / 90d', 'Hotel co-booking signals', 'Business class upgrades', 'Lounge access redemptions'];
 const CMN_INTENT = ['In-market flight search (7d)', 'Premium card application intent', 'Travel rewards redemption active', 'Corporate T&E spend pattern'];
 function CommerceMedia() {
-  const [cmnTab, setCmnTab] = useState('start');
+  const [cmnTab, setCmnTab] = useState(() => {
+    const t = window._signalsetTab;
+    if (t) { window._signalsetTab = null; return t; }
+    return 'start';
+  });
+  React.useEffect(() => {
+    if (window._signalsetTab) { setCmnTab(window._signalsetTab); setCmnHub(false); window._signalsetTab = null; }
+  });
   const [cmnHub, setCmnHub] = useState(true);
   const [selectedTargeting, setSelectedTargeting] = useState([]);
   const [selectedCreative, setSelectedCreative] = useState(null);
@@ -16992,30 +17006,30 @@ function AuthModal({ targetScreen, onUnlock, onDismiss }) {
 
 function ActivationDropdown({ screen, navigate, onClose }) {
   const inHouseItems = [
-    { id: 'desk', sub: 'smart-audience', label: 'Smart Audience', icon: '◎' },
-    { id: 'desk', sub: 'smart-triggers', label: 'Smart Triggers', icon: '⚡' },
-    { id: 'desk', sub: 'creative', label: 'Creative Selector', icon: '◈' },
-    { id: 'desk', sub: 'destinations', label: 'Destinations', icon: '⇥' },
-    { id: 'desk', sub: 'brief', label: 'Brief Builder', icon: '✦' },
+    { id: 'desk', tab: 'audience', label: 'Smart Audience', icon: '◎' },
+    { id: 'desk', tab: 'journey',  label: 'Smart Triggers', icon: '⚡' },
+    { id: 'desk', tab: 'creative', label: 'Creative Selector', icon: '◈' },
+    { id: 'desk', tab: 'orch',     label: 'Destinations', icon: '⇥' },
+    { id: 'desk', tab: 'brief',    label: 'Brief Builder', icon: '✦' },
   ];
   const merchantItems = [
-    { id: 'cmn', sub: 'discover', label: 'Audience Discovery', icon: '⊕' },
-    { id: 'cmn', sub: 'build', label: 'Campaign Builder', icon: '◫' },
-    { id: 'cmn', sub: 'manage', label: 'Manage Campaigns', icon: '≡' },
-    { id: 'cmn', sub: 'results', label: 'Results & Attribution', icon: '↗' },
+    { id: 'cmn', tab: 'start',   label: 'Audience Discovery', icon: '⊕' },
+    { id: 'cmn', tab: 'build',   label: 'Campaign Builder', icon: '◫' },
+    { id: 'cmn', tab: 'manage',  label: 'Manage Campaigns', icon: '≡' },
+    { id: 'cmn', tab: 'results', label: 'Results & Attribution', icon: '↗' },
   ];
-  function go(id) { navigate(id); onClose(); }
+  function go(id, tab) { window._signalsetTab = tab; navigate(id); onClose(); }
   return React.createElement('div', { className: 'nav-dropdown-menu' },
     React.createElement('div', { className: 'nav-dd-section' }, 'In-House'),
     inHouseItems.map(it => React.createElement('div', {
       key: it.label, className: `nav-dd-item ${screen === 'desk' ? 'active' : ''}`,
-      onClick: () => go(it.id)
+      onClick: () => go(it.id, it.tab)
     }, React.createElement('span', { style: { fontSize: 14, width: 18, textAlign: 'center', color: 'var(--cyan)' } }, it.icon), it.label)),
     React.createElement('div', { className: 'nav-dd-divider' }),
     React.createElement('div', { className: 'nav-dd-section' }, 'Merchants'),
     merchantItems.map(it => React.createElement('div', {
       key: it.label, className: `nav-dd-item ${screen === 'cmn' ? 'active' : ''}`,
-      onClick: () => go(it.id)
+      onClick: () => go(it.id, it.tab)
     }, React.createElement('span', { style: { fontSize: 14, width: 18, textAlign: 'center', color: 'var(--amber)' } }, it.icon), it.label))
   );
 }
@@ -17064,13 +17078,13 @@ function SplashPage({ onNavigate }) {
             React.createElement('div', { className: 'sp-nav-act-section' }, 'In-House'),
             inHouseItems.map(it => React.createElement('div', {
               key: it.label, className: 'sp-nav-act-item',
-              onClick: () => { setActOpen(false); onNavigate(it.id); }
+              onClick: () => { window._signalsetTab = it.tab; setActOpen(false); onNavigate(it.id); }
             }, React.createElement('span', { style: { color: '#818CF8', width: 18, textAlign: 'center' } }, it.icon), it.label)),
             React.createElement('div', { className: 'sp-nav-act-div' }),
             React.createElement('div', { className: 'sp-nav-act-section' }, 'Merchants'),
             merchantItems.map(it => React.createElement('div', {
               key: it.label, className: 'sp-nav-act-item',
-              onClick: () => { setActOpen(false); onNavigate(it.id); }
+              onClick: () => { window._signalsetTab = it.tab; setActOpen(false); onNavigate(it.id); }
             }, React.createElement('span', { style: { color: '#F59E0B', width: 18, textAlign: 'center' } }, it.icon), it.label))
           )
         ),
