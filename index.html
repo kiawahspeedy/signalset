@@ -428,7 +428,7 @@ body {
 }
 
 /* Orchestration board */
-.orch-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; padding: 20px 24px; overflow-y: auto; }
+.orch-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; padding: 20px 24px; overflow-y: auto; align-items: start; }
 .orch-card {
   background: var(--card); border: 1px solid var(--bdr);
   border-radius: var(--r); padding: 14px 12px; transition: border-color .3s;
@@ -1538,7 +1538,7 @@ body {
 }
 
 /* Orchestration board */
-.orch-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; padding: 20px 24px; overflow-y: auto; }
+.orch-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; padding: 20px 24px; overflow-y: auto; align-items: start; }
 .orch-card {
   background: var(--card); border: 1px solid var(--bdr);
   border-radius: var(--r); padding: 14px 12px; transition: border-color .3s;
@@ -7787,14 +7787,12 @@ function JourneyBuilderLightbox({ open, onClose, context, onSave }) {
 // ═══════════════════════════════════════════════════════════════
 
 function MarketingDesk() {
-  const [tab, setTab] = useState(() => {
-    const t = window._signalsetTab;
-    if (t) { window._signalsetTab = null; return t; }
-    return 'audience';
-  });
+  const [tab, setTab] = useState('audience');
   React.useEffect(() => {
-    if (window._signalsetTab) { setTab(window._signalsetTab); window._signalsetTab = null; }
-  });
+    function handler(e) { setTab(e.detail); }
+    window.addEventListener('signalset-tab', handler);
+    return () => window.removeEventListener('signalset-tab', handler);
+  }, []);
   const [selectedCreative, setSelectedCreative] = useState(null);
   const [orchStatus, setOrchStatus] = useState(ORCH_DESTS.map(d => ({
     ...d
@@ -8338,7 +8336,7 @@ function MarketingDesk() {
       style: {
         color: 'var(--amber)'
       }
-    }, "\u2190 Select a creative on the Creative Selector tab")
+    }, "\u2190 Select a creative on the Creative Selector tab"))
   }, {
     label: 'Compliance Dossier',
     val: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("strong", {
@@ -9507,7 +9505,11 @@ function MarketingDesk() {
     onClose: () => setCreativeBuilderOpen(false),
     context: creativeBuilderContext,
     onSave: (newC, isFinal) => {
-      setLibraryCreatives(prev => [...prev, newC]);
+      setLibraryCreatives(prev => {
+        const next = [...prev, newC];
+        setSelectedCreative(CREATIVES.length + next.length - 1);
+        return next;
+      });
       if (isFinal) setCreativeBuilderOpen(false);
     }
   }), /*#__PURE__*/React.createElement("div", {
@@ -9823,10 +9825,12 @@ function MarketingDesk() {
     key: i,
     style: {
       cursor: 'pointer',
-      height: '100%'
+      height: '100%',
+      gridColumn: orchExpanded === i ? '1 / -1' : undefined
     }
   }, /*#__PURE__*/React.createElement("div", {
-    className: `orch-card ${d.status === 'running' ? 'running' : ''}`,
+    className: `orch-card ${d.status === 'running' ? 'running' : ''} ${orchExpanded === i ? 'expanded' : ''}`,
+    style: orchExpanded === i ? { display: 'flex', gap: 0, minHeight: 0 } : undefined,
     onClick: () => setOrchExpanded(orchExpanded === i ? null : i)
   }, /*#__PURE__*/React.createElement("div", {
     className: "orch-card-hdr"
@@ -9865,69 +9869,28 @@ function MarketingDesk() {
       color: 'var(--cyan-dim)',
       marginTop: 6
     }
-  }, orchExpanded === i ? '▲ Less' : '▼ Details')), orchExpanded === i && /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: 'var(--card-alt)',
-      border: '1px solid rgba(99,102,241,.25)',
-      borderTop: 'none',
-      borderRadius: '0 0 10px 10px',
-      padding: '12px 12px',
-      marginTop: -4,
-      overflow: 'hidden',
-      wordBreak: 'break-word'
-    }
-  }, [['Records sent', `${(12450 + i * 3200).toLocaleString()}`], ['Identity method', ['Hashed email + auth_id', 'UID2 token', 'GCLID chain → auth', 'act_id native', 'UID2 → Yahoo ID', 'Clean room aggregate'][i]], ['Latency', `${[42, 88, 156, 29, 201, 74][i]}ms avg`], ['Last sync', `${[2, 7, 14, 3, 0, 5][i]}m ago`], ['Consent check', 'PASSED — 100% consent-validated'], ['Egress policy', 'Redacted IDs only · VPC-SC enforced']].map(([k, v]) => /*#__PURE__*/React.createElement("div", {
-    key: k,
-    style: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      fontSize: 12,
-      padding: '4px 0',
-      borderBottom: '1px solid rgba(0,180,230,.1)'
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: 'var(--slate)'
-    }
-  }, k), /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: k === 'Consent check' ? 'var(--green)' : 'var(--text)',
-      fontWeight: 600
-    }
-  }, v))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      gap: 6,
-      marginTop: 8,
-      flexWrap: 'wrap'
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "btn btn-secondary",
-    style: {
-      fontSize: 11,
-      padding: '5px 10px',
-      flex: '1 1 auto',
-      minWidth: 0
-    }
-  }, "Pause"), /*#__PURE__*/React.createElement("button", {
-    className: "btn btn-secondary",
-    style: {
-      fontSize: 11,
-      padding: '5px 10px',
-      flex: '1 1 auto',
-      minWidth: 0
-    }
-  }, "Re-sync"), /*#__PURE__*/React.createElement("button", {
-    className: "btn btn-secondary",
-    style: {
-      fontSize: 11,
-      padding: '5px 10px',
-      flex: '1 1 auto',
-      minWidth: 0,
-      color: 'var(--red)',
-      borderColor: 'rgba(239,68,68,.3)'
-    }
-  }, "Remove"))))))))));
+  }, orchExpanded === i ? '▲ Less' : '▼ Details'))))))))));,
+  orchExpanded !== null && /*#__PURE__*/React.createElement("div", {
+    style: { gridColumn: '1 / -1', background: 'var(--card-alt)', border: '1px solid rgba(99,102,241,.25)', borderRadius: 10, padding: '16px 18px', marginTop: 4 }
+  },
+    /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 } },
+      /*#__PURE__*/React.createElement("span", { style: { fontWeight: 600, color: 'var(--text)', fontSize: 14 } }, orchStatus[orchExpanded] ? orchStatus[orchExpanded].name : '', " — Connection Details"),
+      /*#__PURE__*/React.createElement("button", { onClick: e => { e.stopPropagation(); setOrchExpanded(null); }, style: { background: 'none', border: 'none', color: 'var(--slate)', cursor: 'pointer', fontSize: 20, padding: '0 4px' } }, "×")
+    ),
+    /*#__PURE__*/React.createElement("div", { style: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px 24px', marginBottom: 12 } },
+      [['Records sent', orchExpanded !== null ? String((12450 + orchExpanded * 3200).toLocaleString()) : ''], ['Identity method', orchExpanded !== null ? ['Hashed email + auth_id','UID2 token','GCLID chain → auth','act_id native','UID2 → Yahoo ID','Clean room aggregate'][orchExpanded] : ''], ['Latency', orchExpanded !== null ? [42,88,156,29,201,74][orchExpanded]+'ms avg' : ''], ['Last sync', orchExpanded !== null ? [2,7,14,3,0,5][orchExpanded]+'m ago' : ''], ['Consent check', 'PASSED — 100% consent-validated'], ['Egress policy', 'Redacted IDs only · VPC-SC enforced']].map(([k,v]) =>
+        /*#__PURE__*/React.createElement("div", { key: k, style: { fontSize: 12, padding: '5px 0', borderBottom: '1px solid rgba(99,102,241,.1)', display: 'flex', justifyContent: 'space-between' } },
+          /*#__PURE__*/React.createElement("span", { style: { color: 'var(--slate)' } }, k),
+          /*#__PURE__*/React.createElement("span", { style: { color: k==='Consent check'?'var(--green)':'var(--text)', fontWeight: 600 } }, v)
+        )
+      )
+    ),
+    /*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 8 } },
+      /*#__PURE__*/React.createElement("button", { className: "btn btn-secondary", style: { fontSize: 12 } }, "Pause"),
+      /*#__PURE__*/React.createElement("button", { className: "btn btn-secondary", style: { fontSize: 12 } }, "Re-sync"),
+      /*#__PURE__*/React.createElement("button", { className: "btn btn-secondary", style: { fontSize: 12, color: 'var(--red)', borderColor: 'rgba(239,68,68,.3)' } }, "Remove")
+    )
+  )
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -13309,14 +13272,12 @@ const CMN_SEGMENTS = ['Explorers (High Intent)', 'Revelers (Brand Affinity)', 'L
 const CMN_CATEGORIES = ['Airline spend ≥3× / 90d', 'Hotel co-booking signals', 'Business class upgrades', 'Lounge access redemptions'];
 const CMN_INTENT = ['In-market flight search (7d)', 'Premium card application intent', 'Travel rewards redemption active', 'Corporate T&E spend pattern'];
 function CommerceMedia() {
-  const [cmnTab, setCmnTab] = useState(() => {
-    const t = window._signalsetTab;
-    if (t) { window._signalsetTab = null; return t; }
-    return 'start';
-  });
+  const [cmnTab, setCmnTab] = useState('start');
   React.useEffect(() => {
-    if (window._signalsetTab) { setCmnTab(window._signalsetTab); setCmnHub(false); window._signalsetTab = null; }
-  });
+    function handler(e) { setCmnTab(e.detail); setCmnHub(false); }
+    window.addEventListener('signalset-tab', handler);
+    return () => window.removeEventListener('signalset-tab', handler);
+  }, []);
   const [cmnHub, setCmnHub] = useState(true);
   const [selectedTargeting, setSelectedTargeting] = useState([]);
   const [selectedCreative, setSelectedCreative] = useState(null);
@@ -13469,9 +13430,9 @@ function CommerceMedia() {
     style: {
       marginTop: 10,
       padding: '10px 12px',
-      background: '#F0F9FF',
+      background: 'var(--card-alt)',
       borderRadius: 8,
-      border: '1px solid rgba(0,180,230,.2)'
+      border: '1px solid rgba(99,102,241,.25)'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -17018,7 +16979,11 @@ function ActivationDropdown({ screen, navigate, onClose }) {
     { id: 'cmn', tab: 'manage',  label: 'Manage Campaigns', icon: '≡' },
     { id: 'cmn', tab: 'results', label: 'Results & Attribution', icon: '↗' },
   ];
-  function go(id, tab) { window._signalsetTab = tab; navigate(id); onClose(); }
+  function go(id, tab) {
+    navigate(id);
+    onClose();
+    setTimeout(() => window.dispatchEvent(new CustomEvent('signalset-tab', { detail: tab })), 50);
+  }
   return React.createElement('div', { className: 'nav-dropdown-menu' },
     React.createElement('div', { className: 'nav-dd-section' }, 'In-House'),
     inHouseItems.map(it => React.createElement('div', {
@@ -17078,13 +17043,13 @@ function SplashPage({ onNavigate }) {
             React.createElement('div', { className: 'sp-nav-act-section' }, 'In-House'),
             inHouseItems.map(it => React.createElement('div', {
               key: it.label, className: 'sp-nav-act-item',
-              onClick: () => { window._signalsetTab = it.tab; setActOpen(false); onNavigate(it.id); }
+              onClick: () => { setActOpen(false); onNavigate(it.id); setTimeout(() => window.dispatchEvent(new CustomEvent('signalset-tab', { detail: it.tab })), 50); }
             }, React.createElement('span', { style: { color: '#818CF8', width: 18, textAlign: 'center' } }, it.icon), it.label)),
             React.createElement('div', { className: 'sp-nav-act-div' }),
             React.createElement('div', { className: 'sp-nav-act-section' }, 'Merchants'),
             merchantItems.map(it => React.createElement('div', {
               key: it.label, className: 'sp-nav-act-item',
-              onClick: () => { window._signalsetTab = it.tab; setActOpen(false); onNavigate(it.id); }
+              onClick: () => { setActOpen(false); onNavigate(it.id); setTimeout(() => window.dispatchEvent(new CustomEvent('signalset-tab', { detail: it.tab })), 50); }
             }, React.createElement('span', { style: { color: '#F59E0B', width: 18, textAlign: 'center' } }, it.icon), it.label))
           )
         ),
