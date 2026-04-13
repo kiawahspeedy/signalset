@@ -71,7 +71,7 @@
   --shadow-lg:  0 8px 40px rgba(0,0,0,.6);
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { font-size: 16px; }
+html { font-size: 17.5px; }
 body {
   background: var(--bg);
   color: var(--text);
@@ -101,8 +101,8 @@ body {
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
-.nav-brand-text { font-family: var(--font-b); font-size: 19px; font-weight: 800; color: #FFFFFF; line-height: 1.1; letter-spacing: -.028em; }
-.nav-brand-sub { font-size: 10.5px; color: rgba(238,238,255,.4); letter-spacing: .1em; text-transform: uppercase; font-family: var(--font-m); margin-top: 1px; }
+.nav-brand-text { font-family: var(--font-b); font-size: 21px; font-weight: 800; color: #FFFFFF; line-height: 1.1; letter-spacing: -.028em; }
+.nav-brand-sub { font-size: 12px; color: rgba(238,238,255,.4); letter-spacing: .1em; text-transform: uppercase; font-family: var(--font-m); margin-top: 1px; }
 
 .nav-tabs { display: flex; gap: 4px; }
 .nav-tab {
@@ -111,14 +111,14 @@ body {
   border: 1px solid transparent;
   background: transparent;
   color: rgba(255,255,255,0.8);
-  font-family: var(--font-b); font-size: 14px; font-weight: 600;
+  font-family: var(--font-b); font-size: 15px; font-weight: 600;
   white-space: nowrap;
   cursor: pointer; transition: all 0.18s ease;
 }
 .nav-tab:hover { color: #FFFFFF; border-color: rgba(255,255,255,0.15); background: rgba(255,255,255,0.07); }
 .nav-tab.active { background: rgba(99,102,241,0.22); border-color: rgba(99,102,241,0.5); color: var(--cyan); }
 
-.nav-status { display: flex; align-items: center; gap: 7px; font-size: 14px; color: var(--green); font-weight: 500; }
+.nav-status { display: flex; align-items: center; gap: 7px; font-size: 15px; color: var(--green); font-weight: 500; }
 .pulse { width: 8px; height: 8px; background: var(--green); border-radius: 50%; animation: pulse 2s ease infinite; }
 @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.3)} }
 
@@ -156,9 +156,9 @@ body {
   font-size: 11px; font-weight: 700; color: var(--cyan);
   letter-spacing: .1em; text-transform: uppercase; margin-bottom: 14px;
 }
-.hero h1 { font-family: var(--font-d); font-size: 38px; font-weight: 700; letter-spacing: -.01em; line-height: 1.35; margin-bottom: 16px; color: #FFFFFF; }
+.hero h1 { font-family: var(--font-d); font-size: 40px; font-weight: 700; letter-spacing: -.01em; line-height: 1.35; margin-bottom: 16px; color: #FFFFFF; }
 .hero h1 span { color: var(--cyan); }
-.hero p { font-size: 15px; color: rgba(255,255,255,0.65); line-height: 1.6; }
+.hero p { font-size: 16px; color: rgba(255,255,255,0.65); line-height: 1.6; }
 
 /* ── CARDS & PANELS ── */
 .panel {
@@ -174,7 +174,7 @@ body {
   background: var(--card-alt);
   display: flex; align-items: center; justify-content: space-between;
 }
-.panel-title { font-size: 13px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--text); }
+.panel-title { font-size: 14px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--text); }
 .badge {
   font-size: 11px; padding: 3px 9px; border-radius: 12px; border: 1px solid; white-space: nowrap;
 }
@@ -192,7 +192,7 @@ body {
   display: flex; flex-direction: column; gap: 16px;
   background: var(--bg);
 }
-.chat-empty { color: var(--slate); font-size: 15px; text-align: center; padding-top: 40px; line-height: 1.8; }
+.chat-empty { color: var(--slate); font-size: 16px; text-align: center; padding-top: 40px; line-height: 1.8; }
 .chat-empty .hint { font-size: 13px; color: var(--text-sec); margin-top: 10px; display: block; }
 .chat-empty .hint-cyan { font-size: 13px; color: var(--cyan-dim); font-weight: 500; margin-top: 8px; display: block; }
 
@@ -200,16 +200,16 @@ body {
 .msg.user { justify-content: flex-end; }
 .msg.user .bubble {
   background: var(--cyan); border: none;
-  color: #FFFFFF; font-size: 15px; padding: 11px 16px; line-height: 1.65;
+  color: #FFFFFF; font-size: 16px; padding: 12px 17px; line-height: 1.68;
   border-radius: 16px 16px 4px 16px; max-width: 78%;
 }
-.msg.assistant .bubble { flex: 1; font-size: 15px; line-height: 1.7; color: var(--text); background: rgba(22,22,58,.95); padding: 13px 17px; border-radius: 4px 16px 16px 16px; border: 1px solid rgba(99,102,241,.25); box-shadow: 0 1px 4px rgba(0,0,0,.2); }
+.msg.assistant .bubble { flex: 1; font-size: 16px; line-height: 1.72; color: var(--text); background: rgba(22,22,58,.95); padding: 13px 17px; border-radius: 4px 16px 16px 16px; border: 1px solid rgba(99,102,241,.25); box-shadow: 0 1px 4px rgba(0,0,0,.2); }
 
 .sample-chips { padding: 0 24px 14px; display: flex; gap: 8px; flex-wrap: wrap; background: var(--bg); flex-shrink: 0; }
 .chip {
   padding: 7px 14px; background: rgba(99,102,241,.1);
   border: 1px solid rgba(99,102,241,.28); border-radius: 20px;
-  font-size: 13px; color: rgba(238,238,255,.8); cursor: pointer; transition: all .15s;
+  font-size: 14px; color: rgba(238,238,255,.8); cursor: pointer; transition: all .15s;
   box-shadow: 0 1px 3px rgba(14,31,56,0.06);
 }
 .chip:hover { color: var(--text); border-color: var(--cyan); background: rgba(0,180,230,0.05); }
@@ -223,7 +223,7 @@ body {
 .chat-input {
   flex: 1; background: var(--bg); border: 1px solid rgba(99,102,241,.28);
   border-radius: 9px; padding: 11px 15px; color: var(--text);
-  font-family: var(--font-b); font-size: 15px; resize: none; outline: none;
+  font-family: var(--font-b); font-size: 16px; resize: none; outline: none;
   min-height: 46px; max-height: 120px; transition: border-color .15s;
 }
 .chat-input:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(0,180,230,0.1); }
@@ -314,8 +314,8 @@ body {
 .profile-segment { font-size: 13px; color: var(--cyan-dim); font-weight: 500; }
 .profile-signals { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; padding: 14px 16px; }
 .sig { background: var(--bg); border: 1px solid var(--bdr); border-radius: 8px; padding: 10px 13px; }
-.sig-lbl { font-size: 12px; color: var(--text-sec); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
-.sig-val { font-size: 15px; font-weight: 600; color: var(--text); }
+.sig-lbl { font-size: 13px; color: var(--text-sec); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
+.sig-val { font-size: 16px; font-weight: 600; color: var(--text); }
 .intent-section { padding: 14px 16px; border-top: 1px solid var(--bdr); }
 .intent-title { font-size: 13px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 10px; }
 .intent-row { margin-bottom: 9px; }
@@ -1072,7 +1072,6 @@ body {
 /* ══════════════════════════════════════
    SPLASH PAGE — Design A (Satoshi)
 ══════════════════════════════════════ */
-@import url('https://api.fontshare.com/v2/css?f[]=satoshi@900,800,700,500,400&display=swap');
 .sp-body { background: #08080F; min-height: 100vh; font-family: 'Satoshi', sans-serif; }
 .sp-nav {
   position: sticky; top: 0; z-index: 100;
@@ -1085,7 +1084,7 @@ body {
 .sp-logo-text { font-size: 19px; font-weight: 800; color: #EEEEFF; letter-spacing: -.04em; font-family: 'Satoshi', sans-serif; }
 .sp-logo-text span { color: #818CF8; font-size: inherit; font-weight: 900; letter-spacing: inherit; }
 .sp-nav-links { display: flex; gap: 30px; align-items: center; }
-.sp-nav-link { font-size: 14px; font-weight: 500; color: rgba(238,238,255,.55); cursor: pointer; transition: color .18s; background: none; border: none; font-family: 'Satoshi', sans-serif; }
+.sp-nav-link { font-size: 15px; font-weight: 500; color: rgba(238,238,255,.55); cursor: pointer; transition: color .18s; background: none; border: none; font-family: 'Satoshi', sans-serif; }
 .sp-nav-link:hover { color: #EEEEFF; }
 .sp-nav-act { position: relative; }
 .sp-nav-act-menu {
@@ -1098,7 +1097,7 @@ body {
 .sp-nav-act-item { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 7px; cursor: pointer; font-size: 13px; font-weight: 500; color: rgba(238,238,255,.8); transition: background .12s; font-family: 'Satoshi', sans-serif; }
 .sp-nav-act-item:hover { background: rgba(99,102,241,.18); color: #fff; }
 .sp-nav-act-div { height: 1px; background: rgba(99,102,241,.18); margin: 4px 8px; }
-.sp-cta { padding: 9px 24px; border-radius: 9px; background: #6366F1; font-size: 13.5px; font-weight: 700; color: #fff; cursor: pointer; border: none; font-family: 'Satoshi', sans-serif; box-shadow: 0 0 24px rgba(99,102,241,.35); transition: all .18s; letter-spacing: -.01em; }
+.sp-cta { padding: 10px 26px; border-radius: 9px; background: #6366F1; font-size: 15px; font-weight: 700; color: #fff; cursor: pointer; border: none; font-family: 'Satoshi', sans-serif; box-shadow: 0 0 24px rgba(99,102,241,.35); transition: all .18s; letter-spacing: -.01em; }
 .sp-cta:hover { background: #818CF8; box-shadow: 0 0 40px rgba(99,102,241,.5); }
 .sp-hero {
   min-height: calc(100vh - 66px); display: flex; flex-direction: column;
@@ -1117,7 +1116,7 @@ body {
 .sp-badge-dot { width: 6px; height: 6px; border-radius: 50%; background: #818CF8; animation: pulse 2.2s ease-in-out infinite; }
 .sp-h1 { font-size: clamp(42px, 5vw, 68px); font-weight: 800; letter-spacing: -.038em; line-height: 1.0; color: #EEEEFF; max-width: 840px; margin-bottom: 26px; position: relative; font-family: 'Satoshi', sans-serif; }
 .sp-h1 .sp-accent { color: #818CF8; }
-.sp-sub { font-size: 17px; font-weight: 400; color: rgba(238,238,255,.48); max-width: 520px; line-height: 1.68; margin-bottom: 48px; position: relative; font-family: 'Satoshi', sans-serif; }
+.sp-sub { font-size: 19px; font-weight: 400; color: rgba(238,238,255,.48); max-width: 520px; line-height: 1.68; margin-bottom: 48px; position: relative; font-family: 'Satoshi', sans-serif; }
 .sp-actions { display: flex; gap: 14px; justify-content: center; position: relative; }
 .sp-btn-primary { padding: 15px 36px; border-radius: 10px; background: #6366F1; font-size: 15px; font-weight: 700; color: #fff; cursor: pointer; border: none; box-shadow: 0 0 44px rgba(99,102,241,.4); transition: all .2s; font-family: 'Satoshi', sans-serif; letter-spacing: -.01em; }
 .sp-btn-primary:hover { background: #818CF8; box-shadow: 0 0 60px rgba(99,102,241,.55); transform: translateY(-1px); }
@@ -3969,13 +3968,16 @@ async function fetchNeo4jGraph() {
     const totalDevices = (detDev || 0) + (probDev || 0);
     const segDisplay = SEG_DISPLAY[seg] || seg;
     const shortId = pid ? 'LIG-' + pid.slice(-4).toUpperCase() : 'LIG-????';
-    const initials = shortId.slice(-4,-2);
+    const SEG_INITIALS = {'Explorers':'EX','Revelers':'RE','Luxuriates':'LU','Bask_Chill':'BC','Deal_Seekers':'DS'};
+    const initials = SEG_INITIALS[seg] || (seg ? seg.slice(0,2).toUpperCase() : 'LG');
+    const SEG_PERSONA = {'Explorers':'Premium Achiever','Revelers':'Experiential Reveler','Luxuriates':'Luxury Seeker','Bask_Chill':'Bask & Chill Loyalist','Deal_Seekers':'Deal Maximizer'};
+    const persona = SEG_PERSONA[seg] || segDisplay;
     return {
       id: shortId,
       pid: pid,
       name: shortId,
       initials: initials,
-      segment: seg,
+      segment: persona || seg,
       cluster: segDisplay,
       color: SEG_COLORS[seg] || '#6366F1',
       ltv: ltv ? '$' + Number(ltv).toLocaleString() : 'N/A',
