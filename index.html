@@ -3983,7 +3983,7 @@ function IdentityGraph() {
   const nodeCounts = graphData?.nodeCounts || {};
   const segCounts = graphData?.segCounts || {};
   const totalNodes = Object.values(nodeCounts).reduce((a,b) => a+b, 0);
-  const [selected, setSelected] = useState(null);
+  const [selected, setSelected] = useState(CUSTOMERS[0]);
   const [hinted, setHinted] = useState(true);
   const [showExpand, setShowExpand] = useState(false);
   const [showListDropdown, setShowListDropdown] = useState(false);
@@ -3992,13 +3992,15 @@ function IdentityGraph() {
   const simRef = useRef(null);
   const nodesRef = useRef([]);
   const svgSelRef = useRef(null);
-  // Set selected once liveCustomers are ready
+  // Update selected when live Neo4j data arrives — keep same index if possible
   useEffect(() => {
-    if (liveCustomers && liveCustomers.length > 0 && !selected) {
-      setSelected(liveCustomers[0]);
+    if (graphData?.customers?.length > 0) {
+      setSelected(prev => {
+        const prevIdx = CUSTOMERS.findIndex(c => c.id === (prev && prev.id));
+        return graphData.customers[Math.max(0, prevIdx)] || graphData.customers[0];
+      });
     }
-  }, [liveCustomers]);
-  if (!selected) return /*#__PURE__*/React.createElement('div', {style:{padding:40,color:'var(--slate)',fontSize:14}}, neo4jLoading ? '⟳ Connecting to Neo4j AuraDB...' : '⟳ Loading identity graph...');
+  }, [graphData]);
   const HOUSEHOLD_DATA = {
     'LIG-7F3A': {
       members: [{
@@ -4485,7 +4487,7 @@ function IdentityGraph() {
       }]
     }
   };
-  const household = (selected && HOUSEHOLD_DATA[selected.id]) || HOUSEHOLD_DATA['LIG-7F3A'];
+  const household = HOUSEHOLD_DATA[selected.id] || HOUSEHOLD_DATA['LIG-7F3A'];
   useEffect(() => {
     const drawIG = () => {
     const svg = d3.select(svgRef.current);
