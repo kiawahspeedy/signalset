@@ -3892,7 +3892,7 @@ async function fetchNeo4jGraph() {
     body: JSON.stringify({ query })
   });
   const data = await resp.json();
-  const rows = data?.data?.results?.[0]?.data || [];
+  const rows = data?.data?.data?.values || [];
 
   // Also get segment counts
   const countQuery = `
@@ -3907,8 +3907,8 @@ async function fetchNeo4jGraph() {
   });
   const countData = await countResp.json();
   const segCounts = {};
-  (countData?.data?.results?.[0]?.data || []).forEach(row => {
-    const [seg, cnt, ltv] = row.row || [];
+  (countData?.data?.data?.values || []).forEach(row => {
+    const [seg, cnt, ltv] = row || [];
     if (seg) segCounts[seg] = { count: cnt, ltv: Math.round(ltv) };
   });
 
@@ -3923,14 +3923,14 @@ async function fetchNeo4jGraph() {
   });
   const ncData = await ncResp.json();
   const nodeCounts = {};
-  (ncData?.data?.results?.[0]?.data || []).forEach(row => {
-    const [label, cnt] = row.row || [];
+  (ncData?.data?.data?.values || []).forEach(row => {
+    const [label, cnt] = row || [];
     if (label) nodeCounts[label] = cnt;
   });
 
   // Transform rows to CUSTOMERS shape
   const customers = rows.map(row => {
-    const [pid, seg, ltv, propensity, spend, fico, uid2, detDev, probDev, accounts, interactions, terminals] = row.row || [];
+    const [pid, seg, ltv, propensity, spend, fico, uid2, detDev, probDev, accounts, interactions, terminals] = row || [];
     const totalDevices = (detDev || 0) + (probDev || 0);
     const segDisplay = SEG_DISPLAY[seg] || seg;
     const shortId = pid ? 'LIG-' + pid.slice(-4).toUpperCase() : 'LIG-????';
