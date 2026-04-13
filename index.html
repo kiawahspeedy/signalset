@@ -1083,7 +1083,7 @@ body {
 }
 .sp-logo { display: flex; align-items: center; gap: 11px; cursor: pointer; }
 .sp-logo-text { font-size: 19px; font-weight: 800; color: #EEEEFF; letter-spacing: -.04em; font-family: 'Satoshi', sans-serif; }
-.sp-logo-text span { color: #6366F1; font-size: inherit; font-weight: inherit; letter-spacing: inherit; }
+.sp-logo-text span { color: inherit; font-size: inherit; font-weight: inherit; letter-spacing: inherit; }
 .sp-nav-links { display: flex; gap: 30px; align-items: center; }
 .sp-nav-link { font-size: 14px; font-weight: 500; color: rgba(238,238,255,.55); cursor: pointer; transition: color .18s; background: none; border: none; font-family: 'Satoshi', sans-serif; }
 .sp-nav-link:hover { color: #EEEEFF; }
@@ -7131,7 +7131,7 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
     className: "hero"
   }, /*#__PURE__*/React.createElement("div", {
     className: "hero-eyebrow"
-  }, "In-House \xB7 LIG v2.1"), /*#__PURE__*/React.createElement("h1", null, "Signal", /*#__PURE__*/React.createElement("span", null, "set")), /*#__PURE__*/React.createElement("p", {
+  }, "In-House \xB7 LIG v2.1"), /*#__PURE__*/React.createElement("h1", null, "Signal", /*#__PURE__*/React.createElement("span", {style:{color:"inherit"}}, "set")), /*#__PURE__*/React.createElement("p", {
     style: {
       fontSize: 14,
       color: 'rgba(255,255,255,0.65)',
@@ -15977,7 +15977,7 @@ function AuthModal({ targetScreen, onUnlock, onDismiss }) {
     React.createElement('img', { src: window.CLOVER_SRC, width: 34, height: 34, style: { borderRadius: '50%' } }),
     React.createElement('div', null,
       React.createElement('div', { style: { fontSize: 16, fontWeight: 800, color: '#fff', letterSpacing: '-.01em' } },
-        'Signal', React.createElement('span', { style: { color: 'var(--cyan)' } }, 'set')
+        'Signal', React.createElement('span', { style: { color: 'inherit' } }, 'set')
       ),
       React.createElement('div', { style: { fontSize: 11, color: 'rgba(238,238,255,.4)', letterSpacing: '.06em', textTransform: 'uppercase' } }, 'Living Identity Graph')
     )
@@ -16140,7 +16140,7 @@ function SplashPage({ onNavigate }) {
     React.createElement('nav', { className: 'sp-nav' },
       React.createElement('div', { className: 'sp-logo', onClick: () => {} },
         React.createElement('img', { src: LOGO_SRC, width: 40, height: 40, style: { display: 'block' } }),
-        React.createElement('span', { className: 'sp-logo-text' }, 'Signal', React.createElement('span', null, 'set'))
+        React.createElement('span', { className: 'sp-logo-text' }, 'Signal', React.createElement('span', {style:{color:'inherit'}}, 'set'))
       ),
       React.createElement('div', { className: 'sp-nav-links' },
         React.createElement('button', { className: 'sp-nav-link', onClick: () => onNavigate('identity') }, 'Identity'),
