@@ -5076,7 +5076,7 @@ function CreativeBuilderChat({ onTriggerBuilder }) {
     return React.createElement('div', { style: { display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 } },
       options.map(opt => React.createElement('button', {
         key: opt,
-        style: { padding: '5px 14px', borderRadius: 20, border: '1.5px solid rgba(0,180,230,.4)', background: 'rgba(0,180,230,.08)', color: 'var(--cyan-dim)', fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all .15s' },
+        style: { padding: '6px 16px', borderRadius: 20, border: '1.5px solid rgba(99,102,241,.5)', background: 'rgba(99,102,241,.1)', color: 'var(--cyan-dim)', fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all .15s', letterSpacing: '.01em' },
         onClick: () => sendFn(opt)
       }, opt))
     );
@@ -5610,7 +5610,13 @@ RULES:
 - When surfacing LIG analysis, always include: universe size, top SHAP signals (with weights), suppression count, predicted CVR.
 - Never ask more than one question per turn.
 - When you reach step 5, always end with exactly: "Ready to build this audience? Click **Build Audience** below."
-- You understand Fair Lending, ECOA, UDAAP, GLBA, TCPA/CAN-SPAM, and GPC requirements.`;
+- You understand Fair Lending, ECOA, UDAAP, GLBA, TCPA/CAN-SPAM, and GPC requirements.
+
+RESPONSE FORMAT:
+Always return valid JSON. When presenting multiple choices for the user to select, include them in the options array so they appear as clickable pill buttons in the UI.
+{"text": "Your response here with **bold** supported", "options": ["Choice 1", "Choice 2", "Choice 3"]}
+When NOT presenting choices (e.g., surfacing LIG analysis, final summary), omit the options field:
+{"text": "Your response here"}`;
 
 // ═══════════════════════════════════════════════════════════════
 // JOURNEY BUILDER SYSTEM PROMPT (conversational + path optimization)
@@ -5637,7 +5643,13 @@ RULES:
 - When user asks for "fastest" or "fewest steps", visually lead with the most aggressive option.
 - Never ask more than one question per turn.
 - End step 5 with exactly: "Ready to build this journey? Click **Build Trigger** below."
-- You understand TCPA, CAN-SPAM, ECOA, UDAAP, Fair Lending, GPC signal compliance.`;
+- You understand TCPA, CAN-SPAM, ECOA, UDAAP, Fair Lending, GPC signal compliance.
+
+RESPONSE FORMAT:
+Always return valid JSON. When presenting multiple choices or asking the user to select between options, include them in the options array so they appear as clickable pill buttons.
+{"text": "Your response here with **bold** supported", "options": ["Choice 1", "Choice 2", "Choice 3"]}
+When NOT presenting choices (e.g., surfacing path analysis, final summary), omit options:
+{"text": "Your response here"}`;
 
 // ═══════════════════════════════════════════════════════════════
 // AUDIENCE BUILDER CHAT COMPONENT
@@ -5678,7 +5690,7 @@ function AudienceBuilderChat({ onTriggerBuilder }) {
       options.map(function(opt) {
         return React.createElement('button', {
           key: opt,
-          style: { padding: '5px 14px', borderRadius: 20, border: '1.5px solid rgba(0,180,230,.4)', background: 'rgba(0,180,230,.08)', color: 'var(--cyan-dim)', fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all .15s' },
+          style: { padding: '6px 16px', borderRadius: 20, border: '1.5px solid rgba(99,102,241,.5)', background: 'rgba(99,102,241,.1)', color: 'var(--cyan-dim)', fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all .15s', letterSpacing: '.01em' },
           onClick: function() { sendFn(opt); }
         }, opt);
       })
@@ -5777,8 +5789,11 @@ function AudienceBuilderChat({ onTriggerBuilder }) {
         })
       }).then(function(r) { return r.json(); }).then(function(data) {
         var raw = (data.content && data.content[0] && data.content[0].text) || getMock(history, q);
-        setMsgs(function(m) { return m.slice(0, -1).concat([{ role: 'assistant', content: { text: raw } }]); });
-        if (raw.toLowerCase().includes('build audience')) setBuilderReady(true);
+        var parsed;
+        try { parsed = JSON.parse(raw.replace(/```json|```/g, '').trim()); } catch(e) { parsed = { text: raw }; }
+        if (typeof parsed === 'string') parsed = { text: parsed };
+        setMsgs(function(m) { return m.slice(0, -1).concat([{ role: 'assistant', content: parsed }]); });
+        if ((parsed.text||'').toLowerCase().includes('build audience')) setBuilderReady(true);
         setLoading(false);
       }).catch(function() {
         var mock = getMock(history, q);
@@ -5899,7 +5914,7 @@ function JourneyBuilderChat({ onTriggerBuilder }) {
       options.map(function(opt) {
         return React.createElement('button', {
           key: opt,
-          style: { padding: '5px 14px', borderRadius: 20, border: '1.5px solid rgba(0,180,230,.4)', background: 'rgba(0,180,230,.08)', color: 'var(--cyan-dim)', fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all .15s' },
+          style: { padding: '6px 16px', borderRadius: 20, border: '1.5px solid rgba(99,102,241,.5)', background: 'rgba(99,102,241,.1)', color: 'var(--cyan-dim)', fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all .15s', letterSpacing: '.01em' },
           onClick: function() { sendFn(opt); }
         }, opt);
       })
@@ -5958,8 +5973,11 @@ function JourneyBuilderChat({ onTriggerBuilder }) {
         })
       }).then(function(r) { return r.json(); }).then(function(data) {
         var raw = (data.content && data.content[0] && data.content[0].text) || getMock(history, q);
-        setMsgs(function(m) { return m.slice(0, -1).concat([{ role: 'assistant', content: { text: raw } }]); });
-        if (raw.toLowerCase().includes('build trigger')) setBuilderReady(true);
+        var parsed;
+        try { parsed = JSON.parse(raw.replace(/```json|```/g, '').trim()); } catch(e) { parsed = { text: raw }; }
+        if (typeof parsed === 'string') parsed = { text: parsed };
+        setMsgs(function(m) { return m.slice(0, -1).concat([{ role: 'assistant', content: parsed }]); });
+        if ((parsed.text||'').toLowerCase().includes('build trigger')) setBuilderReady(true);
         setLoading(false);
       }).catch(function() {
         var mock = getMock(history, q);
