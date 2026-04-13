@@ -3842,9 +3842,148 @@ function JourneyResult({
 // SCREEN 1 — IDENTITY GRAPH
 // ═══════════════════════════════════════════════════════════════
 
+
+// ═══════════════════════════════════════════════════════════════
+// NEO4J LIVE IDENTITY GRAPH HOOK
+// Fetches live Person nodes from AuraDB via Worker
+// ═══════════════════════════════════════════════════════════════
+const WORKER_URL = 'https://signalset-lig-api.tickersignals.workers.dev';
+const SEG_COLORS = {
+  'Explorers': '#6366F1',
+  'Revelers': '#8B5CF6',
+  'Luxuriates': '#F59E0B',
+  'Bask_Chill': '#00C47A',
+  'Deal_Seekers': '#EF4444'
+};
+const SEG_DISPLAY = {
+  'Explorers': 'Explorers',
+  'Revelers': 'Revelers',
+  'Luxuriates': 'Luxuriates',
+  'Bask_Chill': 'Bask & Chill',
+  'Deal_Seekers': 'Deal Seekers'
+};
+
+async function fetchNeo4jGraph() {
+  // Fetch a representative sample: 1 person per segment + their linked nodes
+  const query = `
+    MATCH (p:Person)
+    WITH p ORDER BY p.propensity DESC
+    WITH p.segment AS seg, collect(p)[0..2] AS persons
+    UNWIND persons AS p
+    OPTIONAL MATCH (p)-[r1:LINKED_TO]->(d:Device)
+    OPTIONAL MATCH (p)-[r2:PROBABILISTIC_MATCH]->(d2:Device)
+    OPTIONAL MATCH (p)-[:HAS_ACCOUNT]->(a:Account)
+    OPTIONAL MATCH (p)-[:HAD_INTERACTION]->(i:Interaction)
+    OPTIONAL MATCH (p)-[:USED_TERMINAL]->(t:Terminal)
+    RETURN p.pid AS pid, p.segment AS segment, p.ltv AS ltv,
+           p.propensity AS propensity, p.monthly_spend AS monthly_spend,
+           p.fico_proxy AS fico_proxy, p.uid2 AS uid2,
+           count(DISTINCT d) AS det_devices,
+           count(DISTINCT d2) AS prob_devices,
+           count(DISTINCT a) AS accounts,
+           count(DISTINCT i) AS interactions,
+           count(DISTINCT t) AS terminals
+    ORDER BY p.propensity DESC
+    LIMIT 10
+  `;
+  const resp = await fetch(WORKER_URL + '/api/neo4j/query', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ query })
+  });
+  const data = await resp.json();
+  const rows = data?.data?.results?.[0]?.data || [];
+
+  // Also get segment counts
+  const countQuery = `
+    MATCH (p:Person)
+    RETURN p.segment AS seg, count(p) AS cnt, avg(p.ltv) AS avg_ltv
+    ORDER BY cnt DESC
+  `;
+  const countResp = await fetch(WORKER_URL + '/api/neo4j/query', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ query: countQuery })
+  });
+  const countData = await countResp.json();
+  const segCounts = {};
+  (countData?.data?.results?.[0]?.data || []).forEach(row => {
+    const [seg, cnt, ltv] = row.row || [];
+    if (seg) segCounts[seg] = { count: cnt, ltv: Math.round(ltv) };
+  });
+
+  // Also get total node counts
+  const nodeCountQuery = `
+    MATCH (n) RETURN labels(n)[0] AS label, count(n) AS cnt ORDER BY cnt DESC
+  `;
+  const ncResp = await fetch(WORKER_URL + '/api/neo4j/query', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ query: nodeCountQuery })
+  });
+  const ncData = await ncResp.json();
+  const nodeCounts = {};
+  (ncData?.data?.results?.[0]?.data || []).forEach(row => {
+    const [label, cnt] = row.row || [];
+    if (label) nodeCounts[label] = cnt;
+  });
+
+  // Transform rows to CUSTOMERS shape
+  const customers = rows.map(row => {
+    const [pid, seg, ltv, propensity, spend, fico, uid2, detDev, probDev, accounts, interactions, terminals] = row.row || [];
+    const totalDevices = (detDev || 0) + (probDev || 0);
+    const segDisplay = SEG_DISPLAY[seg] || seg;
+    const shortId = pid ? 'LIG-' + pid.slice(-4).toUpperCase() : 'LIG-????';
+    const initials = shortId.slice(-4,-2);
+    return {
+      id: shortId,
+      pid: pid,
+      name: shortId,
+      initials: initials,
+      segment: seg,
+      cluster: segDisplay,
+      color: SEG_COLORS[seg] || '#6366F1',
+      ltv: ltv ? '$' + Number(ltv).toLocaleString() : 'N/A',
+      ltvRaw: ltv || 0,
+      score: fico || 720,
+      spend: spend ? '$' + Number(spend).toLocaleString() + '/mo' : 'N/A',
+      products: accounts || 1,
+      mobile: (detDev || 0) + ' det · ' + (probDev || 0) + ' prob',
+      intent: propensity || 70,
+      propensity: propensity || 70,
+      devices: totalDevices,
+      interactions: interactions || 0,
+      terminals: terminals || 0,
+      uid2: uid2 || '',
+      live: true
+    };
+  });
+
+  return { customers, segCounts, nodeCounts };
+}
+
+function useNeo4jGraph() {
+  const [graphData, setGraphData] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(null);
+
+  React.useEffect(() => {
+    fetchNeo4jGraph()
+      .then(data => { setGraphData(data); setLoading(false); })
+      .catch(err => { setError(err.message); setLoading(false); });
+  }, []);
+
+  return { graphData, loading, error };
+}
+
 function IdentityGraph() {
   const svgRef = useRef(null);
-  const [selected, setSelected] = useState(CUSTOMERS[0]);
+  const { graphData, loading: neo4jLoading, error: neo4jError } = useNeo4jGraph();
+  const liveCustomers = graphData?.customers?.length > 0 ? graphData.customers : CUSTOMERS;
+  const nodeCounts = graphData?.nodeCounts || {};
+  const segCounts = graphData?.segCounts || {};
+  const totalNodes = Object.values(nodeCounts).reduce((a,b) => a+b, 0);
+  const [selected, setSelected] = useState(null);
   const [hinted, setHinted] = useState(true);
   const [showExpand, setShowExpand] = useState(false);
   const [showListDropdown, setShowListDropdown] = useState(false);
@@ -3853,6 +3992,13 @@ function IdentityGraph() {
   const simRef = useRef(null);
   const nodesRef = useRef([]);
   const svgSelRef = useRef(null);
+  // Set selected once liveCustomers are ready
+  useEffect(() => {
+    if (liveCustomers && liveCustomers.length > 0 && !selected) {
+      setSelected(liveCustomers[0]);
+    }
+  }, [liveCustomers]);
+  if (!selected) return /*#__PURE__*/React.createElement('div', {style:{padding:40,color:'var(--slate)',fontSize:14}}, neo4jLoading ? '⟳ Connecting to Neo4j AuraDB...' : '⟳ Loading identity graph...');
   const HOUSEHOLD_DATA = {
     'LIG-7F3A': {
       members: [{
@@ -4339,7 +4485,7 @@ function IdentityGraph() {
       }]
     }
   };
-  const household = HOUSEHOLD_DATA[selected.id] || HOUSEHOLD_DATA['LIG-7F3A'];
+  const household = (selected && HOUSEHOLD_DATA[selected.id]) || HOUSEHOLD_DATA['LIG-7F3A'];
   useEffect(() => {
     const drawIG = () => {
     const svg = d3.select(svgRef.current);
@@ -4443,7 +4589,7 @@ function IdentityGraph() {
     const probEdgeG = svg.append('g').attr('class', 'prob-edges');
 
     // Nodes
-    const nodes = CUSTOMERS.map((c, i) => ({
+    const nodes = liveCustomers.map((c, i) => ({
       ...c,
       i,
       x: clusterPos[c.cluster]?.x + (Math.random() - 0.5) * 80,
@@ -4604,9 +4750,9 @@ function IdentityGraph() {
     className: "panel-hdr"
   }, /*#__PURE__*/React.createElement("span", {
     className: "panel-title"
-  }, "Customer Graph \u2014 8 Nodes \xB7 3 Segments"), /*#__PURE__*/React.createElement("span", {
+  }, (totalNodes > 0 ? ('Customer Graph — ' + totalNodes + ' Nodes · ' + Object.keys(segCounts).length + ' Segments') : 'Customer Graph — 8 Nodes · 3 Segments')), /*#__PURE__*/React.createElement("span", {
     className: "badge badge-live"
-  }, "Live \xB7 <500ms P95")), /*#__PURE__*/React.createElement("div", {
+  }, (graphData?.customers?.length > 0 ? 'Neo4j · Live' : 'Live · <500ms P95'))), /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'relative'
     }
@@ -9156,7 +9302,7 @@ function USChoropleth({
   useEffect(() => {
     if (usGeo) return;
     fetch('https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json').then(r => r.json()).then(us => setUsGeo(us)).catch(() => setUsGeo('error'));
-  }, []);
+  }, [liveCustomers]);
 
   // Draw map whenever geo or data changes
   useEffect(() => {
