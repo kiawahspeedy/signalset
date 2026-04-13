@@ -3381,7 +3381,7 @@ function Chatbot({
     // Simulate realistic thinking delay for demo
     await new Promise(r => setTimeout(r, 900 + Math.random() * 700));
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('https://signalset-lig-api.tickersignals.workers.dev/api/claude', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -5038,7 +5038,7 @@ function CreativeBuilderChat({ onTriggerBuilder }) {
     await new Promise(r => setTimeout(r, 900 + Math.random() * 600));
     try {
       const apiMessages = buildApiMessages(currentHistory, q);
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('https://signalset-lig-api.tickersignals.workers.dev/api/claude', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -5767,7 +5767,7 @@ function AudienceBuilderChat({ onTriggerBuilder }) {
     setLoading(true);
     setMsgs(function(m) { return m.concat([{ role: 'assistant', content: null, loading: true }]); });
     setTimeout(function() {
-      fetch('https://api.anthropic.com/v1/messages', {
+      fetch('https://signalset-lig-api.tickersignals.workers.dev/api/claude', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -5948,7 +5948,7 @@ function JourneyBuilderChat({ onTriggerBuilder }) {
     setLoading(true);
     setMsgs(function(m) { return m.concat([{ role: 'assistant', content: null, loading: true }]); });
     setTimeout(function() {
-      fetch('https://api.anthropic.com/v1/messages', {
+      fetch('https://signalset-lig-api.tickersignals.workers.dev/api/claude', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
