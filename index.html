@@ -9302,7 +9302,7 @@ function USChoropleth({
   useEffect(() => {
     if (usGeo) return;
     fetch('https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json').then(r => r.json()).then(us => setUsGeo(us)).catch(() => setUsGeo('error'));
-  }, [liveCustomers]);
+  }, []);
 
   // Draw map whenever geo or data changes
   useEffect(() => {
