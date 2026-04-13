@@ -196,14 +196,14 @@ body {
 .chat-empty .hint { font-size: 13px; color: var(--text-sec); margin-top: 10px; display: block; }
 .chat-empty .hint-cyan { font-size: 13px; color: var(--cyan-dim); font-weight: 500; margin-top: 8px; display: block; }
 
-.msg { display: flex; gap: 10px; }
+.msg { display: flex; gap: 12px; margin-bottom: 6px; }
 .msg.user { justify-content: flex-end; }
 .msg.user .bubble {
-  background: var(--navy); border: 1px solid rgba(14,31,56,0.2);
-  color: #FFFFFF; font-size: 15px; padding: 11px 16px;
-  border-radius: 12px 12px 3px 12px; max-width: 72%;
+  background: var(--cyan); border: none;
+  color: #FFFFFF; font-size: 15px; padding: 11px 16px; line-height: 1.65;
+  border-radius: 16px 16px 4px 16px; max-width: 78%;
 }
-.msg.assistant .bubble { flex: 1; font-size: 15px; line-height: 1.6; color: var(--text); }
+.msg.assistant .bubble { flex: 1; font-size: 15px; line-height: 1.7; color: var(--text); background: rgba(22,22,58,.95); padding: 13px 17px; border-radius: 4px 16px 16px 16px; border: 1px solid rgba(99,102,241,.25); box-shadow: 0 1px 4px rgba(0,0,0,.2); }
 
 .sample-chips { padding: 0 24px 14px; display: flex; gap: 8px; flex-wrap: wrap; background: var(--bg); flex-shrink: 0; }
 .chip {
@@ -222,9 +222,9 @@ body {
 }
 .chat-input {
   flex: 1; background: var(--bg); border: 1px solid rgba(99,102,241,.28);
-  border-radius: 9px; padding: 10px 14px; color: var(--text);
-  font-family: var(--font-b); font-size: 14px; resize: none; outline: none;
-  min-height: 42px; max-height: 120px; transition: border-color .15s;
+  border-radius: 9px; padding: 11px 15px; color: var(--text);
+  font-family: var(--font-b); font-size: 15px; resize: none; outline: none;
+  min-height: 46px; max-height: 120px; transition: border-color .15s;
 }
 .chat-input:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(0,180,230,0.1); }
 .chat-input::placeholder { color: #94A3B8; }
@@ -5811,7 +5811,7 @@ function AudienceBuilderChat({ onTriggerBuilder }) {
       var parts = line.split(/(\*\*[^*]+\*\*)/g).map(function(p, j) {
         return p.startsWith('**') && p.endsWith('**') ? React.createElement('strong', { key: j }, p.slice(2,-2)) : p;
       });
-      return React.createElement('p', { key: i, style: { margin: '2px 0', lineHeight: 1.55 } }, parts);
+      return React.createElement('p', { key: i, style: { margin: '5px 0', lineHeight: 1.7 } }, parts);
     });
   }
 
@@ -5820,7 +5820,7 @@ function AudienceBuilderChat({ onTriggerBuilder }) {
       React.createElement('span', { style: { fontSize: 13, color: 'var(--slate)', fontWeight: 500 } }, React.createElement('span', { style: { display: 'flex', alignItems: 'center', gap: 6 } }, Icon('target', 15, 'var(--slate)'), 'Audience Builder Chat')),
       React.createElement('button', { style: { fontSize: 12, color: 'var(--slate)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px' }, onClick: function() { setMsgs([]); setBuilderReady(false); setBuilderContext({}); } }, 'Clear')
     ),
-    React.createElement('div', { style: { flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 10 } },
+    React.createElement('div', { style: { flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 16 } },
       msgs.length === 0 && React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 9, marginTop: 8, padding: '0 4px' } },
         React.createElement('div', { style: { fontSize: 13, color: 'var(--slate)', fontWeight: 500, marginBottom: 4 } }, 'Describe your audience need or try:'),
         SAMPLES.map(function(s, i) {
@@ -5830,7 +5830,7 @@ function AudienceBuilderChat({ onTriggerBuilder }) {
       msgs.map(function(m, i) {
         var isUser = m.role === 'user';
         return React.createElement('div', { key: i, style: { display: 'flex', flexDirection: 'column', alignItems: isUser ? 'flex-end' : 'flex-start' } },
-          React.createElement('div', { style: { maxWidth: '88%', padding: '10px 14px', borderRadius: isUser ? '14px 14px 4px 14px' : '14px 14px 14px 4px', background: isUser ? 'var(--cyan)' : 'var(--card-alt)', color: isUser ? '#fff' : 'var(--text)', border: isUser ? 'none' : '1px solid var(--bdr)', fontSize: 13, lineHeight: 1.55 } },
+          React.createElement('div', { style: { maxWidth: '88%', padding: isUser ? '11px 16px' : '13px 17px', borderRadius: isUser ? '16px 16px 4px 16px' : '4px 16px 16px 16px', background: isUser ? 'var(--cyan)' : 'rgba(22,22,58,.95)', color: isUser ? '#fff' : 'var(--text)', border: isUser ? 'none' : '1px solid rgba(99,102,241,.3)', fontSize: 15, lineHeight: 1.65, boxShadow: isUser ? 'none' : '0 1px 4px rgba(0,0,0,.25)' } },
             m.loading ? React.createElement('span', { style: { opacity: 0.6 } }, '\u2026') :
             isUser ? m.content :
             React.createElement(React.Fragment, null,
@@ -5846,7 +5846,7 @@ function AudienceBuilderChat({ onTriggerBuilder }) {
       React.createElement('button', { style: { width: '100%', padding: '11px 0', borderRadius: 9, background: 'linear-gradient(135deg, var(--cyan) 0%, #0070c0 100%)', color: '#fff', border: 'none', fontWeight: 700, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }, onClick: function() { onTriggerBuilder(builderContext); } }, '\u2726 Build Audience')
     ),
     React.createElement('div', { style: { padding: '10px 16px 14px', borderTop: '1px solid var(--bdr)', display: 'flex', gap: 8, alignItems: 'flex-end', background: 'var(--card)' } },
-      React.createElement('textarea', { style: { flex: 1, padding: '10px 13px', borderRadius: 9, border: '1px solid var(--bdr)', fontSize: 13, color: 'var(--text)', background: 'var(--bg)', outline: 'none', resize: 'none', minHeight: 44, maxHeight: 120, lineHeight: 1.5, fontFamily: 'inherit', overflowY: 'auto' }, placeholder: 'Describe your target audience\u2026', value: input, rows: 1, onChange: function(e) { setInput(e.target.value); }, onKeyDown: function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }, disabled: loading }),
+      React.createElement('textarea', { style: { flex: 1, padding: '11px 14px', borderRadius: 9, border: '1px solid var(--bdr)', fontSize: 15, color: 'var(--text)', background: 'var(--bg)', outline: 'none', resize: 'none', minHeight: 46, maxHeight: 120, lineHeight: 1.5, fontFamily: 'inherit', overflowY: 'auto' }, placeholder: 'Describe your target audience\u2026', value: input, rows: 1, onChange: function(e) { setInput(e.target.value); }, onKeyDown: function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }, disabled: loading }),
       React.createElement('button', { style: { width: 40, height: 40, borderRadius: 9, background: loading ? 'var(--bdr)' : 'var(--cyan)', color: '#fff', border: 'none', fontSize: 18, cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }, onClick: function() { send(); }, disabled: loading }, loading ? '\u2026' : '\u2191')
     )
   );
@@ -5995,7 +5995,7 @@ function JourneyBuilderChat({ onTriggerBuilder }) {
       var parts = line.split(/(\*\*[^*]+\*\*)/g).map(function(p, j) {
         return p.startsWith('**') && p.endsWith('**') ? React.createElement('strong', { key: j }, p.slice(2,-2)) : p;
       });
-      return React.createElement('p', { key: i, style: { margin: '2px 0', lineHeight: 1.55 } }, parts);
+      return React.createElement('p', { key: i, style: { margin: '5px 0', lineHeight: 1.7 } }, parts);
     });
   }
 
@@ -6004,7 +6004,7 @@ function JourneyBuilderChat({ onTriggerBuilder }) {
       React.createElement('span', { style: { fontSize: 13, color: 'var(--slate)', fontWeight: 500 } }, React.createElement('span', { style: { display: 'flex', alignItems: 'center', gap: 6 } }, Icon('lightning', 15, 'var(--slate)'), 'Journey Builder Chat')),
       React.createElement('button', { style: { fontSize: 12, color: 'var(--slate)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px' }, onClick: function() { setMsgs([]); setBuilderReady(false); setBuilderContext({}); } }, 'Clear')
     ),
-    React.createElement('div', { style: { flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 10 } },
+    React.createElement('div', { style: { flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 16 } },
       msgs.length === 0 && React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 9, marginTop: 8, padding: '0 4px' } },
         React.createElement('div', { style: { fontSize: 13, color: 'var(--slate)', fontWeight: 500, marginBottom: 4 } }, 'Describe your journey goal or try:'),
         SAMPLES.map(function(s, i) {
@@ -6014,7 +6014,7 @@ function JourneyBuilderChat({ onTriggerBuilder }) {
       msgs.map(function(m, i) {
         var isUser = m.role === 'user';
         return React.createElement('div', { key: i, style: { display: 'flex', flexDirection: 'column', alignItems: isUser ? 'flex-end' : 'flex-start' } },
-          React.createElement('div', { style: { maxWidth: '88%', padding: '10px 14px', borderRadius: isUser ? '14px 14px 4px 14px' : '14px 14px 14px 4px', background: isUser ? 'var(--cyan)' : 'var(--card-alt)', color: isUser ? '#fff' : 'var(--text)', border: isUser ? 'none' : '1px solid var(--bdr)', fontSize: 13, lineHeight: 1.55 } },
+          React.createElement('div', { style: { maxWidth: '88%', padding: isUser ? '11px 16px' : '13px 17px', borderRadius: isUser ? '16px 16px 4px 16px' : '4px 16px 16px 16px', background: isUser ? 'var(--cyan)' : 'rgba(22,22,58,.95)', color: isUser ? '#fff' : 'var(--text)', border: isUser ? 'none' : '1px solid rgba(99,102,241,.3)', fontSize: 15, lineHeight: 1.65, boxShadow: isUser ? 'none' : '0 1px 4px rgba(0,0,0,.25)' } },
             m.loading ? React.createElement('span', { style: { opacity: 0.6 } }, '\u2026') :
             isUser ? m.content :
             React.createElement(React.Fragment, null,
@@ -6030,7 +6030,7 @@ function JourneyBuilderChat({ onTriggerBuilder }) {
       React.createElement('button', { style: { width: '100%', padding: '11px 0', borderRadius: 9, background: 'linear-gradient(135deg, var(--cyan) 0%, #0070c0 100%)', color: '#fff', border: 'none', fontWeight: 700, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }, onClick: function() { onTriggerBuilder(builderContext); } }, '\u26a1 Build Trigger')
     ),
     React.createElement('div', { style: { padding: '10px 16px 14px', borderTop: '1px solid var(--bdr)', display: 'flex', gap: 8, alignItems: 'flex-end', background: 'var(--card)' } },
-      React.createElement('textarea', { style: { flex: 1, padding: '10px 13px', borderRadius: 9, border: '1px solid var(--bdr)', fontSize: 13, color: 'var(--text)', background: 'var(--bg)', outline: 'none', resize: 'none', minHeight: 44, maxHeight: 120, lineHeight: 1.5, fontFamily: 'inherit', overflowY: 'auto' }, placeholder: 'Describe your journey or optimization goal\u2026', value: input, rows: 1, onChange: function(e) { setInput(e.target.value); }, onKeyDown: function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }, disabled: loading }),
+      React.createElement('textarea', { style: { flex: 1, padding: '11px 14px', borderRadius: 9, border: '1px solid var(--bdr)', fontSize: 15, color: 'var(--text)', background: 'var(--bg)', outline: 'none', resize: 'none', minHeight: 46, maxHeight: 120, lineHeight: 1.5, fontFamily: 'inherit', overflowY: 'auto' }, placeholder: 'Describe your journey or optimization goal\u2026', value: input, rows: 1, onChange: function(e) { setInput(e.target.value); }, onKeyDown: function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }, disabled: loading }),
       React.createElement('button', { style: { width: 40, height: 40, borderRadius: 9, background: loading ? 'var(--bdr)' : 'var(--cyan)', color: '#fff', border: 'none', fontSize: 18, cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }, onClick: function() { send(); }, disabled: loading }, loading ? '\u2026' : '\u2191')
     )
   );
