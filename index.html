@@ -3844,6 +3844,41 @@ function JourneyResult({
 
 
 // ═══════════════════════════════════════════════════════════════
+// NEO4J STATUS HOOK — module-level cache, one fetch per session
+// Used by App (nav) and MarketingDesk (LIG connection panel)
+// ═══════════════════════════════════════════════════════════════
+let _neo4jStatusCache = null;
+let _neo4jStatusListeners = [];
+let _neo4jStatusFetched = false;
+
+function _fetchNeo4jStatus() {
+  if (_neo4jStatusFetched) return;
+  _neo4jStatusFetched = true;
+  fetch('https://signalset-lig-api.tickersignals.workers.dev/api/neo4j/health')
+    .then(r => r.json())
+    .then(d => {
+      _neo4jStatusCache = { connected: d.status === 'ok', nodeCount: d.nodeCount || 0, database: d.database || '' };
+      _neo4jStatusListeners.forEach(fn => fn(_neo4jStatusCache));
+    })
+    .catch(() => {
+      _neo4jStatusCache = { connected: false, nodeCount: 0, database: '' };
+      _neo4jStatusListeners.forEach(fn => fn(_neo4jStatusCache));
+    });
+}
+
+function useNeo4jStatus() {
+  const [status, setStatus] = React.useState(_neo4jStatusCache);
+  React.useEffect(() => {
+    if (_neo4jStatusCache) { setStatus(_neo4jStatusCache); return; }
+    _neo4jStatusListeners.push(setStatus);
+    _fetchNeo4jStatus();
+    return () => { _neo4jStatusListeners = _neo4jStatusListeners.filter(fn => fn !== setStatus); };
+  }, []);
+  return status;
+}
+
+
+// ═══════════════════════════════════════════════════════════════
 // NEO4J LIVE IDENTITY GRAPH HOOK
 // Fetches live Person nodes from AuraDB via Worker
 // ═══════════════════════════════════════════════════════════════
@@ -6945,6 +6980,7 @@ function JourneyBuilderLightbox({ open, onClose, context, onSave }) {
 // ═══════════════════════════════════════════════════════════════
 
 function MarketingDesk({ jumpTab, onTabConsumed }) {
+  const neo4jStatus = useNeo4jStatus();
   const [tab, setTab] = useState('audience');
   const DESK_SUB_MAP = { 'smart-audience': 'audience', 'smart-triggers': 'journey', creative: 'creative', destinations: 'orch', brief: 'brief' };
   useEffect(() => {
@@ -7320,21 +7356,31 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
     }
   }, "LIG Connection"), /*#__PURE__*/React.createElement("div", {
     style: {
+      fontSize: 11,
+      color: 'rgba(255,255,255,0.5)',
+      textTransform: 'uppercase',
+      letterSpacing: '.06em',
+      marginBottom: 3
+    }
+  }, "Neo4j AuraDB"), /*#__PURE__*/React.createElement("div", {
+    style: {
       fontSize: 13,
-      color: 'var(--green)',
+      color: neo4jStatus?.connected ? 'var(--green)' : 'var(--slate)',
       display: 'flex',
       gap: 5,
       alignItems: 'center'
     }
   }, /*#__PURE__*/React.createElement("div", {
     className: "pulse"
-  }), "VPC-SC \xB7 Live"), /*#__PURE__*/React.createElement("div", {
+  }), neo4jStatus?.connected ? "Connected · Live" : "Connecting..."), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: 'rgba(255,255,255,0.35)',
-      marginTop: 5
+      marginTop: 4
     }
-  }, "0 ext. PII"))), /*#__PURE__*/React.createElement("div", {
+  }, neo4jStatus?.connected
+    ? (neo4jStatus.nodeCount.toLocaleString() + " nodes · 0 ext. PII")
+    : "0 ext. PII"))), /*#__PURE__*/React.createElement("div", {
     className: "desk-content"
   }, /*#__PURE__*/React.createElement("div", {
     className: `desk-cap overflow-y ${tab === 'brief' ? 'active' : ''}`
@@ -16379,6 +16425,7 @@ function App() {
   });
   const [authTarget, setAuthTarget] = React.useState(null);
   const ddRef = React.useRef(null);
+  const neo4jStatus = useNeo4jStatus();
 
   // Nav click handler — used by both splash and platform nav
   // Gate is on entering the platform at all — once in, no more gates
@@ -16459,7 +16506,9 @@ function App() {
     className: "nav-status"
   }, /*#__PURE__*/React.createElement("div", {
     className: "pulse"
-  }), "LIG v2.1 \xB7 VPC-SC \xB7 0 ext. PII")), /*#__PURE__*/React.createElement("main", {
+  }), neo4jStatus?.connected
+      ? ("Neo4j · " + neo4jStatus.nodeCount.toLocaleString() + " nodes · 0 ext. PII")
+      : "LIG v2.1 · VPC-SC · 0 ext. PII")), /*#__PURE__*/React.createElement("main", {
     className: "main"
   }, /*#__PURE__*/React.createElement("div", {
     className: `screen ${screen === 'home' ? 'active' : ''}`
