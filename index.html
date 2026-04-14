@@ -11606,7 +11606,7 @@ function MeasurementIntro({
     action: () => {
       onEnter();
       setDrillLevel(1);
-      setDrillSegment(COHORTS.find(c => c.name === 'Explorers'));
+      setDrillSegment(liveCohorts.find(c => c.name === 'Explorers'));
     }
   }, {
     title: 'Reveler Consumer Mix',
@@ -11617,7 +11617,7 @@ function MeasurementIntro({
     action: () => {
       onEnter();
       setDrillLevel(1);
-      setDrillSegment(COHORTS.find(c => c.name === 'Revelers'));
+      setDrillSegment(liveCohorts.find(c => c.name === 'Revelers'));
     }
   }, {
     title: 'Channel Attribution Waterfall',
@@ -11855,6 +11855,46 @@ function MeasurementZone({
   const svgRef = useRef(null);
   const [tooltip, setTooltip] = useState(null);
   const [selectedCohort, setSelectedCohort] = useState(COHORTS[0]);
+  const [liveCohorts, setLiveCohorts] = useState(COHORTS);
+  const [bqStatus, setBqStatus] = useState('loading'); // 'loading'|'live'|'fallback'
+
+  useEffect(() => {
+    const SEG_MAP = { EXP:'Explorers', REV:'Revelers', LUX:'Luxuriates', BSK:'Bask & Chill', DLR:'Deal Seekers' };
+    const sql = `SELECT segment_id, ROUND(AVG(ltv),0) as avg_ltv, ROUND(AVG(cac),0) as avg_cac FROM \`project-f99bd3eb-3aa0-4b6d-912.lig_master.channel_performance\` WHERE window = '90d' GROUP BY segment_id`;
+    fetch(WORKER_URL + '/api/bq/query', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sql })
+    })
+    .then(r => r.json())
+    .then(data => {
+      // Parse defensively — try multiple BQ response shapes
+      let parsed = [];
+      const raw = data?.rows || data?.data?.rows || data?.result?.rows || data?.data?.data?.rows || [];
+      if (raw.length) {
+        parsed = raw.map(row => {
+          // Shape 1: array of objects { segment_id, avg_ltv, avg_cac }
+          if (row.segment_id !== undefined) return { seg: row.segment_id, ltv: parseFloat(row.avg_ltv), cac: parseFloat(row.avg_cac) };
+          // Shape 2: BQ native { f: [{v:...}] }
+          if (row.f) { const v = row.f; return { seg: v[0]?.v, ltv: parseFloat(v[1]?.v), cac: parseFloat(v[2]?.v) }; }
+          // Shape 3: flat array [seg, ltv, cac]
+          if (Array.isArray(row)) return { seg: row[0], ltv: parseFloat(row[1]), cac: parseFloat(row[2]) };
+          return null;
+        }).filter(Boolean);
+      }
+      if (!parsed.length) { setBqStatus('fallback'); return; }
+      const updated = COHORTS.map(c => {
+        const row = parsed.find(r => SEG_MAP[r.seg] === c.name);
+        if (!row) return c;
+        const ltv = isNaN(row.ltv) ? c.ltv : row.ltv;
+        const cac = isNaN(row.cac) ? c.cac : row.cac;
+        return { ...c, ltv, cac };
+      });
+      setLiveCohorts(updated);
+      setBqStatus('live');
+    })
+    .catch(() => setBqStatus('fallback'));
+  }, []);
   // Drill navigation
   const [drillLevel, setDrillLevel] = useState(0); // 0=main, 1=micro-cohorts, 2=consumer-mix
   const [drillSegment, setDrillSegment] = useState(null);
@@ -11966,7 +12006,7 @@ function MeasurementZone({
     const m2 = glow.append('feMerge');
     m2.append('feMergeNode').attr('in', 'coloredBlur');
     m2.append('feMergeNode').attr('in', 'SourceGraphic');
-    const filteredCohorts = COHORTS.filter(d => {
+    const filteredCohorts = liveCohorts.filter(d => {
       if (filterProduct !== 'All Products' && !d.products.includes(filterProduct)) return false;
       if (filterMarket !== 'All Markets' && !d.markets.includes(filterMarket)) return false;
       if (filterCampaign !== 'All Campaigns' && !d.campaigns.includes(filterCampaign)) return false;
