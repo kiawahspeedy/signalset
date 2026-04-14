@@ -1,18 +1,24 @@
-<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <clipPath id="c"><circle cx="16" cy="16" r="16"/></clipPath>
-  </defs>
-  <circle cx="16" cy="16" r="16" fill="#0D0D1F"/>
-  <line x1="16" y1="16" x2="6" y2="7" stroke="#6366F1" stroke-width="1.2" stroke-opacity="0.8" clip-path="url(#c)"/>
-  <line x1="16" y1="16" x2="26" y2="7" stroke="#6366F1" stroke-width="1.2" stroke-opacity="0.8" clip-path="url(#c)"/>
-  <line x1="6" y1="7" x2="26" y2="7" stroke="#818CF8" stroke-width="0.7" stroke-opacity="0.35" clip-path="url(#c)"/>
-  <line x1="16" y1="16" x2="6" y2="26" stroke="#6366F1" stroke-width="0.9" stroke-dasharray="2 2" stroke-opacity="0.55" clip-path="url(#c)"/>
-  <line x1="16" y1="16" x2="26" y2="26" stroke="#6366F1" stroke-width="0.9" stroke-dasharray="2 2" stroke-opacity="0.55" clip-path="url(#c)"/>
-  <circle cx="6" cy="26" r="3" fill="#4F46E5" opacity="0.65"/>
-  <circle cx="26" cy="26" r="2.5" fill="#4F46E5" opacity="0.65"/>
-  <circle cx="6" cy="7" r="4" fill="#818CF8"/>
-  <circle cx="26" cy="7" r="4" fill="#818CF8"/>
-  <circle cx="16" cy="16" r="7" fill="#6366F1"/>
-  <circle cx="16" cy="16" r="7" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
-  <circle cx="16" cy="16" r="2" fill="white" opacity="0.92"/>
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <!-- Dark background -->
+  <rect width="64" height="64" rx="14" fill="#0D0D1F"/>
+
+  <!-- Edges — deterministic (solid, to top nodes) -->
+  <line x1="32" y1="32" x2="10" y2="14" stroke="#6366F1" stroke-width="1.8" stroke-opacity="0.85"/>
+  <line x1="32" y1="32" x2="54" y2="14" stroke="#6366F1" stroke-width="1.8" stroke-opacity="0.85"/>
+
+  <!-- Edges — probabilistic (dashed, to bottom nodes) -->
+  <line x1="32" y1="32" x2="10" y2="50" stroke="#6366F1" stroke-width="1.4" stroke-dasharray="3 2.5" stroke-opacity="0.55"/>
+  <line x1="32" y1="32" x2="54" y2="50" stroke="#6366F1" stroke-width="1.4" stroke-dasharray="3 2.5" stroke-opacity="0.55"/>
+
+  <!-- Top nodes — deterministic (brighter) -->
+  <circle cx="10" cy="14" r="5" fill="#A5B4FC"/>
+  <circle cx="54" cy="14" r="5" fill="#A5B4FC"/>
+
+  <!-- Bottom nodes — probabilistic (dimmer) -->
+  <circle cx="10" cy="50" r="4.5" fill="#4F46E5" opacity="0.75"/>
+  <circle cx="54" cy="50" r="4.5" fill="#4F46E5" opacity="0.75"/>
+
+  <!-- Hub node -->
+  <circle cx="32" cy="32" r="9" fill="#6366F1"/>
+  <circle cx="32" cy="32" r="3" fill="white" opacity="0.9"/>
 </svg>
