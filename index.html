@@ -23,7 +23,7 @@
 <meta property="og:url" content="https://signalset.io">
 <meta property="og:title" content="Signalset — Living Identity Graph">
 <meta property="og:description" content="Identity that resolves. Activation that converts. 221M nodes, 94% match rate, zero PII exposed.">
-<meta property="og:image" content="https://signalset.io/og-image.svg">
+<meta property="og:image" content="https://signalset.io/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:site_name" content="Signalset">
@@ -31,7 +31,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Signalset — Living Identity Graph">
 <meta name="twitter:description" content="Identity that resolves. 221M nodes. 94% match rate. Zero PII exposed.">
-<meta name="twitter:image" content="https://signalset.io/og-image.svg">
+<meta name="twitter:image" content="https://signalset.io/og-image.png">
 <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
@@ -11858,6 +11858,8 @@ function MeasurementZone({
   const [selectedCohort, setSelectedCohort] = useState(COHORTS[0]);
   const [liveCohorts, setLiveCohorts] = useState(COHORTS);
   const [bqStatus, setBqStatus] = useState('loading'); // 'loading'|'live'|'fallback'
+  const [liveChannelWaterfall, setLiveChannelWaterfall] = useState(CHANNEL_WATERFALL);
+  const [liveSegContribs, setLiveSegContribs] = useState(SEGMENT_CONTRIBUTIONS);
 
   useEffect(() => {
     const SEG_MAP = { EXP:'Explorers', REV:'Revelers', LUX:'Luxuriates', BSK:'Bask & Chill', DLR:'Deal Seekers' };
@@ -11895,6 +11897,82 @@ function MeasurementZone({
       setBqStatus('live');
     })
     .catch(() => setBqStatus('fallback'));
+  }, []);
+
+  // ── Step 10: Wire channel waterfall to BQ ─────────────────────────────
+  useEffect(() => {
+    const CHANNEL_MAP = {
+      email:           { label:'Email / SMS',     color:'#00B4E6', type:'owned' },
+      direct_mail:     { label:'Direct Mail',     color:'#8B5CF6', type:'owned' },
+      branch_digital:  { label:'Branch Digital',  color:'#10B981', type:'owned' },
+      paid_search:     { label:'Paid Search',     color:'#059669', type:'paid'  },
+      display:         { label:'Display / DSP',   color:'#6366F1', type:'paid'  },
+      connected_tv:    { label:'Connected TV',    color:'#F59E0B', type:'paid'  },
+      streaming_audio: { label:'Streaming Audio', color:'#0EA5E9', type:'paid'  },
+      social:          { label:'Social (CR)',     color:'#64748B', type:'cr'    },
+    };
+    const sql = `SELECT channel, CAST(SUM(conversions) AS INT64) as total_conv, ROUND(AVG(roas),2) as avg_roas FROM \`project-f99bd3eb-3aa0-4b6d-912.lig_master.channel_performance\` WHERE \`window\` = '90d' GROUP BY channel ORDER BY total_conv DESC`;
+    fetch(WORKER_URL + '/api/bq/query', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: sql })
+    })
+    .then(r => r.json())
+    .then(data => {
+      const raw = data?.rows || [];
+      if (!raw.length) return;
+      const rows = raw.map(row => {
+        const ch  = row.f ? row.f[0]?.v : row.channel;
+        const conv = parseFloat(row.f ? row.f[1]?.v : row.total_conv) || 0;
+        const roas = parseFloat(row.f ? row.f[2]?.v : row.avg_roas) || 0;
+        return { ch, conv, roas };
+      }).filter(r => r.ch);
+      const total = rows.reduce((s, r) => s + r.conv, 0) || 1;
+      const updated = rows.map(r => {
+        const meta = CHANNEL_MAP[r.ch] || { label: r.ch, color: '#94A3B8', type: 'paid' };
+        return {
+          channel: meta.label,
+          contribution: Math.round((r.conv / total) * 100),
+          color: meta.color,
+          type: meta.type,
+          mode: meta.type === 'owned' ? 'Deterministic' : meta.type === 'cr' ? 'Clean Room Model' : 'Identity-Resolved'
+        };
+      }).sort((a, b) => b.contribution - a.contribution);
+      setLiveChannelWaterfall(updated);
+    })
+    .catch(() => {});
+  }, []);
+
+  // ── Step 11: Wire clean room panel to lig_cleanroom ──────────────────────
+  useEffect(() => {
+    const SEG_MAP = { EXP:'Explorers', REV:'Revelers', LUX:'Luxuriates', BSK:'Bask & Chill', DLR:'Deal Seekers' };
+    const sql = `SELECT segment_id, ROUND(SUM(revenue_attributed),0) as rev, CAST(SUM(conversion_count) AS INT64) as conv FROM \`project-f99bd3eb-3aa0-4b6d-912.lig_cleanroom.cleanroom_outputs\` WHERE attribution_window = '90d' GROUP BY segment_id`;
+    fetch(WORKER_URL + '/api/bq/query', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: sql })
+    })
+    .then(r => r.json())
+    .then(data => {
+      const raw = data?.rows || [];
+      if (!raw.length) return;
+      const rows = raw.map(row => ({
+        seg: row.f ? row.f[0]?.v : row.segment_id,
+        rev: parseFloat(row.f ? row.f[1]?.v : row.rev) || 0,
+        conv: parseInt(row.f ? row.f[2]?.v : row.conv) || 0
+      })).filter(r => r.seg);
+      const totalConv = rows.reduce((s, r) => s + r.conv, 0) || 1;
+      const totalRev  = rows.reduce((s, r) => s + r.rev, 0) || 1;
+      const updated = SEGMENT_CONTRIBUTIONS.map(sc => {
+        const row = rows.find(r => SEG_MAP[r.seg] === sc.segment);
+        if (!row) return sc;
+        return {
+          ...sc,
+          convShare:    Math.round((row.conv / totalConv) * 100),
+          revenueShare: Math.round((row.rev  / totalRev)  * 100)
+        };
+      });
+      setLiveSegContribs(updated);
+    })
+    .catch(() => {});
   }, []);
   // Drill navigation
   const [drillLevel, setDrillLevel] = useState(0); // 0=main, 1=micro-cohorts, 2=consumer-mix
@@ -12383,7 +12461,8 @@ function MeasurementZone({
   }, "Or click any bubble on the chart directly")))))));
 }
 function SegmentContributionPanel({
-  onOptimize
+  onOptimize,
+  data = SEGMENT_CONTRIBUTIONS
 }) {
   const [segMetric, setSegMetric] = useState('convShare');
   const [expandedSeg, setExpandedSeg] = useState(null);
@@ -12415,7 +12494,7 @@ function SegmentContributionPanel({
       color: segMetric === k ? '#fff' : 'var(--slate)',
       transition: 'all .15s'
     }
-  }, v))), SEGMENT_CONTRIBUTIONS.map(seg => /*#__PURE__*/React.createElement("div", {
+  }, v))), data.map(seg => /*#__PURE__*/React.createElement("div", {
     key: seg.segment,
     style: {
       marginBottom: 10
@@ -15089,7 +15168,8 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
       padding: '14px 16px'
     }
   }, /*#__PURE__*/React.createElement(SegmentContributionPanel, {
-    onOptimize: setOptimizeAction
+    onOptimize: setOptimizeAction,
+    data: liveSegContribs
   })))), /*#__PURE__*/React.createElement("div", {
     className: "panel"
   }, /*#__PURE__*/React.createElement("div", {
@@ -15108,7 +15188,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
       flexDirection: 'column',
       gap: 8
     }
-  }, CHANNEL_WATERFALL.map((ch, i) => /*#__PURE__*/React.createElement("div", {
+  }, liveChannelWaterfall.map((ch, i) => /*#__PURE__*/React.createElement("div", {
     key: ch.channel,
     style: {
       display: 'flex',
