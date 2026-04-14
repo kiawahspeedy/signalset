@@ -11860,11 +11860,11 @@ function MeasurementZone({
 
   useEffect(() => {
     const SEG_MAP = { EXP:'Explorers', REV:'Revelers', LUX:'Luxuriates', BSK:'Bask & Chill', DLR:'Deal Seekers' };
-    const sql = `SELECT segment_id, ROUND(AVG(ltv),0) as avg_ltv, ROUND(AVG(cac),0) as avg_cac FROM \`project-f99bd3eb-3aa0-4b6d-912.lig_master.channel_performance\` WHERE window = '90d' GROUP BY segment_id`;
+    const sql = `SELECT segment_id, ROUND(AVG(ltv),0) as avg_ltv, ROUND(AVG(cac),0) as avg_cac FROM \`project-f99bd3eb-3aa0-4b6d-912.lig_master.channel_performance\` WHERE \`window\` = '90d' GROUP BY segment_id`;
     fetch(WORKER_URL + '/api/bq/query', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sql })
+      body: JSON.stringify({ query: sql })
     })
     .then(r => r.json())
     .then(data => {
