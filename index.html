@@ -34,7 +34,7 @@
 <meta name="twitter:image" content="https://signalset.io/og-image.png">
 <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.8.5/dist/d3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -16230,7 +16230,11 @@ function HomeScreen({
 }
 function AuthModal({ targetScreen, onUnlock, onDismiss }) {
   const AUTH_URL = 'https://auth.signalset.io';
-  const PASSPHRASE = 'LIG-Signalset-2026';
+  const PASSPHRASE_HASH = '51b4105598b7e3b6ccbc1b4451417f70bc1110bd6f1fa6adbb0f14a973255014';
+  async function checkPassphrase(input) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input.trim()));
+    return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('') === PASSPHRASE_HASH;
+  }
   const labels = { identity: 'Identity Graph', measurement: 'Measurement', desk: 'Activation \u00b7 In-House', cmn: 'Activation \u00b7 Merchants', home: 'Platform' };
 
   const [mode, setMode] = React.useState('choose');
@@ -16248,11 +16252,13 @@ function AuthModal({ targetScreen, onUnlock, onDismiss }) {
   }
 
   function tryPassphrase() {
-    if (pass.trim() === PASSPHRASE) { unlock(); return; }
-    const n = passAttempts + 1;
-    setPassAttempts(n);
-    setPassErr(n >= 5 ? 'Too many attempts.' : 'Incorrect passphrase (' + n + '/5)');
-    setPass('');
+    checkPassphrase(pass).then(function(ok) {
+      if (ok) { unlock(); return; }
+      const n = passAttempts + 1;
+      setPassAttempts(n);
+      setPassErr(n >= 5 ? 'Too many attempts.' : 'Incorrect passphrase (' + n + '/5)');
+      setPass('');
+    });
   }
 
   async function sendOTP() {
