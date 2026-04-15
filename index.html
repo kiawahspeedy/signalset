@@ -1028,7 +1028,7 @@ body {
 
 /* ── DESTINATIONS: uniform card height ── */
 .orch-grid { align-items: stretch; }
-.orch-card { display: flex; flex-direction: column; box-sizing: border-box; height: 100%; }
+.orch-card { display: flex; flex-direction: column; box-sizing: border-box; height: 100%; position: relative; }
 .orch-bar { margin-top: auto; padding-top: 10px; }
 
 .nav-dropdown { position: relative; }
@@ -12020,11 +12020,14 @@ function MeasurementZone({
     const svg = d3.select(el);
     svg.selectAll('*').remove();
     const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
-    const xScale = d3.scaleLinear().domain([0, 120]).range([0, iW]);
-    const yScale = d3.scaleLinear().domain([0, 8000]).range([iH, 0]);
-    const rScale = d3.scaleSqrt().domain([0, 70000]).range([0, 48]);
-    const qX = xScale(60),
-      qY = yScale(4000);
+    const maxCac = Math.max(120, d3.max(liveCohorts, d => d.cac) * 1.25) || 120;
+    const maxLtv = Math.max(8000, d3.max(liveCohorts, d => d.ltv) * 1.25) || 8000;
+    const maxN   = Math.max(70000, d3.max(liveCohorts, d => d.n) * 1.1) || 70000;
+    const xScale = d3.scaleLinear().domain([0, maxCac]).range([0, iW]);
+    const yScale = d3.scaleLinear().domain([0, maxLtv]).range([iH, 0]);
+    const rScale = d3.scaleSqrt().domain([0, maxN]).range([0, 48]);
+    const qX = xScale(maxCac / 2),
+      qY = yScale(maxLtv / 2);
     const quads = [{
       x: 0,
       y: 0,
@@ -12640,6 +12643,7 @@ const CMN_CATEGORIES = ['Airline spend ≥3× / 90d', 'Hotel co-booking signals'
 const CMN_INTENT = ['In-market flight search (7d)', 'Premium card application intent', 'Travel rewards redemption active', 'Corporate T&E spend pattern'];
 function CommerceMedia({ jumpTab, onTabConsumed }) {
   const [cmnTab, setCmnTab] = useState('start');
+  const [cmnHub, setCmnHub] = useState(true);
   const CMN_SUB_MAP = { discover: 'start', build: 'build', manage: 'manage', results: 'results' };
   useEffect(() => {
     if (!jumpTab) return;
@@ -12647,7 +12651,6 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     setCmnTab(CMN_SUB_MAP[jumpTab] || jumpTab);
     if (onTabConsumed) onTabConsumed();
   }, [jumpTab]);
-  const [cmnHub, setCmnHub] = useState(true);
   const [selectedTargeting, setSelectedTargeting] = useState([]);
   const [selectedCreative, setSelectedCreative] = useState(null);
   const [previewCreative, setPreviewCreative] = useState(null);
