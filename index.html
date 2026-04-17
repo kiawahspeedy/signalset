@@ -16951,32 +16951,45 @@ function AuthModal({ targetScreen, onUnlock, onDismiss }) {
 
 
 function ActivationDropdown({ screen, navigate, onClose }) {
-  const inHouseItems = [
-    { id: 'desk', sub: 'smart-audience', label: 'Smart Audience', icon: '◎' },
-    { id: 'desk', sub: 'smart-triggers', label: 'Smart Triggers', icon: '⚡' },
-    { id: 'desk', sub: 'creative', label: 'Creative Selector', icon: '◈' },
-    { id: 'desk', sub: 'destinations', label: 'Destinations', icon: '⇥' },
-    { id: 'desk', sub: 'brief', label: 'Brief Builder', icon: '✦' },
-  ];
-  const merchantItems = [
-    { id: 'cmn', sub: 'discover', label: 'Audience Discovery', icon: '⊕' },
-    { id: 'cmn', sub: 'build', label: 'Campaign Builder', icon: '◫' },
-    { id: 'cmn', sub: 'manage', label: 'Manage Campaigns', icon: '≡' },
-    { id: 'cmn', sub: 'results', label: 'Results & Attribution', icon: '↗' },
-  ];
-  function go(id, sub) { navigate(id, sub); onClose(); }
-  return React.createElement('div', { className: 'nav-dropdown-menu' },
-    React.createElement('div', { className: 'nav-dd-section' }, 'In-House'),
-    inHouseItems.map(it => React.createElement('div', {
-      key: it.label, className: `nav-dd-item ${screen === 'desk' ? 'active' : ''}`,
-      onClick: () => go(it.id, it.sub)
-    }, React.createElement('span', { style: { fontSize: 14, width: 18, textAlign: 'center', color: 'var(--cyan)' } }, it.icon), it.label)),
+  function go(id) { navigate(id); onClose(); }
+  return React.createElement('div', { className: 'nav-dropdown-menu', style: { minWidth: 280 } },
+    // Marketers portal
+    React.createElement('div', {
+      className: `nav-dd-item ${screen === 'desk' ? 'active' : ''}`,
+      style: { flexDirection: 'column', alignItems: 'flex-start', padding: '10px 12px' },
+      onClick: () => go('desk')
+    },
+      React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 9, width: '100%' } },
+        React.createElement('svg', { width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none', stroke: '#818CF8', strokeWidth: 1.8 },
+          React.createElement('path', { d: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2' }),
+          React.createElement('circle', { cx: 12, cy: 7, r: 4 })
+        ),
+        React.createElement('span', { style: { fontWeight: 600 } }, 'Marketers')
+      ),
+      React.createElement('div', { style: { fontSize: 11, color: 'var(--slate-lt)', fontWeight: 500, marginLeft: 23, marginTop: 2, fontFamily: 'IBM Plex Mono, monospace' } },
+        'FI workspace · audiences, triggers, creatives'
+      )
+    ),
     React.createElement('div', { className: 'nav-dd-divider' }),
-    React.createElement('div', { className: 'nav-dd-section' }, 'Merchants'),
-    merchantItems.map(it => React.createElement('div', {
-      key: it.label, className: `nav-dd-item ${screen === 'cmn' ? 'active' : ''}`,
-      onClick: () => go(it.id, it.sub)
-    }, React.createElement('span', { style: { fontSize: 14, width: 18, textAlign: 'center', color: 'var(--amber)' } }, it.icon), it.label))
+    // Partners portal
+    React.createElement('div', {
+      className: `nav-dd-item ${screen === 'cmn' ? 'active' : ''}`,
+      style: { flexDirection: 'column', alignItems: 'flex-start', padding: '10px 12px' },
+      onClick: () => go('cmn')
+    },
+      React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 9, width: '100%' } },
+        React.createElement('svg', { width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none', stroke: '#A78BFA', strokeWidth: 1.8 },
+          React.createElement('path', { d: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2' }),
+          React.createElement('circle', { cx: 9, cy: 7, r: 4 }),
+          React.createElement('path', { d: 'M23 21v-2a4 4 0 0 0-3-3.87' }),
+          React.createElement('path', { d: 'M16 3.13a4 4 0 0 1 0 7.75' })
+        ),
+        React.createElement('span', { style: { fontWeight: 600 } }, 'Partners')
+      ),
+      React.createElement('div', { style: { fontSize: 11, color: 'var(--slate-lt)', fontWeight: 500, marginLeft: 23, marginTop: 2, fontFamily: 'IBM Plex Mono, monospace' } },
+        'Brand portal · clean room · TEE-attested'
+      )
+    )
   );
 }
 
@@ -16989,20 +17002,6 @@ function SplashPage({ onNavigate }) {
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
   }, [actOpen]);
-
-  const inHouseItems = [
-    { id: 'desk', sub: 'smart-audience', label: 'Smart Audience', icon: '◎' },
-    { id: 'desk', sub: 'smart-triggers', label: 'Smart Triggers', icon: '⚡' },
-    { id: 'desk', sub: 'creative', label: 'Creative Selector', icon: '◈' },
-    { id: 'desk', sub: 'destinations', label: 'Destinations', icon: '⇥' },
-    { id: 'desk', sub: 'brief', label: 'Brief Builder', icon: '✦' },
-  ];
-  const merchantItems = [
-    { id: 'cmn', sub: 'discover', label: 'Audience Discovery', icon: '⊕' },
-    { id: 'cmn', sub: 'build', label: 'Campaign Builder', icon: '◫' },
-    { id: 'cmn', sub: 'manage', label: 'Manage Campaigns', icon: '≡' },
-    { id: 'cmn', sub: 'results', label: 'Results & Attribution', icon: '↗' },
-  ];
 
   const LOGO_SRC = window.CLOVER_SRC;
 
@@ -17020,18 +17019,44 @@ function SplashPage({ onNavigate }) {
           React.createElement('button', { className: 'sp-nav-link', onClick: () => setActOpen(o => !o) },
             'Activation ', React.createElement('span', { style: { fontSize: 10, opacity: .6 } }, actOpen ? '▲' : '▼')
           ),
-          actOpen && React.createElement('div', { className: 'sp-nav-act-menu' },
-            React.createElement('div', { className: 'sp-nav-act-section' }, 'In-House'),
-            inHouseItems.map(it => React.createElement('div', {
-              key: it.label, className: 'sp-nav-act-item',
-              onClick: () => { setActOpen(false); onNavigate(it.id, it.sub); }
-            }, React.createElement('span', { style: { color: '#818CF8', width: 18, textAlign: 'center' } }, it.icon), it.label)),
+          actOpen && React.createElement('div', { className: 'sp-nav-act-menu', style: { minWidth: 280 } },
+            // Marketers portal
+            React.createElement('div', {
+              className: 'sp-nav-act-item',
+              style: { flexDirection: 'column', alignItems: 'flex-start', padding: '10px 12px' },
+              onClick: () => { setActOpen(false); onNavigate('desk'); }
+            },
+              React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 9, width: '100%' } },
+                React.createElement('svg', { width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none', stroke: '#818CF8', strokeWidth: 1.8 },
+                  React.createElement('path', { d: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2' }),
+                  React.createElement('circle', { cx: 12, cy: 7, r: 4 })
+                ),
+                React.createElement('span', { style: { fontWeight: 600 } }, 'Marketers')
+              ),
+              React.createElement('div', { style: { fontSize: 11, color: 'rgba(238,238,255,.5)', fontWeight: 500, marginLeft: 23, marginTop: 2, fontFamily: 'IBM Plex Mono, monospace' } },
+                'FI workspace · audiences, triggers, creatives'
+              )
+            ),
             React.createElement('div', { className: 'sp-nav-act-div' }),
-            React.createElement('div', { className: 'sp-nav-act-section' }, 'Merchants'),
-            merchantItems.map(it => React.createElement('div', {
-              key: it.label, className: 'sp-nav-act-item',
-              onClick: () => { setActOpen(false); onNavigate(it.id, it.sub); }
-            }, React.createElement('span', { style: { color: '#F59E0B', width: 18, textAlign: 'center' } }, it.icon), it.label))
+            // Partners portal
+            React.createElement('div', {
+              className: 'sp-nav-act-item',
+              style: { flexDirection: 'column', alignItems: 'flex-start', padding: '10px 12px' },
+              onClick: () => { setActOpen(false); onNavigate('cmn'); }
+            },
+              React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 9, width: '100%' } },
+                React.createElement('svg', { width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none', stroke: '#A78BFA', strokeWidth: 1.8 },
+                  React.createElement('path', { d: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2' }),
+                  React.createElement('circle', { cx: 9, cy: 7, r: 4 }),
+                  React.createElement('path', { d: 'M23 21v-2a4 4 0 0 0-3-3.87' }),
+                  React.createElement('path', { d: 'M16 3.13a4 4 0 0 1 0 7.75' })
+                ),
+                React.createElement('span', { style: { fontWeight: 600 } }, 'Partners')
+              ),
+              React.createElement('div', { style: { fontSize: 11, color: 'rgba(238,238,255,.5)', fontWeight: 500, marginLeft: 23, marginTop: 2, fontFamily: 'IBM Plex Mono, monospace' } },
+                'Brand portal · clean room · TEE-attested'
+              )
+            )
           )
         ),
         React.createElement('button', { className: 'sp-nav-link', onClick: () => alert('Pricing — coming soon') }, 'Pricing')
