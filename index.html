@@ -11833,6 +11833,13 @@ function MeasurementIntro({
     reveler_mix: '🌍 Open Reveler Consumer Mix',
     clean_room: '🔐 Open Clean Room Attribution',
   };
+  const CHART_IDS = {
+    waterfall: 'mz-waterfall',
+    ltv_cac: null,       // top of page — default scroll
+    explorer_cohorts: null,
+    reveler_mix: null,
+    clean_room: null,
+  };
 
   function MZIntroResultRenderer(data, onFollowUp) {
     if (!data) return null;
@@ -11868,7 +11875,7 @@ function MeasurementIntro({
             }, q)
           ),
           navLabel && /*#__PURE__*/React.createElement("button", {
-            onClick: () => onEnter(),
+            onClick: () => onEnter(CHART_IDS[navKey] || null),
             style: {
               padding: '7px 16px',
               background: 'rgba(6,182,212,0.15)',
@@ -12083,10 +12090,20 @@ function MeasurementZone({
   const [liveChannelWaterfall, setLiveChannelWaterfall] = useState(CHANNEL_WATERFALL);
   const [liveSegContribs, setLiveSegContribs] = useState(SEGMENT_CONTRIBUTIONS);
   const [liveMzSys, setLiveMzSys] = useState(MZ_CHATBOT_SYS);
+  const [mzScrollTarget, setMzScrollTarget] = useState(null);
   // Build live system prompt from BQ on mount
   React.useEffect(() => {
     buildMzSystemPrompt().then(sys => { if (sys) setLiveMzSys(sys); });
   }, []);
+
+  // Scroll to target chart after entering main view
+  React.useEffect(() => {
+    if (!mzIntro && mzScrollTarget) {
+      const el = document.getElementById(mzScrollTarget);
+      if (el) setTimeout(() => { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 150);
+      setMzScrollTarget(null);
+    }
+  }, [mzIntro, mzScrollTarget]);
 
   useEffect(() => {
     const SEG_MAP = { EXP:'Explorers', REV:'Revelers', LUX:'Luxuriates', BSK:'Bask & Chill', DLR:'Deal Seekers' };
@@ -12363,7 +12380,7 @@ function MeasurementZone({
     return /*#__PURE__*/React.createElement("div", {
       className: "drill-container"
     }, /*#__PURE__*/React.createElement(MeasurementIntro, {
-      onEnter: () => { setMzIntro(false); window.scrollTo(0,0); },
+      onEnter: (scrollTarget) => { if (scrollTarget) setMzScrollTarget(scrollTarget); setMzIntro(false); window.scrollTo(0,0); },
       setDrillLevel: setDrillLevel,
       setDrillSegment: setDrillSegment,
       liveMzSys: liveMzSys,
@@ -15406,8 +15423,8 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     onOptimize: setOptimizeAction,
     data: liveSegContribs
   })))), /*#__PURE__*/React.createElement("div", {
-    className: "panel"
-  }, /*#__PURE__*/React.createElement("div", {
+    className: "panel",
+    id: "mz-waterfall" }, /*#__PURE__*/React.createElement("div", {
     className: "panel-hdr"
   }, /*#__PURE__*/React.createElement("span", {
     className: "panel-title"
