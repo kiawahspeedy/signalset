@@ -3612,7 +3612,7 @@ function Chatbot({
       padding: '28px',
       flex: 1
     }
-  }, resultRenderer ? resultRenderer(popout, () => {}) : /*#__PURE__*/React.createElement("div", {
+  }, resultRenderer ? resultRenderer(popout, (q) => { setPopout(null); send(q); }) : /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 15,
       lineHeight: 1.75,
