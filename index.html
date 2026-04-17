@@ -415,6 +415,89 @@ body.v11-sidebar-open .v11-sidebar { transform: translateX(0); }
   font-family: var(--font-m);
 }
 
+/* ── V11 HOME SCREEN — chatbot-first ── */
+.v11-home {
+  min-height: calc(100vh - 56px);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 40px 20px 60px;
+  position: relative;
+  overflow: hidden;
+}
+.v11-home::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 800px 500px at 50% 30%, rgba(99,102,241,.06), transparent 70%);
+  pointer-events: none;
+}
+.v11-home-kicker {
+  font-family: var(--font-m); font-size: 11px; font-weight: 700;
+  color: var(--slate); letter-spacing: .18em; text-transform: uppercase;
+  display: flex; align-items: center; gap: 9px;
+  position: relative; z-index: 1;
+  margin-bottom: 24px;
+}
+.v11-home-kicker-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--indigo-lt, #818CF8);
+  box-shadow: 0 0 6px var(--indigo-lt, #818CF8);
+}
+.v11-home-greeting {
+  font-family: var(--font-b);
+  font-size: 36px; font-weight: 700; color: var(--text);
+  letter-spacing: -.02em; text-align: center;
+  margin-bottom: 32px;
+  max-width: 720px; line-height: 1.2;
+  position: relative; z-index: 1;
+}
+.v11-home-greeting span { color: var(--indigo-lt, #818CF8); font-weight: 800; }
+.v11-home-chat-wrap {
+  width: min(720px, calc(100% - 40px));
+  position: relative; z-index: 1;
+  margin-bottom: 24px;
+}
+/* Override Chatbot interior styling for the v11 home context */
+.v11-home-chat-wrap .home-chat-wrap {
+  height: auto; max-height: 520px;
+  border: 1px solid rgba(99,102,241,.28);
+  border-radius: 14px;
+  background: rgba(14,14,34,.65);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 0 1px rgba(99,102,241,.06), 0 20px 60px rgba(0,0,0,.5);
+}
+.v11-home-pills {
+  display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+  width: min(720px, calc(100% - 40px));
+  position: relative; z-index: 1;
+}
+.v11-home-pill {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 18px; border-radius: 24px;
+  background: rgba(14,14,34,.6);
+  border: 1px solid rgba(99,102,241,.22);
+  font-family: var(--font-b); font-size: 13px; font-weight: 600;
+  color: var(--text); cursor: pointer; transition: all .15s;
+}
+.v11-home-pill:hover {
+  border-color: rgba(99,102,241,.5);
+  background: rgba(99,102,241,.1);
+  transform: translateY(-1px);
+}
+.v11-home-pill-ico {
+  display: flex; align-items: center; color: var(--indigo-lt, #818CF8);
+}
+.v11-home-pill.section-measurement .v11-home-pill-ico { color: #67E8F9; }
+.v11-home-pill.section-drive .v11-home-pill-ico { color: #FBBF24; }
+.v11-home-pill.section-measurement:hover { border-color: rgba(6,182,212,.5); background: rgba(6,182,212,.08); }
+.v11-home-pill.section-drive:hover { border-color: rgba(251,191,36,.4); background: rgba(251,191,36,.06); }
+
+/* Responsive */
+@media (max-width: 640px) {
+  .v11-home-greeting { font-size: 26px; }
+  .v11-home-pills { gap: 8px; }
+  .v11-home-pill { padding: 8px 14px; font-size: 12px; }
+}
+
 /* ── SCREEN HERO ── */
 /* ── GLOBAL SEPARATOR BAND (Block 2) ── */
 .page-separator { height: 10px; background: var(--bg); border-bottom: 1px solid var(--bdr); flex-shrink: 0; }
@@ -17365,151 +17448,77 @@ function HomeScreen({
       strokeLinejoin: "round"
     }))))));
   }
-  return /*#__PURE__*/React.createElement("div", {
-    className: "home-wrap"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "home-hero"
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: 'relative',
-      zIndex: 1
-    }
-  }, /*#__PURE__*/React.createElement("h1", {
-    className: "home-title"
-  }, "Your Intelligence ", /*#__PURE__*/React.createElement("span", null, "Platform.")), /*#__PURE__*/React.createElement("p", {
-    className: "home-subtitle"
-  }, "End-to-end identity resolution, cohort attribution, AI-powered campaign authoring, and clean-room merchant activation \u2014 connected to your Living Identity Graph."))), /*#__PURE__*/React.createElement("div", {
-    className: "home-body"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "home-left"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "home-agent-intro"
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 10,
-      marginBottom: 8
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: 32,
-      height: 32,
-      borderRadius: 8,
-      background: 'var(--navy)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexShrink: 0
-    }
-  }, /*#__PURE__*/React.createElement("svg", {
-    width: "16",
-    height: "16",
-    viewBox: "0 0 16 16",
-    fill: "none"
-  }, /*#__PURE__*/React.createElement("circle", {
-    cx: "8",
-    cy: "8",
-    r: "3",
-    fill: "#00B4E6"
-  }), /*#__PURE__*/React.createElement("circle", {
-    cx: "8",
-    cy: "8",
-    r: "6",
-    stroke: "#00B4E6",
-    strokeWidth: "1.4",
-    fill: "none"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M8 2v1.5M8 12.5V14M2 8h1.5M12.5 8H14",
-    stroke: "#00B4E6",
-    strokeWidth: "1.4",
-    strokeLinecap: "round"
-  }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 14,
-      fontWeight: 700,
-      color: 'var(--text)'
-    }
-  }, "Platform Intelligence Guide"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: 'var(--slate)'
-    }
-  }, "Ask a question to explore any capability \u2014 Live AI \xB7 Claude via Anthropic")), /*#__PURE__*/React.createElement("span", {
-    style: {
-      marginLeft: 'auto',
-      fontSize: 11,
-      padding: '2px 8px',
-      borderRadius: 6,
-      background: 'rgba(0,180,230,.1)',
-      color: 'var(--cyan-dim)',
-      border: '1px solid rgba(0,180,230,.25)',
-      fontWeight: 700
-    }
-  }, "AI"))), /*#__PURE__*/React.createElement("div", {
-    className: "home-chat-wrap"
-  }, /*#__PURE__*/React.createElement(Chatbot, {
-    systemPrompt: HOME_SYS,
-    exploreLabel: "Identity Graph",
-    exploreScreen: () => { setScreen('identity'); window.scrollTo(0, 0); },
-    samples: HOME_SAMPLES,
-    placeholder: "Ask about identity, measurement, campaigns, or merchant activation\u2026",
-    resultRenderer: d => HomeResultRenderer(d)
-  }))), /*#__PURE__*/React.createElement("div", {
-    className: "home-right"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "home-section-label"
-  }, "Platform Modules"), FEAT_TILES.map(t => /*#__PURE__*/React.createElement("div", {
-    key: t.id,
-    className: "feat-tile",
-    onClick: () => { setScreen(t.id); window.scrollTo(0, 0); }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "feat-tile-icon",
-    style: {
-      background: t.bg,
-      border: `1px solid ${t.color}30`
-    }
-  }, /*#__PURE__*/React.createElement(Ico, {
-    name: t.icon,
-    size: 18,
-    color: t.color
-  })), /*#__PURE__*/React.createElement("div", {
-    style: {
-      flex: 1,
-      minWidth: 0
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "feat-tile-title"
-  }, t.label), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: t.color,
-      fontWeight: 600,
-      marginBottom: 2
-    }
-  }, t.sub), /*#__PURE__*/React.createElement("div", {
-    className: "feat-tile-desc"
-  }, t.desc)), /*#__PURE__*/React.createElement("span", {
-    className: "feat-tile-arrow"
-  }, "\u203A"))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginTop: 'auto',
-      padding: '14px 16px',
-      background: 'rgba(0,180,230,.04)',
-      border: '1px solid rgba(0,180,230,.15)',
-      borderRadius: 9
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: 'var(--slate)',
-      lineHeight: 1.65
-    }
-  }, /*#__PURE__*/React.createElement("strong", {
-    style: {
-      color: 'var(--text)'
-    }
-  }, "LIG v2.1"), " \xB7 VPC-SC enforced \xB7 LiveRamp clean room \xB7 Zero persistent external PII \xB7 247 compliance checks")))));
+  // v11 — chatbot-first Home: kicker + greeting + centered chatbot + 4 context pills
+  const PILLS = [
+    {
+      id: 'measurement', section: 'measurement', label: 'Measurement',
+      icon: /*#__PURE__*/React.createElement("svg", { width: 13, height: 13, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" },
+        /*#__PURE__*/React.createElement("line", { x1: 4, y1: 21, x2: 4, y2: 10 }),
+        /*#__PURE__*/React.createElement("line", { x1: 10, y1: 21, x2: 10, y2: 4 }),
+        /*#__PURE__*/React.createElement("line", { x1: 16, y1: 21, x2: 16, y2: 14 }),
+        /*#__PURE__*/React.createElement("line", { x1: 22, y1: 21, x2: 22, y2: 8 })
+      )
+    },
+    {
+      id: 'desk', section: 'marketers', label: 'Activation',
+      icon: /*#__PURE__*/React.createElement("svg", { width: 13, height: 13, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" },
+        /*#__PURE__*/React.createElement("path", { d: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" }),
+        /*#__PURE__*/React.createElement("circle", { cx: 12, cy: 7, r: 4 })
+      )
+    },
+    {
+      id: 'identity', section: 'identity', label: 'Identity',
+      icon: /*#__PURE__*/React.createElement("svg", { width: 13, height: 13, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" },
+        /*#__PURE__*/React.createElement("circle", { cx: 12, cy: 12, r: 3 }),
+        /*#__PURE__*/React.createElement("circle", { cx: 5, cy: 6, r: 2 }),
+        /*#__PURE__*/React.createElement("circle", { cx: 19, cy: 6, r: 2 }),
+        /*#__PURE__*/React.createElement("circle", { cx: 5, cy: 18, r: 2 }),
+        /*#__PURE__*/React.createElement("circle", { cx: 19, cy: 18, r: 2 })
+      )
+    },
+    {
+      id: 'drive', section: 'drive', label: 'From Drive',
+      icon: /*#__PURE__*/React.createElement("svg", { width: 13, height: 13, viewBox: "0 0 24 24", fill: "currentColor" },
+        /*#__PURE__*/React.createElement("path", { d: "M4.4 15.5l3.2-5.5h8.8l-3.2 5.5H4.4zm11.3-6L19 14l-3 5.2-3.3-5.7 2.7-4zm-6.9-.5L6.2 14l-3.2 5.2h6.3L12.5 14 8.8 9z" })
+      )
+    },
+  ];
+  return /*#__PURE__*/React.createElement("div", { className: "v11-home" },
+    /*#__PURE__*/React.createElement("div", { className: "v11-home-kicker" },
+      /*#__PURE__*/React.createElement("div", { className: "v11-home-kicker-dot" }),
+      "Signalset · Living Identity Graph"
+    ),
+    /*#__PURE__*/React.createElement("h1", { className: "v11-home-greeting" },
+      "Hi Dio — ", /*#__PURE__*/React.createElement("span", null, "what would you like to do today?")
+    ),
+    /*#__PURE__*/React.createElement("div", { className: "v11-home-chat-wrap" },
+      /*#__PURE__*/React.createElement("div", { className: "home-chat-wrap" },
+        /*#__PURE__*/React.createElement(Chatbot, {
+          systemPrompt: HOME_SYS,
+          exploreLabel: "Identity Graph",
+          exploreScreen: () => { setScreen('identity'); window.scrollTo(0, 0); },
+          samples: HOME_SAMPLES,
+          placeholder: "Ask about identity, measurement, campaigns, or merchant activation…",
+          resultRenderer: d => HomeResultRenderer(d)
+        })
+      )
+    ),
+    /*#__PURE__*/React.createElement("div", { className: "v11-home-pills" },
+      PILLS.map(p => /*#__PURE__*/React.createElement("div", {
+        key: p.id,
+        className: "v11-home-pill section-" + p.section,
+        onClick: () => {
+          if (p.id === 'drive') { alert('From Drive integration coming in Phase 11'); return; }
+          setScreen(p.id); window.scrollTo(0, 0);
+        },
+        role: "button", tabIndex: 0,
+        onKeyDown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (p.id !== 'drive') { setScreen(p.id); window.scrollTo(0, 0); } else { alert('From Drive integration coming in Phase 11'); } } }
+      },
+        /*#__PURE__*/React.createElement("span", { className: "v11-home-pill-ico" }, p.icon),
+        p.label
+      ))
+    )
+  );
 }
 function AuthModal({ targetScreen, onUnlock, onDismiss }) {
   const AUTH_URL = 'https://auth.signalset.io';
