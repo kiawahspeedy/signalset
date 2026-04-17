@@ -3346,7 +3346,8 @@ function Chatbot({
   actionBar,
   exploreLabel,
   exploreScreen,
-  onSaveResult
+  onSaveResult,
+  sendRef
 }) {
   const [msgs, setMsgs] = useState([]);
   const [input, setInput] = useState('');
@@ -3412,16 +3413,14 @@ function Chatbot({
       }));
       if (onResult) onResult(parsed);
     } catch (e) {
-      // API unreachable — serve demo mock response
-      const mock = getMockResponse(systemPrompt, q);
-      setMsgs(m => m.slice(0, -1).concat({
-        role: 'assistant',
-        content: mock
-      }));
-      if (onResult) onResult(mock);
+      const errMsg = { text: 'Something went wrong — please try again.', error: true };
+      setMsgs(m => m.slice(0, -1).concat({ role: 'assistant', content: errMsg }));
+      if (onResult) onResult(errMsg);
     }
     setLoading(false);
   }, [input, loading, systemPrompt, onResult]);
+  // Expose send externally (used by followUp pills)
+  React.useEffect(() => { if (sendRef) sendRef.current = send; }, [send, sendRef]);
   return /*#__PURE__*/React.createElement("div", {
     className: "chat-wrap"
   }, msgs.length > 0 && /*#__PURE__*/React.createElement("div", {
@@ -3487,7 +3486,7 @@ function Chatbot({
     className: "typing-dot"
   }), /*#__PURE__*/React.createElement("div", {
     className: "typing-dot"
-  }))) : resultRenderer ? resultRenderer(msg.content, setPopout) : /*#__PURE__*/React.createElement("div", {
+  }))) : resultRenderer ? resultRenderer(msg.content, send) : /*#__PURE__*/React.createElement("div", {
     className: "bubble",
     style: {
       color: msg.content?.error ? 'var(--red)' : 'var(--text)',
@@ -3948,7 +3947,12 @@ async function seedMtaPaths() {
 // Called before every MZ chatbot send — returns a dynamic system prompt
 // with real numbers from BQ, not hardcoded values
 async function buildMzSystemPrompt() {
-  const base = `You are the Measurement Intelligence assistant for a major US financial institution using the Signalset Living Identity Graph. Respond in 2–4 sentences. Be specific, data-driven, and actionable. Never mention "synthetic" or "mock" data.`;
+  const base = `You are the Measurement Intelligence assistant for a major US financial institution using the Signalset Living Identity Graph. Be specific, data-driven, and actionable. Never mention "synthetic" or "mock" data.
+
+RESPONSE FORMAT: Always respond with a JSON object in this exact shape:
+{"text": "Your 2-4 sentence answer here.", "followUps": ["Follow-up question 1?", "Follow-up question 2?", "Follow-up question 3?"]}
+
+The followUps array must contain exactly 3 short, specific follow-up questions the marketer would naturally want to ask next given your answer. Examples: "Which segment converts fastest on paid search?", "How does social attribution confidence compare across segments?", "Should we shift budget from display to email?". Make them feel like natural next steps, not generic prompts. Return ONLY valid JSON — no markdown, no preamble.`;
 
   try {
     // Query 1: channel MTA weights + performance (90-day window)
@@ -11761,44 +11765,37 @@ function MeasurementIntro({
     label: 'L1 · Attribution',
     action: () => onEnter()
   }];
-  function MZIntroResultRenderer(data) {
+  function MZIntroResultRenderer(data, onFollowUp) {
     if (!data) return null;
-    return /*#__PURE__*/React.createElement("div", {
-      className: "bubble",
-      style: {
-        flex: 1
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        background: 'var(--card)',
-        border: '1px solid var(--bdr)',
-        borderRadius: 10,
-        padding: '16px 18px',
-        boxShadow: 'var(--shadow)'
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 15,
-        color: 'var(--text)',
-        lineHeight: 1.7,
-        marginBottom: 12
-      }
-    }, data.text || JSON.stringify(data)), /*#__PURE__*/React.createElement("button", {
-      onClick: onEnter,
-      style: {
-        padding: '8px 18px',
-        background: 'var(--navy)',
-        color: '#fff',
-        border: 'none',
-        borderRadius: 7,
-        fontSize: 13,
-        fontWeight: 700,
-        cursor: 'pointer',
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 6
-      }
-    }, "View Full Cohort Analysis \u2192")));
+    const followUps = Array.isArray(data.followUps) ? data.followUps : [];
+    return /*#__PURE__*/React.createElement("div", { className: "bubble", style: { flex: 1 } },
+      /*#__PURE__*/React.createElement("div", {
+        style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 10, padding: '16px 18px', boxShadow: 'var(--shadow)' }
+      },
+        /*#__PURE__*/React.createElement("div", {
+          style: { fontSize: 15, color: 'var(--text)', lineHeight: 1.7, marginBottom: followUps.length ? 14 : 0 }
+        }, data.text || JSON.stringify(data)),
+        followUps.length > 0 && /*#__PURE__*/React.createElement("div", {
+          style: { display: 'flex', flexWrap: 'wrap', gap: 8 }
+        }, followUps.map((q, i) =>
+          /*#__PURE__*/React.createElement("button", {
+            key: i,
+            onClick: () => onFollowUp && onFollowUp(q),
+            style: {
+              padding: '6px 14px',
+              background: 'rgba(99,102,241,0.1)',
+              color: 'var(--indigo)',
+              border: '1px solid rgba(99,102,241,0.3)',
+              borderRadius: 20,
+              fontSize: 12,
+              fontWeight: 500,
+              cursor: 'pointer',
+              whiteSpace: 'nowrap'
+            }
+          }, q)
+        ))
+      )
+    );
   }
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "hero"
@@ -11868,12 +11865,12 @@ function MeasurementIntro({
       boxShadow: 'var(--shadow)'
     }
   }, /*#__PURE__*/React.createElement(Chatbot, {
-    systemPrompt: MZ_CHATBOT_SYS,
+    systemPrompt: liveMzSys,
     samples: MZ_INTRO_SAMPLES,
     exploreLabel: "Cohort Analysis",
     exploreScreen: () => { setMzIntro(false); window.scrollTo(0,0); },
     placeholder: "Ask about cohort performance, attribution, or segment efficiency\u2026",
-    resultRenderer: d => MZIntroResultRenderer(d)
+    resultRenderer: (d, send) => MZIntroResultRenderer(d, send)
   })), /*#__PURE__*/React.createElement("button", {
     onClick: onEnter,
     style: {
