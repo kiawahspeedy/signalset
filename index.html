@@ -1036,7 +1036,7 @@ body.v11-sidebar-open .v11-sidebar { transform: translateX(0); }
 .orch-bar { height: 4px; background: #E2E8F0; border-radius: 2px; overflow: hidden; margin-top: 10px; }
 .orch-fill { height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--cyan), var(--green)); transition: width .8s ease; }
 
-/* Brief */
+/* Summary */
 .brief-doc { margin: 20px 24px; background: var(--card); border: 1px solid var(--bdr); border-radius: var(--r); overflow: hidden; box-shadow: var(--shadow); display: flex; flex-direction: column; max-height: calc(100% - 40px); }
 .brief-doc-body { flex: 1; overflow-y: auto; }
 .brief-doc-hdr { padding: 16px 22px; border-bottom: 1px solid var(--bdr); background: var(--card-alt); display: flex; align-items: center; justify-content: space-between; }
@@ -3902,7 +3902,7 @@ const JOURNEY_MOCKS = [{
     days: 'Day 14'
   }]
 }];
-const MZ_TEXT_MOCKS = ['Explorers represent your highest-ROI acquisition target: LTV/CAC ratio of 87.5× versus the segment average of 68×. With only 18% current penetration, there is significant headroom — prioritize this segment for the travel rewards brief.', 'Revelers justify their $72 CAC through superior brand engagement: 4.1× higher share-of-wallet growth vs. control groups in clean room analysis. Attribution data shows CTV as the highest-lift paid channel for this segment (+38% vs. email-only path).', 'The walled garden Meta/TikTok campaign contributed an estimated 4,200 conversions based on clean room cohort lift analysis (+18% vs. holdout). However, individual-level attribution is modeled — confidence is lower than the 98% on identity-resolved channels. Recommend supplementing with incrementality testing.', 'Luxuriates have the highest absolute LTV at $6,800 but require careful channel selection — they over-index on print and premium CTV and under-index on social. Standard programmatic buys underperform by 22% on this cohort; direct publisher deals outperform by 41%.'];
+const MZ_TEXT_MOCKS = ['Explorers represent your highest-ROI acquisition target: LTV/CAC ratio of 87.5× versus the segment average of 68×. With only 18% current penetration, there is significant headroom — prioritize this segment for the travel rewards campaign.', 'Revelers justify their $72 CAC through superior brand engagement: 4.1× higher share-of-wallet growth vs. control groups in clean room analysis. Attribution data shows CTV as the highest-lift paid channel for this segment (+38% vs. email-only path).', 'The walled garden Meta/TikTok campaign contributed an estimated 4,200 conversions based on clean room cohort lift analysis (+18% vs. holdout). However, individual-level attribution is modeled — confidence is lower than the 98% on identity-resolved channels. Recommend supplementing with incrementality testing.', 'Luxuriates have the highest absolute LTV at $6,800 but require careful channel selection — they over-index on print and premium CTV and under-index on social. Standard programmatic buys underperform by 22% on this cohort; direct publisher deals outperform by 41%.'];
 const CMN_TEXT_MOCKS = ['For Meridian Air targeting top business travel DMAs, I recommend concentrating spend in Chicago, New York, San Francisco, and Dallas — these four markets represent 68% of your addressable FI cardholder audience with active business travel signals. Expected match rate: 64% of your target base, yielding approximately 1.28M reachable users at a projected 4.2× premium CPM over generic audience buying.', 'The strongest FI cardholder segments for Meridian Air’s business traveler profile are Explorers (48.2K, 82% propensity, $4,200 LTV) and Revelers (31.4K, 76% propensity, $5,100 LTV). Combined, these segments represent 79,600 high-confidence matches with average spend in airline categories of $1,840/year — well above the $580 category average.', 'Shopping behavior signals indicating premium air travel intent include: airline transaction ≥3× in 90 days, hotel/car rental co-occurrence within same booking window, corporate card usage patterns, and lounge access redemption. These signals identify approximately 44,100 in-market users in the Meridian Air target geography with 91% confidence of active purchase consideration.'];
 function getMockResponse(systemPrompt, userMessage) {
   const isAudience = systemPrompt.includes('audienceName');
@@ -3917,7 +3917,7 @@ function getMockResponse(systemPrompt, userMessage) {
       return HOME_MOCKS.find(m => m.nav === 'measurement') || HOME_MOCKS[1];
     if (q.includes('merchant') || q.includes('commerce') || q.includes('retail') || q.includes('partner') || q.includes('walled garden'))
       return HOME_MOCKS.find(m => m.nav === 'cmn') || HOME_MOCKS[3];
-    if (q.includes('campaign') || q.includes('in-house') || q.includes('brief') || q.includes('creative') || q.includes('trigger') || q.includes('smart audience') || q.includes('sfmc'))
+    if (q.includes('campaign') || q.includes('in-house') || q.includes('summary') || q.includes('creative') || q.includes('trigger') || q.includes('smart audience') || q.includes('sfmc'))
       return HOME_MOCKS.find(m => m.nav === 'desk') || HOME_MOCKS[2];
     if (q.includes('identity') || q.includes('graph') || q.includes('household') || q.includes('device') || q.includes('dig') || q.includes('resolve') || q.includes('segment'))
       return HOME_MOCKS.find(m => m.nav === 'identity') || HOME_MOCKS[0];
@@ -7164,7 +7164,7 @@ function AudienceBuilderChat({ onTriggerBuilder }) {
       var quarter = ql.includes('q1') ? 'Q1' : ql.includes('q2') ? 'Q2' : ql.includes('q3') ? 'Q3' : ql.includes('q4') ? 'Q4' : '';
       var ack = hasCampaign && hasProduct ? 'On it \u2014 building the audience for your ' + quarter + (quarter ? ' ' : '') + 'travel rewards campaign. '
               : hasProduct ? 'Travel rewards \u2014 strong segment to work with. '
-              : q.trim().length > 20 ? 'Got the brief. '
+              : q.trim().length > 20 ? 'Got it. '
               : '';
       return { text: ack + 'What\u2019s the primary conversion goal for this audience?', options: ['New card acquisition', 'Product upgrade', 'Spend activation', 'Reactivation \u2014 lapsed'] };
     }
@@ -8249,8 +8249,10 @@ function JourneyBuilderLightbox({ open, onClose, context, onSave }) {
 
 function MarketingDesk({ jumpTab, onTabConsumed }) {
   const neo4jStatus = useNeo4jStatus();
-  const [tab, setTab] = useState('audience');
-  const DESK_SUB_MAP = { 'smart-audience': 'audience', 'smart-triggers': 'journey', creative: 'creative', destinations: 'orch', brief: 'brief' };
+  const [tab, setTab] = useState('setup');
+  // v11 · 10C — new 6-step flow: setup → audience → journey → creative → summary → activate
+  // Legacy slugs remapped so old deep-links keep working
+  const DESK_SUB_MAP = { setup: 'setup', 'smart-audience': 'audience', 'smart-triggers': 'journey', creative: 'creative', summary: 'summary', activate: 'activate', destinations: 'activate', brief: 'summary' };
   useEffect(() => {
     if (!jumpTab) return;
     setDeskHub(false);
@@ -8289,51 +8291,110 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
   const [journeyBuilderOpen, setJourneyBuilderOpen] = useState(false);
   const [journeyBuilderContext, setJourneyBuilderContext] = useState({});
   const [deskHub, setDeskHub] = useState(true);
+  // ── v11 · 10C — campaign state ─────────────────────────────────────
+  const [campSetup, setCampSetup] = useState({
+    name: 'Premium Rewards Acquisition Q2 2026',
+    objective: 'acquisition',
+    budget: 450,
+    flightStart: '2026-05-01',
+    flightEnd: '2026-05-31',
+    audience: 'Premium Travel Achievers'
+  });
+  // Per-module bound destinations (destinations bind per-module at Activate time, not front-loaded)
+  const DEST_CATALOG = [
+    { id: 'sfmc', name: 'SFMC / Email', kind: 'Email', match: 94 },
+    { id: 'rtcdp', name: 'Adobe RTCDP', kind: 'CDP', match: 91 },
+    { id: 'ttd', name: 'The Trade Desk', kind: 'DSP', match: 78 },
+    { id: 'ajo', name: 'AJO Journeys', kind: 'Journey', match: 96 },
+    { id: 'yahoo', name: 'Yahoo DSP', kind: 'DSP', match: 71 },
+    { id: 'cleanroom', name: 'Clean Room (LR)', kind: 'CR', match: 88 }
+  ];
+  const [moduleDests, setModuleDests] = useState({
+    audience: ['sfmc', 'rtcdp'],
+    journey: ['sfmc', 'ajo'],
+    creative: ['sfmc', 'rtcdp', 'ttd']
+  });
+  const [moduleApproved, setModuleApproved] = useState({ audience: false, journey: false, creative: false });
+  // Dual-approver sign-off for Summary step
+  const [approvals, setApprovals] = useState({ marketer: null, compliance: null }); // null | 'pending' | 'approved'
+  const [activationState, setActivationState] = useState('idle'); // idle | activating | activated
+  // Tab order helper used by per-module continue buttons
+  const TAB_ORDER = ['setup', 'audience', 'journey', 'creative', 'summary', 'activate'];
+  function goNextTab() {
+    const i = TAB_ORDER.indexOf(tab);
+    if (i >= 0 && i < TAB_ORDER.length - 1) { setTab(TAB_ORDER[i + 1]); window.scrollTo(0, 0); }
+  }
+  function toggleModuleDest(moduleKey, destId) {
+    setModuleDests(prev => {
+      const cur = prev[moduleKey] || [];
+      const next = cur.includes(destId) ? cur.filter(d => d !== destId) : [...cur, destId];
+      return { ...prev, [moduleKey]: next };
+    });
+  }
+  // All three modules must have at least one destination + approval before Summary is ready
+  const summaryReady = moduleDests.audience.length > 0 && moduleDests.journey.length > 0 && moduleDests.creative.length > 0 && moduleApproved.audience && moduleApproved.journey && moduleApproved.creative;
+  const bothApproved = approvals.marketer === 'approved' && approvals.compliance === 'approved';
   const TABS = [{
+    id: 'setup',
+    icon: 'document',
+    label: 'Setup'
+  }, {
     id: 'audience',
     icon: 'target',
-    label: 'Smart Audience',
+    label: 'Audiences',
     badge: 'AI'
   }, {
     id: 'journey',
     icon: 'lightning',
-    label: 'Smart Triggers',
+    label: 'Triggers',
     badge: 'AI'
   }, {
     id: 'creative',
     icon: 'palette',
-    label: 'Creative Selector'
+    label: 'Creatives'
   }, {
-    id: 'orch',
+    id: 'summary',
+    icon: 'check',
+    label: 'Summary & Approval'
+  }, {
+    id: 'activate',
     icon: 'broadcast',
-    label: 'Destinations'
-  }, {
-    id: 'brief',
-    icon: 'document',
-    label: 'Brief Builder'
+    label: 'Activate'
   }];
+  // v11 · 10C — destination fan-out animation now fires on Activate button, not tab entry
   useEffect(() => {
-    if (tab !== 'orch') return;
+    if (activationState !== 'activating') return;
     const iv = setInterval(() => {
-      setOrchStatus(prev => prev.map(d => {
-        if (d.status === 'running') {
-          const p = Math.min(d.progress + 7, 100);
-          return {
+      setOrchStatus(prev => {
+        const next = prev.map(d => {
+          if (d.status === 'running') {
+            const p = Math.min(d.progress + 7, 100);
+            return {
+              ...d,
+              progress: p,
+              status: p === 100 ? 'success' : 'running'
+            };
+          }
+          if (d.status === 'queued' && Math.random() > 0.7) return {
             ...d,
-            progress: p,
-            status: p === 100 ? 'success' : 'running'
+            status: 'running',
+            progress: 6
           };
+          return d;
+        });
+        // When all non-queued are success, mark activated
+        const allDone = next.every(d => d.status === 'success' || d.status === 'queued');
+        if (allDone && next.some(d => d.status === 'success')) {
+          // tiny delay to let final 100% render
+          setTimeout(() => setActivationState('activated'), 400);
         }
-        if (d.status === 'queued' && Math.random() > 0.7) return {
-          ...d,
-          status: 'running',
-          progress: 6
-        };
-        return d;
-      }));
+        return next;
+      });
     }, 450);
     return () => clearInterval(iv);
-  }, [tab]);
+  }, [activationState]);
+  // (legacy tab-driven interval removed — Activate button now drives animation)
+  // Legacy interval block fully replaced by activation-driven interval above
   const AUDIENCE_SAMPLES = ['Show me the best representation of a High-Intent Traveler for our new travel rewards card', 'Create an audience of heavy travelers ≥4 flights/90d, no current Signature card, consent email+push', 'Affluent spenders $5K+/mo, active mobile, not current premium cardholders — credit card upgrade target'];
   const JOURNEY_SAMPLES = ['Build an AI-optimized conversion path for High-Intent Travelers — maximize CVR within a 14-day window', 'What trigger sequence drives the fastest path to Signature card application for mobile-first Explorers?'];
   const SMART_TRIGGERS_HEADER = /*#__PURE__*/React.createElement("div", {
@@ -8387,7 +8448,7 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
     className: "camp-hub-wrap"
   }, /*#__PURE__*/React.createElement("div", {
     className: "hero"
-  }, /*#__PURE__*/React.createElement("div", {className: "hero-eyebrow"}, "The Marketing Desk \xB7 In-House"), /*#__PURE__*/React.createElement("h1", null, "Campaign ", /*#__PURE__*/React.createElement("span", null, "Intelligence"), " Suite"), /*#__PURE__*/React.createElement("p", null, "AI-powered audience creation, trigger sequencing, compliance-cleared creatives, and full brief-to-activation in one connected workflow.")), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {className: "hero-eyebrow"}, "The Marketing Desk \xB7 In-House"), /*#__PURE__*/React.createElement("h1", null, "Campaign ", /*#__PURE__*/React.createElement("span", null, "Intelligence"), " Suite"), /*#__PURE__*/React.createElement("p", null, "AI-powered audience creation, trigger sequencing, compliance-cleared creatives, and full setup-to-activation in one connected workflow.")), /*#__PURE__*/React.createElement("div", {
     className: "camp-hub-body"
   }, /*#__PURE__*/React.createElement("div", {
     className: "camp-hub-left"
@@ -8428,7 +8489,7 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
       fontSize: 12,
       color: 'var(--slate)'
     }
-  }, "Generate an audience and launch your campaign brief in one session")), /*#__PURE__*/React.createElement("span", {
+  }, "Generate an audience and launch your campaign summary in one session")), /*#__PURE__*/React.createElement("span", {
     style: {
       marginLeft: 'auto',
       fontSize: 11,
@@ -8493,35 +8554,41 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
       marginBottom: 8
     }
   }, "Campaign Tools"), [{
+    id: 'setup',
+    icon: 'document',
+    label: 'Campaign Setup',
+    sub: '',
+    desc: 'Name, objective, budget, flight dates — the campaign shell.'
+  }, {
     id: 'audience',
     icon: 'target',
-    label: 'Smart Audience',
+    label: 'Audiences',
     sub: 'AI',
     desc: 'Build audiences using transaction signals, propensity scores, and compliance rules.'
   }, {
     id: 'journey',
     icon: 'lightning',
-    label: 'Smart Triggers',
+    label: 'Triggers',
     sub: 'AI',
     desc: 'AI-optimized multi-touch conversion sequences with MTA attribution.'
   }, {
     id: 'creative',
     icon: 'palette',
-    label: 'Creative Selector',
+    label: 'Creatives',
     sub: '',
     desc: 'Auto-linted creative variants — email, display, push — all compliance-cleared.'
   }, {
-    id: 'orch',
-    icon: 'broadcast',
-    label: 'Destinations',
+    id: 'summary',
+    icon: 'check',
+    label: 'Summary & Approval',
     sub: '',
-    desc: 'Policy-aware egress to SFMC, RTCDP, TTD, AJO, and clean rooms.'
+    desc: 'AI-assembled campaign overview with dual-approver sign-off before activation.'
   }, {
-    id: 'brief',
-    icon: 'document',
-    label: 'Brief Builder',
+    id: 'activate',
+    icon: 'broadcast',
+    label: 'Activate',
     sub: '',
-    desc: 'One-click campaign brief with audience, journey, creative, and compliance dossier.'
+    desc: 'Final push — destinations bind per-module at launch. VPC-SC, zero PII egress.'
   }].map(card => /*#__PURE__*/React.createElement("div", {
     key: card.id,
     className: "camp-tool-card",
@@ -8669,195 +8736,178 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
     : "0 ext. PII"))), /*#__PURE__*/React.createElement("div", {
     className: "desk-content"
   }, /*#__PURE__*/React.createElement("div", {
-    className: `desk-cap overflow-y ${tab === 'brief' ? 'active' : ''}`
-  }, showEmailModal && /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: 'fixed',
-      inset: 0,
-      background: 'rgba(14,31,56,.45)',
-      zIndex: 500,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    },
-    onClick: () => setShowEmailModal(false)
+    className: `desk-cap overflow-y ${tab === 'setup' ? 'active' : ''}`
   }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: 'var(--card)',
-      borderRadius: 14,
-      padding: 28,
-      minWidth: 420,
-      boxShadow: '0 20px 60px rgba(14,31,56,.3)'
-    },
-    onClick: e => e.stopPropagation()
+    style: { padding: '14px 24px', borderBottom: '1px solid var(--bdr)', background: 'var(--card-alt)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }
+  }, /*#__PURE__*/React.createElement("div", null,
+    /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 3 } }, "Step 1 of 6"),
+    /*#__PURE__*/React.createElement("div", { style: { fontSize: 16, fontWeight: 700, color: 'var(--text)' } }, "Campaign Setup"),
+    /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, color: 'var(--slate)', marginTop: 3 } }, "Name the campaign, set the objective, budget, and flight — then build the audience.")
+  ), /*#__PURE__*/React.createElement("span", { style: { fontSize: 11, fontFamily: 'IBM Plex Mono, monospace', color: 'var(--slate)', letterSpacing: '.04em' } }, "Auto-saved · Draft")),
+  /*#__PURE__*/React.createElement("div", { style: { padding: '24px 28px', maxWidth: 960, margin: '0 auto', width: '100%' } },
+    /*#__PURE__*/React.createElement("div", { style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 12, padding: 24, boxShadow: 'var(--shadow)' } },
+      /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 16 } }, "Campaign Shell"),
+      /*#__PURE__*/React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, marginBottom: 18 } },
+        /*#__PURE__*/React.createElement("div", null,
+          /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 6 } }, "Campaign Name"),
+          /*#__PURE__*/React.createElement("input", { type: 'text', value: campSetup.name, onChange: e => setCampSetup(s => ({...s, name: e.target.value})),
+            style: { width: '100%', boxSizing: 'border-box', padding: '10px 12px', border: '1px solid var(--bdr)', borderRadius: 8, fontSize: 14, color: 'var(--text)', background: 'var(--bg)', outline: 'none', fontFamily: 'var(--font-b)' } })
+        ),
+        /*#__PURE__*/React.createElement("div", null,
+          /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 6 } }, "Objective"),
+          /*#__PURE__*/React.createElement("select", { value: campSetup.objective, onChange: e => setCampSetup(s => ({...s, objective: e.target.value})),
+            style: { width: '100%', boxSizing: 'border-box', padding: '10px 12px', border: '1px solid var(--bdr)', borderRadius: 8, fontSize: 14, color: 'var(--text)', background: 'var(--bg)', outline: 'none', fontFamily: 'var(--font-b)' } },
+            /*#__PURE__*/React.createElement("option", { value: 'acquisition' }, "Acquisition — new cardholders"),
+            /*#__PURE__*/React.createElement("option", { value: 'upsell' }, "Upsell — upgrade existing cardholders"),
+            /*#__PURE__*/React.createElement("option", { value: 'retention' }, "Retention — reduce churn"),
+            /*#__PURE__*/React.createElement("option", { value: 'reactivation' }, "Reactivation — dormant segment"),
+            /*#__PURE__*/React.createElement("option", { value: 'awareness' }, "Awareness — upper-funnel brand")
+          )
+        )
+      ),
+      /*#__PURE__*/React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 18, marginBottom: 18 } },
+        /*#__PURE__*/React.createElement("div", null,
+          /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 6 } }, "Budget ($K)"),
+          /*#__PURE__*/React.createElement("input", { type: 'number', value: campSetup.budget, onChange: e => setCampSetup(s => ({...s, budget: Number(e.target.value)})),
+            style: { width: '100%', boxSizing: 'border-box', padding: '10px 12px', border: '1px solid var(--bdr)', borderRadius: 8, fontSize: 14, color: 'var(--text)', background: 'var(--bg)', outline: 'none', fontFamily: 'IBM Plex Mono, monospace' } })
+        ),
+        /*#__PURE__*/React.createElement("div", null,
+          /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 6 } }, "Flight Start"),
+          /*#__PURE__*/React.createElement("input", { type: 'date', value: campSetup.flightStart, onChange: e => setCampSetup(s => ({...s, flightStart: e.target.value})),
+            style: { width: '100%', boxSizing: 'border-box', padding: '10px 12px', border: '1px solid var(--bdr)', borderRadius: 8, fontSize: 14, color: 'var(--text)', background: 'var(--bg)', outline: 'none', fontFamily: 'IBM Plex Mono, monospace' } })
+        ),
+        /*#__PURE__*/React.createElement("div", null,
+          /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 6 } }, "Flight End"),
+          /*#__PURE__*/React.createElement("input", { type: 'date', value: campSetup.flightEnd, onChange: e => setCampSetup(s => ({...s, flightEnd: e.target.value})),
+            style: { width: '100%', boxSizing: 'border-box', padding: '10px 12px', border: '1px solid var(--bdr)', borderRadius: 8, fontSize: 14, color: 'var(--text)', background: 'var(--bg)', outline: 'none', fontFamily: 'IBM Plex Mono, monospace' } })
+        )
+      ),
+      /*#__PURE__*/React.createElement("div", { style: { padding: 14, background: 'var(--card-alt)', border: '1px solid var(--bdr)', borderRadius: 8, marginBottom: 18 } },
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: 'var(--cyan-dim)', textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 6 } }, "AI Suggestion"),
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, color: 'var(--text)', lineHeight: 1.5 } },
+          "Based on LIG segment intelligence, this ", campSetup.objective, " campaign would best target the ",
+          /*#__PURE__*/React.createElement("strong", null, "Premium Travel Achievers"), " cluster — 48.2K cardholder-ready customers, 79% conversion likelihood, travel-spend SHAP-positive. You can refine this on the Audiences step."
+        )
+      ),
+      /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'flex-end', gap: 10 } },
+        /*#__PURE__*/React.createElement("button", { className: 'btn btn-secondary', style: { fontSize: 13 }, onClick: () => { setDeskHub(true); window.scrollTo(0,0); } }, "Cancel"),
+        /*#__PURE__*/React.createElement("button", { className: 'btn btn-primary', style: { fontSize: 13, padding: '9px 20px' }, onClick: () => { setTab('audience'); window.scrollTo(0,0); } }, "Continue to Audiences →")
+      )
+    )
+  )), /*#__PURE__*/React.createElement("div", {
+    className: `desk-cap overflow-y ${tab === 'summary' ? 'active' : ''}`
   }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 18,
-      fontWeight: 700,
-      color: 'var(--text)',
-      marginBottom: 4
-    }
-  }, "Email Brief for Approval"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 13,
-      color: 'var(--slate)',
-      marginBottom: 18
-    }
-  }, "Send the campaign brief to stakeholders for sign-off."), emailSent ? /*#__PURE__*/React.createElement("div", {
-    style: {
-      padding: 18,
-      background: 'rgba(5,150,105,.07)',
-      border: '1px solid rgba(5,150,105,.25)',
-      borderRadius: 9,
-      color: 'var(--green)',
-      fontSize: 15,
-      fontWeight: 600,
-      textAlign: 'center'
-    }
-  }, "\u2713 Brief sent successfully!") : /*#__PURE__*/React.createElement(React.Fragment, null, [{
-    label: 'To',
-    placeholder: 'approver@company.com',
-    defaultVal: 'sarah.kim@capgemini.com'
-  }, {
-    label: 'CC',
-    placeholder: 'cc@company.com',
-    defaultVal: 'marketing-ops@client.com'
-  }, {
-    label: 'Subject',
-    placeholder: 'Brief subject',
-    defaultVal: 'For Approval: Premium Rewards Acquisition Brief — Q2 2025'
-  }].map(f => /*#__PURE__*/React.createElement("div", {
-    key: f.label,
-    style: {
-      marginBottom: 12
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      fontWeight: 600,
-      color: 'var(--text)',
-      marginBottom: 4
-    }
-  }, f.label), /*#__PURE__*/React.createElement("input", {
-    defaultValue: f.defaultVal,
-    style: {
-      width: '100%',
-      padding: '9px 12px',
-      border: '1px solid var(--bdr)',
-      borderRadius: 7,
-      fontSize: 14,
-      color: 'var(--text)',
-      outline: 'none',
-      fontFamily: 'var(--font-b)'
-    }
-  }))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 16
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      fontWeight: 600,
-      color: 'var(--text)',
-      marginBottom: 4
-    }
-  }, "Note"), /*#__PURE__*/React.createElement("textarea", {
-    defaultValue: "Please review and approve the attached campaign brief. Compliance dossier and audience spec are included.",
-    style: {
-      width: '100%',
-      padding: '9px 12px',
-      border: '1px solid var(--bdr)',
-      borderRadius: 7,
-      fontSize: 14,
-      color: 'var(--text)',
-      resize: 'vertical',
-      minHeight: 72,
-      fontFamily: 'var(--font-b)',
-      outline: 'none'
-    }
-  })), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      gap: 9,
-      justifyContent: 'flex-end'
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: () => setShowEmailModal(false),
-    className: "btn btn-secondary"
-  }, "Cancel"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setEmailSent(true),
-    className: "btn btn-primary"
-  }, "Send for Approval"))))), /*#__PURE__*/React.createElement("div", {
-    className: "brief-doc"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "brief-doc-hdr"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "brief-doc-title"
-  }, "Campaign Brief \u2014 Premium Rewards Acquisition Q2 2025"), /*#__PURE__*/React.createElement("div", {
-    className: "brief-btns"
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "btn btn-secondary",
-    onClick: () => {
-      setShowEmailModal(true);
-      setEmailSent(false);
-    }
-  }, "Email for Approval"), /*#__PURE__*/React.createElement("button", {
-    className: "btn btn-secondary",
-    onClick: () => window.print()
-  }, "Print / Save PDF"), /*#__PURE__*/React.createElement("button", {
-    className: "btn btn-primary",
-    onClick: () => {
-      const content = `CAMPAIGN BRIEF — Premium Rewards Acquisition Q2 2025\n\nAUDIENCE\nPremium Travel Achievers · 48,200 customers · Conversion likelihood 79%\nSHAP top signal: travel spend ≥$800/mo · Suppression: 3,210 excluded\n\nJOURNEY\nEmail → Push → Paid Search → CTV\nProj. CVR 3.8% · ROAS 4.1× · Incr. lift +22% · MTA (touch-order aware)\n\nCREATIVE\n${selectedCreative !== null ? [...CREATIVES, ...libraryCreatives][selectedCreative].name + ' · Pred. CTR ' + [...CREATIVES, ...libraryCreatives][selectedCreative].ctr : 'Not yet selected'}\n\nCOMPLIANCE DOSSIER\nPASSED: Fair Lending · UDAAP · GLBA · TCPA/CAN-SPAM · GPC · WCAG 2.1 AA\n\nIDENTITY & EGRESS\nRedacted IDs only · LiveRamp Embedded Identity · VPC-SC · Zero persistent external PII\n\nLINEAGE\nRUN-2025-03-18-F7A9 · Audience v3 · Journey v2 · 247 compliance checks`;
-      const blob = new Blob([content], {
-        type: 'text/plain'
-      });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'Campaign-Brief-Q2-2025.txt';
-      a.click();
-    }
-  }, "\u2B07 Export Brief \u2192"))), /*#__PURE__*/React.createElement("div", {className: "brief-doc-body"}, [{
-    label: 'Audience',
-    val: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("strong", null, "Premium Travel Achievers"), " \xB7 48,200 customers \xB7 Conversion likelihood 79% \xB7 SHAP top signal: travel spend \u2265$800/mo \xB7 Suppression: 3,210 excluded")
-  }, {
-    label: 'Smart Trigger Path',
-    val: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("strong", null, "Email \u2192 Push \u2192 Paid Search \u2192 CTV"), " \xB7 Proj. CVR 3.8% \xB7 ROAS 4.1\xD7 \xB7 Incr. lift +22% \xB7 Attribution: MTA (touch-order aware)")
-  }, {
-    label: 'Creative',
-    val: selectedCreative !== null ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("strong", null, [...CREATIVES, ...libraryCreatives][selectedCreative].name), " \xB7 Pred. CTR ", [...CREATIVES, ...libraryCreatives][selectedCreative].ctr, " \xB7 Audience fit ", [...CREATIVES, ...libraryCreatives][selectedCreative].fit, " \xB7 All compliance gates passed") : /*#__PURE__*/React.createElement("span", {
-      style: {
-        color: 'var(--amber)'
-      }
-    }, "\u2190 Select a creative on the Creative Selector tab")
-  }, {
-    label: 'Compliance Dossier',
-    val: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("strong", {
-      className: "text-green"
-    }, "PASSED:"), " Fair Lending \xB7 UDAAP \xB7 GLBA \xB7 TCPA/CAN-SPAM \xB7 GPC \xB7 Partner Brand \xB7 WCAG 2.1 AA \xB7 Platform Policy \xB7 Financial Promotions")
-  }, {
-    label: 'Identity & Egress',
-    val: /*#__PURE__*/React.createElement(React.Fragment, null, "Redacted IDs only \xB7 LiveRamp Embedded Identity \xB7 VPC-SC \xB7 ", /*#__PURE__*/React.createElement("strong", {
-      className: "text-green"
-    }, "Zero persistent external PII"), " \xB7 Clean-room path for walled gardens")
-  }, {
-    label: 'Lineage',
-    val: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
-      className: "mono text-cyan",
-      style: {
-        fontSize: 13
-      }
-    }, "RUN-2025-03-18-F7A9"), " \xB7 Audience v3 \xB7 Journey v2 \xB7 Compliance dossier: 247 checks \xB7 All artifacts immutable")
-  }].map(({
-    label,
-    val
-  }) => /*#__PURE__*/React.createElement("div", {
-    key: label,
-    className: "brief-section"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "brief-section-lbl"
-  }, label), /*#__PURE__*/React.createElement("div", {
-    className: "brief-section-val"
-  }, val)))))), /*#__PURE__*/React.createElement("div", {
+    style: { padding: '14px 24px', borderBottom: '1px solid var(--bdr)', background: 'var(--card-alt)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }
+  }, /*#__PURE__*/React.createElement("div", null,
+    /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 3 } }, "Step 5 of 6"),
+    /*#__PURE__*/React.createElement("div", { style: { fontSize: 16, fontWeight: 700, color: 'var(--text)' } }, "Summary & Approval"),
+    /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, color: 'var(--slate)', marginTop: 3 } }, "AI-assembled overview. Two sign-offs required before activation.")
+  ), /*#__PURE__*/React.createElement("span", { style: { fontSize: 11, fontFamily: 'IBM Plex Mono, monospace', color: summaryReady ? 'var(--green)' : 'var(--amber)', letterSpacing: '.04em', padding: '3px 9px', background: summaryReady ? 'rgba(74,222,128,.1)' : 'rgba(245,158,11,.1)', borderRadius: 4, border: `1px solid ${summaryReady ? 'rgba(74,222,128,.3)' : 'rgba(245,158,11,.3)'}` } }, summaryReady ? "READY FOR APPROVAL" : "COMPLETE MODULES FIRST")),
+  !summaryReady ? /*#__PURE__*/React.createElement("div", { style: { padding: '40px 28px', textAlign: 'center', color: 'var(--slate)' } },
+    /*#__PURE__*/React.createElement("div", { style: { fontSize: 15, marginBottom: 8, color: 'var(--text)' } }, "Finish the earlier steps first."),
+    /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, marginBottom: 20 } }, "Each module (Audiences · Triggers · Creatives) needs at least one destination bound and compliance approval before the AI can assemble this summary."),
+    /*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' } },
+      ['audience', 'journey', 'creative'].map(mk => {
+        const lbl = mk === 'audience' ? 'Audiences' : (mk === 'journey' ? 'Triggers' : 'Creatives');
+        const ok = moduleDests[mk].length > 0 && moduleApproved[mk];
+        return /*#__PURE__*/React.createElement("button", { key: mk, onClick: () => { setTab(mk); window.scrollTo(0,0); },
+          style: { padding: '8px 14px', background: ok ? 'rgba(74,222,128,.1)' : 'rgba(245,158,11,.08)', border: `1px solid ${ok ? 'rgba(74,222,128,.3)' : 'rgba(245,158,11,.3)'}`, borderRadius: 6, fontSize: 12, color: ok ? 'var(--green)' : 'var(--amber)', cursor: 'pointer', fontFamily: 'IBM Plex Mono, monospace' } },
+          ok ? '✓ ' : '○ ', lbl);
+      })
+    )
+  ) :
+  /*#__PURE__*/React.createElement("div", { style: { padding: '24px 28px', maxWidth: 980, margin: '0 auto', width: '100%' } },
+    /*#__PURE__*/React.createElement("div", { style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 12, padding: 22, boxShadow: 'var(--shadow)', marginBottom: 18 } },
+      /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14, paddingBottom: 12, borderBottom: '1px solid var(--bdr)' } },
+        /*#__PURE__*/React.createElement("div", null,
+          /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 3 } }, "Campaign"),
+          /*#__PURE__*/React.createElement("div", { style: { fontSize: 18, fontWeight: 700, color: 'var(--text)' } }, campSetup.name)
+        ),
+        /*#__PURE__*/React.createElement("div", { style: { textAlign: 'right' } },
+          /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 3 } }, "Lineage"),
+          /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, fontFamily: 'IBM Plex Mono, monospace', color: 'var(--cyan-dim)' } }, "RUN-2026-04-17-F7A9")
+        )
+      ),
+      /*#__PURE__*/React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 14, marginBottom: 18 } },
+        [['Objective', campSetup.objective.charAt(0).toUpperCase() + campSetup.objective.slice(1)],
+         ['Budget', '$' + campSetup.budget + 'K'],
+         ['Flight', campSetup.flightStart + ' → ' + campSetup.flightEnd],
+         ['Projection', '3.8% CVR · 4.1× ROAS · +22% lift']].map(([lbl, val]) => /*#__PURE__*/React.createElement("div", { key: lbl, style: { padding: 12, background: 'var(--card-alt)', border: '1px solid var(--bdr)', borderRadius: 8 } },
+          /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, fontWeight: 700, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 4 } }, lbl),
+          /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, color: 'var(--text)', fontWeight: 600 } }, val)
+        ))
+      ),
+      /*#__PURE__*/React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 } },
+        [['Audiences', 'audience', 'target'],
+         ['Triggers', 'journey', 'lightning'],
+         ['Creatives', 'creative', 'palette']].map(([lbl, key, ico]) => /*#__PURE__*/React.createElement("div", { key, style: { padding: 14, background: 'var(--card-alt)', border: '1px solid var(--bdr)', borderRadius: 8 } },
+          /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 } },
+            /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '.07em' } }, lbl),
+            /*#__PURE__*/React.createElement("span", { style: { fontSize: 10, color: 'var(--green)', fontFamily: 'IBM Plex Mono, monospace' } }, "✓ APPROVED")
+          ),
+          /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: 'var(--text)', lineHeight: 1.6, marginBottom: 10 } },
+            key === 'audience' ? 'Premium Travel Achievers · 48.2K customers · 79% CVR likelihood' :
+            key === 'journey' ? 'Email → Push → Paid Search → CTV · 14-day window · MTA-aware' :
+            'Travel Hero email · Rewards-focused display · Push sequence'
+          ),
+          /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, fontWeight: 700, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 5 } }, "Bound Destinations"),
+          /*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 4, flexWrap: 'wrap' } },
+            moduleDests[key].map(did => {
+              const d = DEST_CATALOG.find(x => x.id === did);
+              return d ? /*#__PURE__*/React.createElement("span", { key: did, style: { fontSize: 10, padding: '3px 7px', background: 'rgba(99,102,241,.12)', border: '1px solid rgba(99,102,241,.3)', borderRadius: 4, color: 'var(--cyan-pale)', fontFamily: 'IBM Plex Mono, monospace' } }, d.name) : null;
+            })
+          )
+        ))
+      )
+    ),
+    /*#__PURE__*/React.createElement("div", { style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 12, padding: 22, boxShadow: 'var(--shadow)', marginBottom: 18 } },
+      /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 12 } }, "Compliance Dossier"),
+      /*#__PURE__*/React.createElement("div", { style: { display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 8 } },
+        ['Fair Lending', 'UDAAP', 'GLBA', 'TCPA', 'CAN-SPAM', 'GPC', 'WCAG 2.1 AA'].map(c => /*#__PURE__*/React.createElement("div", { key: c, style: { padding: '8px 4px', background: 'rgba(74,222,128,.06)', border: '1px solid rgba(74,222,128,.25)', borderRadius: 6, textAlign: 'center' } },
+          /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--green)', fontWeight: 700, marginBottom: 2 } }, "✓ PASS"),
+          /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace' } }, c)
+        ))
+      ),
+      /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: 'var(--slate)', marginTop: 10, fontFamily: 'IBM Plex Mono, monospace' } }, "247 compliance checks · VPC-SC · LiveRamp Embedded Identity · Zero persistent external PII")
+    ),
+    /*#__PURE__*/React.createElement("div", { style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 12, padding: 22, boxShadow: 'var(--shadow)' } },
+      /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 } },
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '.07em' } }, "Dual-Approver Sign-Off"),
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace' } }, "Both required before Activate")
+      ),
+      /*#__PURE__*/React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 } },
+        [['marketer', 'Marketing Lead', 'Dio Favatas', 'DF', 'var(--cyan-dim)'],
+         ['compliance', 'Compliance Officer', 'S. Reyes', 'SR', 'var(--purple)']].map(([key, role, name, initials, clr]) => {
+          const status = approvals[key];
+          return /*#__PURE__*/React.createElement("div", { key, style: { padding: 14, background: status === 'approved' ? 'rgba(74,222,128,.06)' : 'var(--card-alt)', border: `1px solid ${status === 'approved' ? 'rgba(74,222,128,.3)' : 'var(--bdr)'}`, borderRadius: 8 } },
+            /*#__PURE__*/React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 } },
+              /*#__PURE__*/React.createElement("div", { style: { width: 34, height: 34, borderRadius: '50%', background: clr, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12 } }, initials),
+              /*#__PURE__*/React.createElement("div", null,
+                /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, fontWeight: 600, color: 'var(--text)' } }, name),
+                /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: 'var(--slate)' } }, role)
+              )
+            ),
+            status === 'approved' ?
+              /*#__PURE__*/React.createElement("div", { style: { padding: '8px 12px', background: 'rgba(74,222,128,.08)', border: '1px solid rgba(74,222,128,.3)', borderRadius: 6, fontSize: 12, color: 'var(--green)', fontWeight: 600, fontFamily: 'IBM Plex Mono, monospace' } }, "✓ Approved · 2026-04-17") :
+            status === 'pending' ?
+              /*#__PURE__*/React.createElement("button", { onClick: () => setApprovals(a => ({...a, [key]: 'approved'})),
+                style: { width: '100%', padding: '9px 14px', background: 'var(--cyan)', color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer' } }, "Approve now") :
+              /*#__PURE__*/React.createElement("button", { onClick: () => setApprovals(a => ({...a, [key]: 'pending'})),
+                style: { width: '100%', padding: '9px 14px', background: 'transparent', color: 'var(--cyan-dim)', border: '1px solid var(--bdr)', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer' } }, "Request approval →")
+          );
+        })
+      ),
+      /*#__PURE__*/React.createElement("div", { style: { marginTop: 18, display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: 'var(--slate)' } },
+          bothApproved ? /*#__PURE__*/React.createElement("span", { style: { color: 'var(--green)', fontWeight: 600 } }, "✓ Ready to activate") : "Waiting on approvals"
+        ),
+        /*#__PURE__*/React.createElement("button", { disabled: !bothApproved,
+          onClick: () => { setTab('activate'); window.scrollTo(0,0); },
+          style: { padding: '10px 22px', background: bothApproved ? 'var(--cyan)' : 'var(--card-alt)', color: bothApproved ? '#fff' : 'var(--slate-lt)', border: bothApproved ? 'none' : '1px solid var(--bdr)', borderRadius: 7, fontSize: 13, fontWeight: 700, cursor: bothApproved ? 'pointer' : 'not-allowed' } },
+          "Continue to Activate →")
+      )
+    )
+  )), /*#__PURE__*/React.createElement("div", {
     className: `desk-cap ${tab === 'audience' ? 'active three-col' : ''}`
   }, newAudOpen && /*#__PURE__*/React.createElement("div", {
     className: "opt-modal-overlay",
@@ -9184,7 +9234,7 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
     onClick: e => {
       e.stopPropagation();
       setSelectedAudCard(i);
-      alert(`✓ "${a.name}" activated — audience is now live in The Marketing Desk. Navigate to Brief Builder to finalize.`);
+      alert(`✓ "${a.name}" activated — audience is now live in The Marketing Desk. Navigate to Summary & Approval to finalize.`);
     }
   }, "Activate"))), selectedAudCard === i && /*#__PURE__*/React.createElement("div", {
     style: {
@@ -9204,7 +9254,7 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
       opacity: .6
     },
     onClick: () => setSelectedAudCard(null)
-  }, "\xD7"))))))), /*#__PURE__*/React.createElement("div", {
+  }, "\xD7")))))), /*#__PURE__*/React.createElement("div", { style: { borderTop: '1px solid var(--bdr)', background: 'var(--card-alt)', padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: 10, flexShrink: 0 } },/*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },/*#__PURE__*/React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 10 } },/*#__PURE__*/React.createElement("span", { style: { fontSize: 10, fontWeight: 700, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '.07em', fontFamily: 'IBM Plex Mono, monospace' } }, "Step 2 of 6"),/*#__PURE__*/React.createElement("span", { style: { fontSize: 13, fontWeight: 700, color: 'var(--text)' } }, "Bind destinations for this audience"),/*#__PURE__*/React.createElement("span", { style: { fontSize: 11, fontFamily: 'IBM Plex Mono, monospace', padding: '2px 8px', background: moduleDests.audience.length > 0 ? 'rgba(74,222,128,.1)' : 'rgba(245,158,11,.1)', border: `1px solid ${moduleDests.audience.length > 0 ? 'rgba(74,222,128,.3)' : 'rgba(245,158,11,.3)'}`, borderRadius: 3, color: moduleDests.audience.length > 0 ? 'var(--green)' : 'var(--amber)', fontWeight: 600 } }, moduleDests.audience.length > 0 ? "COMPLIANCE ✓ PASS" : "COMPLIANCE ○ PENDING")),/*#__PURE__*/React.createElement("button", { disabled: moduleDests.audience.length === 0, onClick: () => { setModuleApproved(m => ({...m, audience: true})); goNextTab(); }, style: { padding: '8px 16px', background: moduleDests.audience.length > 0 ? 'var(--cyan)' : 'var(--card)', color: moduleDests.audience.length > 0 ? '#fff' : 'var(--slate-lt)', border: moduleDests.audience.length > 0 ? 'none' : '1px solid var(--bdr)', borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: moduleDests.audience.length > 0 ? 'pointer' : 'not-allowed' } }, moduleApproved.audience ? "✓ Approved · Continue to Triggers →" : "Approve & Continue to Triggers →")),/*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 6, flexWrap: 'wrap' } },DEST_CATALOG.map(d => { const on = moduleDests.audience.includes(d.id); return /*#__PURE__*/React.createElement("div", { key: d.id, onClick: () => toggleModuleDest('audience', d.id), role: "button", tabIndex: 0, style: { padding: '5px 10px', background: on ? 'rgba(99,102,241,.15)' : 'var(--card)', border: `1px solid ${on ? 'var(--cyan)' : 'var(--bdr)'}`, borderRadius: 14, fontSize: 11, color: on ? 'var(--cyan-pale)' : 'var(--slate)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'IBM Plex Mono, monospace', userSelect: 'none' } }, on ? "✓ " : "+ ", d.name, /*#__PURE__*/React.createElement("span", { style: { fontSize: 9, color: on ? 'var(--cyan-dim)' : 'var(--slate-lt)', marginLeft: 4 } }, d.match + "%")); })))), /*#__PURE__*/React.createElement("div", {
     className: `desk-cap ${tab === 'journey' ? 'active three-col' : ''}`
   }, React.createElement(JourneyBuilderLightbox, {
     open: journeyBuilderOpen,
@@ -9259,7 +9309,7 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
         }, "Activate")
       )
     )))
-  )), /*#__PURE__*/React.createElement("div", {
+  ), /*#__PURE__*/React.createElement("div", { style: { borderTop: '1px solid var(--bdr)', background: 'var(--card-alt)', padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: 10, flexShrink: 0 } },/*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },/*#__PURE__*/React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 10 } },/*#__PURE__*/React.createElement("span", { style: { fontSize: 10, fontWeight: 700, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '.07em', fontFamily: 'IBM Plex Mono, monospace' } }, "Step 3 of 6"),/*#__PURE__*/React.createElement("span", { style: { fontSize: 13, fontWeight: 700, color: 'var(--text)' } }, "Bind destinations for this trigger sequence"),/*#__PURE__*/React.createElement("span", { style: { fontSize: 11, fontFamily: 'IBM Plex Mono, monospace', padding: '2px 8px', background: moduleDests.journey.length > 0 ? 'rgba(74,222,128,.1)' : 'rgba(245,158,11,.1)', border: `1px solid ${moduleDests.journey.length > 0 ? 'rgba(74,222,128,.3)' : 'rgba(245,158,11,.3)'}`, borderRadius: 3, color: moduleDests.journey.length > 0 ? 'var(--green)' : 'var(--amber)', fontWeight: 600 } }, moduleDests.journey.length > 0 ? "COMPLIANCE ✓ PASS" : "COMPLIANCE ○ PENDING")),/*#__PURE__*/React.createElement("button", { disabled: moduleDests.journey.length === 0, onClick: () => { setModuleApproved(m => ({...m, journey: true})); goNextTab(); }, style: { padding: '8px 16px', background: moduleDests.journey.length > 0 ? 'var(--cyan)' : 'var(--card)', color: moduleDests.journey.length > 0 ? '#fff' : 'var(--slate-lt)', border: moduleDests.journey.length > 0 ? 'none' : '1px solid var(--bdr)', borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: moduleDests.journey.length > 0 ? 'pointer' : 'not-allowed' } }, moduleApproved.journey ? "✓ Approved · Continue to Creatives →" : "Approve & Continue to Creatives →")),/*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 6, flexWrap: 'wrap' } },DEST_CATALOG.map(d => { const on = moduleDests.journey.includes(d.id); return /*#__PURE__*/React.createElement("div", { key: d.id, onClick: () => toggleModuleDest('journey', d.id), role: "button", tabIndex: 0, style: { padding: '5px 10px', background: on ? 'rgba(99,102,241,.15)' : 'var(--card)', border: `1px solid ${on ? 'var(--cyan)' : 'var(--bdr)'}`, borderRadius: 14, fontSize: 11, color: on ? 'var(--cyan-pale)' : 'var(--slate)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'IBM Plex Mono, monospace', userSelect: 'none' } }, on ? "✓ " : "+ ", d.name, /*#__PURE__*/React.createElement("span", { style: { fontSize: 9, color: on ? 'var(--cyan-dim)' : 'var(--slate-lt)', marginLeft: 4 } }, d.match + "%")); })))), /*#__PURE__*/React.createElement("div", {
     className: `desk-cap ${tab === 'creative' ? 'active three-col' : ''}`
   }, newCreativeOpen && /*#__PURE__*/React.createElement("div", {
     className: "opt-modal-overlay",
@@ -10198,230 +10248,79 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
     style: {
       fontSize: 13
     },
-    onClick: () => setTab('brief')
-  }, "Lock to Brief"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setTab('summary')
+  }, "Send to Summary"), /*#__PURE__*/React.createElement("button", {
     className: "btn btn-secondary",
     style: {
       fontSize: 13
     }
-  }, "Push to DAM")))))))), /*#__PURE__*/React.createElement("div", {
-    className: `desk-cap ${tab === 'orch' ? 'active' : ''}`
+  }, "Push to DAM"))))))), /*#__PURE__*/React.createElement("div", { style: { borderTop: '1px solid var(--bdr)', background: 'var(--card-alt)', padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: 10, flexShrink: 0 } },/*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },/*#__PURE__*/React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 10 } },/*#__PURE__*/React.createElement("span", { style: { fontSize: 10, fontWeight: 700, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '.07em', fontFamily: 'IBM Plex Mono, monospace' } }, "Step 4 of 6"),/*#__PURE__*/React.createElement("span", { style: { fontSize: 13, fontWeight: 700, color: 'var(--text)' } }, "Bind destinations for this creative set"),/*#__PURE__*/React.createElement("span", { style: { fontSize: 11, fontFamily: 'IBM Plex Mono, monospace', padding: '2px 8px', background: moduleDests.creative.length > 0 ? 'rgba(74,222,128,.1)' : 'rgba(245,158,11,.1)', border: `1px solid ${moduleDests.creative.length > 0 ? 'rgba(74,222,128,.3)' : 'rgba(245,158,11,.3)'}`, borderRadius: 3, color: moduleDests.creative.length > 0 ? 'var(--green)' : 'var(--amber)', fontWeight: 600 } }, moduleDests.creative.length > 0 ? "COMPLIANCE ✓ PASS" : "COMPLIANCE ○ PENDING")),/*#__PURE__*/React.createElement("button", { disabled: moduleDests.creative.length === 0, onClick: () => { setModuleApproved(m => ({...m, creative: true})); goNextTab(); }, style: { padding: '8px 16px', background: moduleDests.creative.length > 0 ? 'var(--cyan)' : 'var(--card)', color: moduleDests.creative.length > 0 ? '#fff' : 'var(--slate-lt)', border: moduleDests.creative.length > 0 ? 'none' : '1px solid var(--bdr)', borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: moduleDests.creative.length > 0 ? 'pointer' : 'not-allowed' } }, moduleApproved.creative ? "✓ Approved · Continue to Summary →" : "Approve & Continue to Summary →")),/*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 6, flexWrap: 'wrap' } },DEST_CATALOG.map(d => { const on = moduleDests.creative.includes(d.id); return /*#__PURE__*/React.createElement("div", { key: d.id, onClick: () => toggleModuleDest('creative', d.id), role: "button", tabIndex: 0, style: { padding: '5px 10px', background: on ? 'rgba(99,102,241,.15)' : 'var(--card)', border: `1px solid ${on ? 'var(--cyan)' : 'var(--bdr)'}`, borderRadius: 14, fontSize: 11, color: on ? 'var(--cyan-pale)' : 'var(--slate)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'IBM Plex Mono, monospace', userSelect: 'none' } }, on ? "✓ " : "+ ", d.name, /*#__PURE__*/React.createElement("span", { style: { fontSize: 9, color: on ? 'var(--cyan-dim)' : 'var(--slate-lt)', marginLeft: 4 } }, d.match + "%")); })))), /*#__PURE__*/React.createElement("div", {
+    className: `desk-cap overflow-y ${tab === 'activate' ? 'active' : ''}`
   }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      padding: '14px 24px',
-      borderBottom: '1px solid var(--bdr)',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      background: 'var(--card-alt)'
-    }
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 16,
-      fontWeight: 700,
-      color: 'var(--text)'
-    }
-  }, "Destinations"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 13,
-      color: 'var(--slate)',
-      marginTop: 3
-    }
-  }, "Policy-aware egress \xB7 VPC-SC \xB7 Zero persistent external PII")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      gap: 9,
-      alignItems: 'center'
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 13,
-      color: 'var(--green)',
-      fontWeight: 600
-    }
-  }, orchStatus.filter(d => d.status === 'success').length, "/", orchStatus.length, " complete"), /*#__PURE__*/React.createElement("button", {
-    className: "btn btn-secondary",
-    style: {
-      fontSize: 13
-    },
-    onClick: () => setShowCreateDest(v => !v)
-  }, "+ Create Destination"), /*#__PURE__*/React.createElement("button", {
-    className: "btn btn-secondary",
-    style: {
-      fontSize: 13
-    }
-  }, "Manage"))), showCreateDest && /*#__PURE__*/React.createElement("div", {
-    style: {
-      margin: '14px 24px',
-      padding: 18,
-      background: 'var(--card)',
-      border: '1px solid var(--bdr)',
-      borderRadius: 10,
-      boxShadow: 'var(--shadow)'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 14,
-      fontWeight: 700,
-      color: 'var(--text)',
-      marginBottom: 12
-    }
-  }, "+ New Destination"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'grid',
-      gridTemplateColumns: '1fr 1fr',
-      gap: 10,
-      marginBottom: 12
-    }
-  }, [['Name', 'e.g. Salesforce CDP'], ['Type', 'e.g. DSP · CRM · Paid Social'], ['Auth / Connection', 'e.g. OAuth · API Key'], ['Match Method', 'e.g. Hashed email · UID2']].map(([lbl, ph]) => /*#__PURE__*/React.createElement("div", {
-    key: lbl
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      fontWeight: 600,
-      color: 'var(--slate)',
-      marginBottom: 3
-    }
-  }, lbl), /*#__PURE__*/React.createElement("input", {
-    placeholder: ph,
-    style: {
-      width: '100%',
-      padding: '8px 11px',
-      border: '1px solid var(--bdr)',
-      borderRadius: 7,
-      fontSize: 13,
-      color: 'var(--text)',
-      fontFamily: 'var(--font-b)',
-      outline: 'none'
-    }
-  })))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      gap: 8
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "btn btn-primary",
-    style: {
-      fontSize: 13
-    },
-    onClick: () => setShowCreateDest(false)
-  }, "Save Destination"), /*#__PURE__*/React.createElement("button", {
-    className: "btn btn-secondary",
-    style: {
-      fontSize: 13
-    },
-    onClick: () => setShowCreateDest(false)
-  }, "Cancel"))), /*#__PURE__*/React.createElement("div", {
-    className: "orch-grid"
-  }, orchStatus.map((d, i) => /*#__PURE__*/React.createElement("div", {
-    key: i,
-    style: {
-      cursor: 'pointer',
-      height: '100%'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: `orch-card ${d.status === 'running' ? 'running' : ''}`,
-    onClick: () => setOrchExpanded(orchExpanded === i ? null : i)
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "orch-card-hdr"
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontWeight: 600,
-      color: 'var(--text)',
-      display: 'flex',
-      alignItems: 'center',
-      gap: 7
-    }
-  }, /*#__PURE__*/React.createElement(Ico, {
-    name: d.icon,
-    size: 15,
-    color: "var(--cyan-dim)"
-  }), " ", d.name), /*#__PURE__*/React.createElement("span", {
-    className: `badge ${d.status === 'success' ? 'badge-live' : d.status === 'running' ? 'badge-amber' : 'badge-cyan'}`
-  }, d.status)), /*#__PURE__*/React.createElement("div", {
-    className: "orch-stat"
-  }, "Match rate: ", /*#__PURE__*/React.createElement("strong", null, d.matchRate, "%")), /*#__PURE__*/React.createElement("div", {
-    className: "orch-stat"
-  }, "Cost: ", /*#__PURE__*/React.createElement("strong", null, d.cost)), /*#__PURE__*/React.createElement("div", {
-    className: "orch-stat"
-  }, "PII: ", /*#__PURE__*/React.createElement("strong", {
-    className: "text-green"
-  }, "None egressed")), /*#__PURE__*/React.createElement("div", {
-    className: "orch-bar"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "orch-fill",
-    style: {
-      width: `${d.progress}%`
-    }
-  })), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: 'var(--cyan-dim)',
-      marginTop: 6
-    }
-  }, orchExpanded === i ? '▲ Less' : '▼ Details')), orchExpanded === i && /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: 'var(--card-alt)',
-      border: '1px solid rgba(99,102,241,.25)',
-      borderTop: 'none',
-      borderRadius: '0 0 10px 10px',
-      padding: '12px 12px',
-      marginTop: -4,
-      overflow: 'hidden',
-      wordBreak: 'break-word'
-    }
-  }, [['Records sent', `${(12450 + i * 3200).toLocaleString()}`], ['Identity method', ['Hashed email + auth_id', 'UID2 token', 'GCLID chain → auth', 'act_id native', 'UID2 → Yahoo ID', 'Clean room aggregate'][i]], ['Latency', `${[42, 88, 156, 29, 201, 74][i]}ms avg`], ['Last sync', `${[2, 7, 14, 3, 0, 5][i]}m ago`], ['Consent check', 'PASSED — 100% consent-validated'], ['Egress policy', 'Redacted IDs only · VPC-SC enforced']].map(([k, v]) => /*#__PURE__*/React.createElement("div", {
-    key: k,
-    style: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      fontSize: 12,
-      padding: '4px 0',
-      borderBottom: '1px solid rgba(0,180,230,.1)'
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: 'var(--slate)'
-    }
-  }, k), /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: k === 'Consent check' ? 'var(--green)' : 'var(--text)',
-      fontWeight: 600
-    }
-  }, v))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      gap: 6,
-      marginTop: 8,
-      flexWrap: 'wrap'
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "btn btn-secondary",
-    style: {
-      fontSize: 11,
-      padding: '5px 10px',
-      flex: '1 1 auto',
-      minWidth: 0
-    }
-  }, "Pause"), /*#__PURE__*/React.createElement("button", {
-    className: "btn btn-secondary",
-    style: {
-      fontSize: 11,
-      padding: '5px 10px',
-      flex: '1 1 auto',
-      minWidth: 0
-    }
-  }, "Re-sync"), /*#__PURE__*/React.createElement("button", {
-    className: "btn btn-secondary",
-    style: {
-      fontSize: 11,
-      padding: '5px 10px',
-      flex: '1 1 auto',
-      minWidth: 0,
-      color: 'var(--red)',
-      borderColor: 'rgba(239,68,68,.3)'
-    }
-  }, "Remove"))))))))));
+    style: { padding: '14px 24px', borderBottom: '1px solid var(--bdr)', background: 'var(--card-alt)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }
+  }, /*#__PURE__*/React.createElement("div", null,
+    /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 3 } }, "Step 6 of 6"),
+    /*#__PURE__*/React.createElement("div", { style: { fontSize: 16, fontWeight: 700, color: 'var(--text)' } }, "Activate"),
+    /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, color: 'var(--slate)', marginTop: 3 } }, "Destinations bind per-module at launch. VPC-SC · Zero persistent external PII.")
+  ), /*#__PURE__*/React.createElement("span", { style: { fontSize: 11, fontFamily: 'IBM Plex Mono, monospace', color: activationState === 'activated' ? 'var(--green)' : (activationState === 'activating' ? 'var(--amber)' : 'var(--slate)'), letterSpacing: '.04em', padding: '3px 9px', background: activationState === 'activated' ? 'rgba(74,222,128,.1)' : (activationState === 'activating' ? 'rgba(245,158,11,.1)' : 'var(--card)'), borderRadius: 4, border: `1px solid ${activationState === 'activated' ? 'rgba(74,222,128,.3)' : (activationState === 'activating' ? 'rgba(245,158,11,.3)' : 'var(--bdr)')}` } }, activationState === 'activated' ? "● LIVE" : (activationState === 'activating' ? "○ ACTIVATING" : "○ READY"))),
+  /*#__PURE__*/React.createElement("div", { style: { padding: '24px 28px', maxWidth: 980, margin: '0 auto', width: '100%' } },
+    !bothApproved ? /*#__PURE__*/React.createElement("div", { style: { padding: '40px 28px', textAlign: 'center', color: 'var(--slate)' } },
+      /*#__PURE__*/React.createElement("div", { style: { fontSize: 15, marginBottom: 8, color: 'var(--text)' } }, "Approvals required first."),
+      /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, marginBottom: 16 } }, "Both the Marketing Lead and Compliance Officer need to sign off before you can activate."),
+      /*#__PURE__*/React.createElement("button", { onClick: () => { setTab('summary'); window.scrollTo(0,0); },
+        style: { padding: '9px 18px', background: 'var(--cyan)', color: '#fff', border: 'none', borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: 'pointer' } }, "← Go to Summary & Approval")
+    ) : activationState === 'idle' ? /*#__PURE__*/React.createElement(React.Fragment, null,
+      /*#__PURE__*/React.createElement("div", { style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 12, padding: 24, boxShadow: 'var(--shadow)', marginBottom: 18 } },
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 14 } }, "Destinations By Module"),
+        /*#__PURE__*/React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 } },
+          [['Audiences', 'audience'], ['Triggers', 'journey'], ['Creatives', 'creative']].map(([lbl, key]) => /*#__PURE__*/React.createElement("div", { key, style: { padding: 14, background: 'var(--card-alt)', border: '1px solid var(--bdr)', borderRadius: 8 } },
+            /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 8 } }, lbl),
+            /*#__PURE__*/React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 5 } },
+              moduleDests[key].map(did => {
+                const d = DEST_CATALOG.find(x => x.id === did);
+                return d ? /*#__PURE__*/React.createElement("div", { key: did, style: { fontSize: 12, padding: '5px 8px', background: 'rgba(99,102,241,.08)', border: '1px solid rgba(99,102,241,.25)', borderRadius: 4, color: 'var(--text)', display: 'flex', justifyContent: 'space-between' } },
+                  /*#__PURE__*/React.createElement("span", null, d.name),
+                  /*#__PURE__*/React.createElement("span", { style: { color: 'var(--green)', fontFamily: 'IBM Plex Mono, monospace', fontSize: 10 } }, d.match + '%')
+                ) : null;
+              })
+            )
+          ))
+        )
+      ),
+      /*#__PURE__*/React.createElement("div", { style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 12, padding: 28, boxShadow: 'var(--shadow)', textAlign: 'center' } },
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 6 } }, "Ready to activate."),
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, color: 'var(--slate)', marginBottom: 20 } }, campSetup.name),
+        /*#__PURE__*/React.createElement("button", { onClick: () => { setOrchStatus(ORCH_DESTS.map(d => ({...d, status: d.status === 'success' ? 'queued' : d.status, progress: d.status === 'success' ? 0 : d.progress}))); setActivationState('activating'); },
+          style: { padding: '14px 40px', background: 'var(--cyan)', color: '#fff', border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 20px rgba(99,102,241,.35)' } }, "⚡ Activate Campaign"),
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: 'var(--slate)', marginTop: 14, fontFamily: 'IBM Plex Mono, monospace' } }, "RUN-2026-04-17-F7A9 · VPC-SC active · 0 PII egressed")
+      )
+    ) : /*#__PURE__*/React.createElement(React.Fragment, null,
+      activationState === 'activated' && /*#__PURE__*/React.createElement("div", { style: { padding: 18, background: 'rgba(74,222,128,.08)', border: '1px solid rgba(74,222,128,.3)', borderRadius: 10, marginBottom: 18, textAlign: 'center' } },
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 18, fontWeight: 700, color: 'var(--green)', marginBottom: 4 } }, "✓ Campaign Activated"),
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, color: 'var(--text)' } }, campSetup.name, " is now live across all bound destinations.")
+      ),
+      /*#__PURE__*/React.createElement("div", { style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 12, padding: 22, boxShadow: 'var(--shadow)' } },
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 14 } }, "Destination Fan-Out"),
+        /*#__PURE__*/React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 10 } },
+          orchStatus.map((d, idx) => /*#__PURE__*/React.createElement("div", { key: idx, style: { padding: 12, background: 'var(--card-alt)', border: '1px solid var(--bdr)', borderRadius: 8 } },
+            /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 } },
+              /*#__PURE__*/React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8 } },
+                /*#__PURE__*/React.createElement(Ico, { name: d.icon, size: 14, color: 'var(--cyan-dim)' }),
+                /*#__PURE__*/React.createElement("span", { style: { fontSize: 13, fontWeight: 600, color: 'var(--text)' } }, d.name),
+                /*#__PURE__*/React.createElement("span", { style: { fontSize: 10, padding: '2px 6px', background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 3, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace' } }, "match " + d.matchRate + "%")
+              ),
+              /*#__PURE__*/React.createElement("span", { style: { fontSize: 11, color: d.status === 'success' ? 'var(--green)' : (d.status === 'running' ? 'var(--amber)' : 'var(--slate)'), fontFamily: 'IBM Plex Mono, monospace', fontWeight: 600 } },
+                d.status === 'success' ? '✓ SYNCED' : (d.status === 'running' ? d.progress + '%' : 'QUEUED')
+              )
+            ),
+            /*#__PURE__*/React.createElement("div", { style: { height: 4, background: 'var(--card)', borderRadius: 2, overflow: 'hidden' } },
+              /*#__PURE__*/React.createElement("div", { style: { width: d.progress + '%', height: '100%', background: d.status === 'success' ? 'var(--green)' : 'var(--cyan)', transition: 'width .3s ease' } })
+            )
+          ))
+        )
+      )
+    )
+  )))));
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -12015,7 +11914,7 @@ function CohortConsumerMix({
     style: {
       fontSize: 13
     }
-  }, "Add to Campaign Brief"), /*#__PURE__*/React.createElement("button", {
+  }, "Add to Campaign Summary"), /*#__PURE__*/React.createElement("button", {
     className: "btn btn-secondary",
     style: {
       fontSize: 13
@@ -12048,7 +11947,7 @@ function CohortConsumerMix({
       reach: `${(cohort.size / 1000 * 0.14).toFixed(0)}K`,
       dropoff: '55% drop-off',
       color: '#00C47A',
-      icon: 'brief'
+      icon: 'document'
     }, {
       name: 'Conversion',
       channels: ['Approval & onboard', 'Activation email', 'First use push'],
@@ -17358,7 +17257,7 @@ function HomeScreen({
     label: "In-House",
     sub: 'Campaign Suite',
     icon: 'target',
-    desc: 'Smart Audience · Smart Triggers · Brief Builder',
+    desc: 'Setup · Audiences · Triggers · Creatives · Summary · Activate',
     color: '#818CF8',
     bg: 'rgba(99,102,241,.08)'
   }, {
@@ -17841,7 +17740,7 @@ function SplashPage({ onNavigate }) {
           React.createElement('div', { className: 'sp-card', onClick: () => onNavigate('desk') },
             React.createElement('div', { className: 'sp-card-icon' }, '◎'),
             React.createElement('div', { className: 'sp-card-title' }, 'AI Activation'),
-            React.createElement('div', { className: 'sp-card-desc' }, 'Smart Audience, Smart Triggers, compliance-cleared creatives — full brief-to-activation in one connected agentic workflow.'),
+            React.createElement('div', { className: 'sp-card-desc' }, 'Smart Audience, Smart Triggers, compliance-cleared creatives — full setup-to-activation in one connected agentic workflow.'),
             React.createElement('div', { className: 'sp-card-tag' }, 'Agentic AI')
           )
         )
