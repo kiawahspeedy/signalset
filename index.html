@@ -11774,7 +11774,8 @@ function MicroCohortScatter({
 function MeasurementIntro({
   onEnter,
   setDrillLevel,
-  setDrillSegment
+  setDrillSegment,
+  liveMzSys
 }) {
   const MZ_INTRO_SAMPLES = ['Which segment should I prioritize for credit card acquisition?', 'Compare Explorers vs Revelers for LTV/CAC efficiency', 'What does the walled garden attribution tell us about Meta?', 'Show me propensity scores across all five behavioral segments'];
   const JUMP_CARDS = [{
@@ -12322,7 +12323,8 @@ function MeasurementZone({
     }, /*#__PURE__*/React.createElement(MeasurementIntro, {
       onEnter: () => { setMzIntro(false); window.scrollTo(0,0); },
       setDrillLevel: setDrillLevel,
-      setDrillSegment: setDrillSegment
+      setDrillSegment: setDrillSegment,
+      liveMzSys: liveMzSys
     }));
   }
   if (drillLevel === 1 && drillSegment) {
