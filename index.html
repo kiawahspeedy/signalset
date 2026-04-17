@@ -133,7 +133,7 @@ body {
 /* ── PHASE 10 UNIT A — ICON RAIL (52px fixed left) ── */
 .v11-rail {
   position: fixed; top: 62px; left: 0; bottom: 0; width: 52px;
-  background: var(--navy); border-right: 1px solid rgba(255,255,255,0.08);
+  background: #06061A;
   display: flex; flex-direction: column; align-items: center;
   padding: 10px 0; gap: 4px;
   z-index: 190;
@@ -220,7 +220,6 @@ body.v11-shell-active .v11-rail { top: 56px; }
   position: fixed; top: 0; left: 0; right: 0; z-index: 200;
   height: 56px;
   background: #06061A;
-  border-bottom: 1px solid rgba(255,255,255,.05);
   display: flex; align-items: center;
   padding: 0;
 }
@@ -296,7 +295,6 @@ body.v11-shell-active .v11-rail { top: 56px; }
 .v11-sidebar {
   position: fixed; top: 56px; bottom: 0; left: 52px; width: 260px;
   background: #070718;
-  border-right: 1px solid rgba(255,255,255,.05);
   display: flex; flex-direction: column;
   overflow: hidden;
   z-index: 185;
@@ -495,15 +493,7 @@ body.v11-sidebar-open .v11-sidebar { transform: translateX(0); }
 
 /* ── SCREEN HERO ── */
 /* ── GLOBAL SEPARATOR BAND (Block 2) ── */
-.page-separator { height: 10px; background: var(--bg); border-bottom: 1px solid var(--bdr); flex-shrink: 0; }
-.hero::before, .home-hero::before, .camp-hub-hero::before {
-  content: '';
-  display: block;
-  height: 10px;
-  background: var(--bg);
-  margin: -36px -40px 36px;
-  border-bottom: 1px solid var(--bdr);
-}
+.page-separator { height: 10px; background: var(--bg); flex-shrink: 0; }
 
 /* ── GLOBAL HERO (Block 3 — dark navy) ── */
 .hero {
@@ -512,7 +502,6 @@ body.v11-sidebar-open .v11-sidebar { transform: translateX(0); }
   color: #fff;
   position: relative;
   overflow: visible;
-  border-bottom: 3px solid rgba(0,180,230,0.2);
 }
 .hero-eyebrow {
   display: inline-flex; align-items: center; gap: 7px;
