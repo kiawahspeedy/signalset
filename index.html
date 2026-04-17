@@ -4282,6 +4282,66 @@ function IdentityGraph() {
   const [searchInput, setSearchInput] = useState('');
   const searchInputRef = useRef(null);
   const searchFormat = detectIdentityFormat(searchInput);
+  // Unit B — match state + ref (ref keeps highlight alive across graph redraws)
+  const [matchState, setMatchState] = useState(null); // null | { customer, confidence, resolution }
+  const matchStateRef = useRef(null);
+  useEffect(() => { matchStateRef.current = matchState; }, [matchState]);
+  // Deterministic synthetic identifiers per customer — seeded from pid via djb2-ish hash
+  // Gives us something to match against for SHA-256 / UID2 / MAID inputs in the demo
+  const syntheticIdentifiers = React.useCallback((pid) => {
+    const src = String(pid || '');
+    let h = 5381;
+    for (let i = 0; i < src.length; i++) h = ((h << 5) + h + src.charCodeAt(i)) | 0;
+    h = (h >>> 0).toString(16).padStart(8, '0'); // 8 hex chars
+    const sha256 = (h + h + h + h + h + h + h + h).slice(0, 64);
+    const maid  = `${h}-${h.slice(0,4)}-${h.slice(4,8)}-${h.slice(0,4)}-${h + h.slice(0,4)}`;
+    // UID2 — a URL-safe b64-ish string with at least one padding char
+    const uid2 = 'UID2-' + btoa(h + h + h).replace(/=/g, '').slice(0, 28) + '=';
+    return { sha256, uid2, maid };
+  }, []);
+  // Demo aid: log synthetic identifiers to console so search can be tested live
+  useEffect(() => {
+    if (!liveCustomers?.length) return;
+    if (window.__igSynthLogged) return;
+    window.__igSynthLogged = true;
+    const demo = liveCustomers.slice(0, 3).map(c => ({
+      id: c.id, segment: c.segment, ...syntheticIdentifiers(c.pid || c.id)
+    }));
+    console.log('💡 Identity Search demo · paste any of these into the search bar:', demo);
+  }, [liveCustomers, syntheticIdentifiers]);
+  // Run search — Enter key handler
+  const runSearch = React.useCallback(() => {
+    const s = (searchInput || '').trim();
+    if (!s) { setMatchState(null); return; }
+    const fmt = detectIdentityFormat(s);
+    if (!fmt || fmt.state === 'unknown') { setMatchState(null); return; }
+    // LIG-XXXX exact or raw 4-char last-4 match
+    if (fmt.type === 'lig') {
+      const raw = s.replace(/^LIG-/i, '').toUpperCase();
+      const matches = liveCustomers.filter(c => ((c.id || '').slice(-4).toUpperCase()) === raw);
+      if (matches.length >= 1) {
+        // Unit B: take first on ambiguity (Unit C will surface multi-candidate UI)
+        const conf = fmt.state === 'valid' ? 100 : 92;
+        setMatchState({ customer: matches[0], confidence: conf, resolution: 'Deterministic' });
+        return;
+      }
+    }
+    // Synthetic identifier match for external types
+    for (const c of liveCustomers) {
+      const syn = syntheticIdentifiers(c.pid || c.id);
+      if (fmt.type === 'sha256' && syn.sha256.toLowerCase() === s.toLowerCase()) {
+        setMatchState({ customer: c, confidence: 94, resolution: 'Deterministic' }); return;
+      }
+      if (fmt.type === 'uid2' && syn.uid2 === s) {
+        setMatchState({ customer: c, confidence: 92, resolution: 'Deterministic' }); return;
+      }
+      if (fmt.type === 'maid' && syn.maid.toLowerCase() === s.toLowerCase()) {
+        setMatchState({ customer: c, confidence: 88, resolution: 'Deterministic' }); return;
+      }
+    }
+    // No match (Unit C will render the full no-match / watchlist UI)
+    setMatchState(null);
+  }, [searchInput, liveCustomers, syntheticIdentifiers]);
   const simRef = useRef(null);
   const nodesRef = useRef([]);
   const svgSelRef = useRef(null);
@@ -4294,6 +4354,7 @@ function IdentityGraph() {
       }
       if (e.key === 'Escape' && document.activeElement === searchInputRef.current) {
         setSearchInput('');
+        setMatchState(null);
         searchInputRef.current?.blur();
       }
     };
@@ -5027,13 +5088,67 @@ function IdentityGraph() {
     // Select first by default
     d3.select('#node-ring-0').attr('stroke-width', 3.5).attr('stroke-opacity', 1);
     simRef.current = sim;
+    // Phase 3.5 Unit B — re-apply search highlight if a match is active
+    // (this runs at the end of drawIG so resize/redraw preserves the highlight)
+    applyMatchHighlight(matchStateRef.current, nodesRef.current);
     }; // end drawIG
     drawIG();
     const ro = new ResizeObserver(() => { if (svgRef.current && svgRef.current.getBoundingClientRect().width > 10) drawIG(); });
     if (svgRef.current) ro.observe(svgRef.current);
     return () => { if (simRef.current) simRef.current.stop(); ro.disconnect(); };
   }, [selected]);
-  const c = selected;
+  // Helper — apply or clear cyan-ring match highlight on the graph
+  function applyMatchHighlight(ms, nodes) {
+    if (!nodes || !nodes.length) return;
+    // Remove any existing badge
+    d3.select('#ig-match-badge').remove();
+    if (!ms) {
+      // Reset all nodes
+      nodes.forEach((n, i) => {
+        const ring = d3.select('#node-ring-' + i);
+        if (ring.empty()) return;
+        ring.interrupt().attr('stroke-width', 2).attr('stroke-opacity', 0.5).attr('r', 24).attr('stroke', n.color);
+        const parent = ring.node()?.parentNode;
+        if (parent) d3.select(parent).interrupt().style('opacity', 1);
+      });
+      return;
+    }
+    const idx = nodes.findIndex(n => n.id === ms.customer.id);
+    if (idx === -1) return;
+    nodes.forEach((n, i) => {
+      const ring = d3.select('#node-ring-' + i);
+      if (ring.empty()) return;
+      const parent = ring.node()?.parentNode;
+      if (i === idx) {
+        ring.interrupt().transition().duration(320)
+          .attr('stroke', '#06B6D4').attr('stroke-width', 4).attr('stroke-opacity', 1).attr('r', 28);
+        if (parent) d3.select(parent).interrupt().transition().duration(320).style('opacity', 1);
+      } else {
+        ring.interrupt().transition().duration(320)
+          .attr('stroke-width', 2).attr('stroke-opacity', 0.3);
+        if (parent) d3.select(parent).interrupt().transition().duration(320).style('opacity', 0.35);
+      }
+    });
+    // Render floating match badge near matched node (inside SVG)
+    const match = nodes[idx];
+    if (match && svgSelRef.current) {
+      const badge = svgSelRef.current.append('g').attr('id', 'ig-match-badge').attr('pointer-events', 'none');
+      badge.append('rect')
+        .attr('x', (match.x || 0) - 58).attr('y', (match.y || 0) - 58)
+        .attr('width', 116).attr('height', 22).attr('rx', 6)
+        .attr('fill', 'rgba(6,182,212,0.18)').attr('stroke', 'rgba(6,182,212,0.55)').attr('stroke-width', 1);
+      badge.append('text')
+        .attr('x', (match.x || 0)).attr('y', (match.y || 0) - 43)
+        .attr('text-anchor', 'middle').attr('font-family', 'IBM Plex Mono, monospace')
+        .attr('font-size', 10).attr('font-weight', 700).attr('fill', '#67E8F9')
+        .text('✓ ' + ms.confidence + '% · ' + ms.resolution);
+    }
+  }
+  // React to matchState changes immediately (not waiting for drawIG)
+  useEffect(() => {
+    applyMatchHighlight(matchState, nodesRef.current);
+  }, [matchState]);
+  const c = matchState?.customer || selected;
   const intents = [{
     label: 'Credit card upgrade propensity',
     pct: c.propensity,
@@ -5081,18 +5196,29 @@ function IdentityGraph() {
         className: "ig-search-input",
         placeholder: "Enter hashed email, UID2, device ID, or LIG-XXXX…",
         value: searchInput,
-        onChange: (e) => setSearchInput(e.target.value),
+        onChange: (e) => {
+          const v = e.target.value;
+          setSearchInput(v);
+          if (!v.trim()) setMatchState(null);
+        },
+        onKeyDown: (e) => {
+          if (e.key === 'Enter') { e.preventDefault(); runSearch(); }
+        },
         spellCheck: false,
         autoComplete: "off",
         "aria-label": "Search identity graph"
       }),
-      searchFormat
+      matchState
         ? /*#__PURE__*/React.createElement("span", {
-            className: "ig-search-chip ig-chip-" + searchFormat.state
-          }, searchFormat.label)
-        : /*#__PURE__*/React.createElement("span", {
-            className: "ig-search-chip ig-chip-kbd"
-          }, "⌘K")
+            className: "ig-search-chip ig-chip-valid"
+          }, "✓ " + matchState.confidence + "% · " + matchState.resolution)
+        : (searchFormat
+          ? /*#__PURE__*/React.createElement("span", {
+              className: "ig-search-chip ig-chip-" + searchFormat.state
+            }, searchFormat.label)
+          : /*#__PURE__*/React.createElement("span", {
+              className: "ig-search-chip ig-chip-kbd"
+            }, "⌘K"))
     ),
     /*#__PURE__*/React.createElement("div", { className: "ig-search-hints" },
       /*#__PURE__*/React.createElement("span", { className: "ig-search-hints-lbl" }, "Recognizes"),
