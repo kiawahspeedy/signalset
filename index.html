@@ -12091,6 +12091,7 @@ function MeasurementZone({
   const [liveSegContribs, setLiveSegContribs] = useState(SEGMENT_CONTRIBUTIONS);
   const [liveMzSys, setLiveMzSys] = useState(MZ_CHATBOT_SYS);
   const [mzScrollTarget, setMzScrollTarget] = useState(null);
+  const [mzIntro, setMzIntro] = useState(true);
   // Build live system prompt from BQ on mount
   React.useEffect(() => {
     buildMzSystemPrompt().then(sys => { if (sys) setLiveMzSys(sys); });
@@ -12244,7 +12245,6 @@ function MeasurementZone({
   // State-level DMA drill — lives here so it renders OUTSIDE .drill-screen
   // (will-change:transform on drill-screen breaks position:fixed children)
   const [stateDrill, setStateDrill] = useState(null);
-  const [mzIntro, setMzIntro] = useState(true);
   useEffect(() => {
     if (drillLevel !== 0) return;
     if (mzIntro) return;
@@ -12890,6 +12890,8 @@ const CMN_INTENT = ['In-market flight search (7d)', 'Premium card application in
 function CommerceMedia({ jumpTab, onTabConsumed }) {
   const [cmnTab, setCmnTab] = useState('start');
   const [cmnHub, setCmnHub] = useState(true);
+  const [liveSegContribs, setLiveSegContribs] = useState(SEGMENT_CONTRIBUTIONS);
+  const [liveChannelWaterfall, setLiveChannelWaterfall] = useState(CHANNEL_WATERFALL);
   const CMN_SUB_MAP = { discover: 'start', build: 'build', manage: 'manage', results: 'results' };
   useEffect(() => {
     if (!jumpTab) return;
