@@ -227,13 +227,9 @@ body.v11-shell-active .v11-rail { top: 56px; }
 .v11-topstrip-brand-wrap {
   height: 100%; flex-shrink: 0;
   display: flex; align-items: center;
-  padding: 0 18px;
-  border-right: 1px solid rgba(255,255,255,.05);
+  padding: 0 18px 0 20px;
   cursor: pointer;
-  transition: width .22s ease;
 }
-body.v11-shell-active:not(.v11-sidebar-open) .v11-topstrip-brand-wrap { width: 312px; }
-body.v11-shell-active.v11-sidebar-open .v11-topstrip-brand-wrap { width: 312px; }
 .v11-topstrip-brand {
   display: flex; align-items: center; gap: 12px;
 }
@@ -252,9 +248,8 @@ body.v11-shell-active.v11-sidebar-open .v11-topstrip-brand-wrap { width: 312px; 
 
 .v11-topstrip-right {
   flex: 1;
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; align-items: center; justify-content: flex-end;
   padding: 0 24px;
-  gap: 20px;
   min-width: 0;
 }
 .v11-breadcrumb {
@@ -18062,14 +18057,6 @@ function V11Sidebar({ screen, navigate, onNewChat }) {
 // V11TopStrip — 56px thin bar with logo / breadcrumb / status pill
 // ──────────────────────────────────────────────────────────────────────
 function V11TopStrip({ screen, onBrandClick, neo4jStatus }) {
-  const SECTION_MAP = {
-    home: { label: 'Home', section: 'indigo' },
-    identity: { label: 'Identity', section: 'indigo' },
-    measurement: { label: 'Measurement', section: 'measurement' },
-    desk: { label: 'Marketers', section: 'indigo' },
-    cmn: { label: 'Partners', section: 'partners' },
-  };
-  const cur = SECTION_MAP[screen] || SECTION_MAP.home;
   return /*#__PURE__*/React.createElement("div", { className: "v11-topstrip" },
     /*#__PURE__*/React.createElement("div", {
       className: "v11-topstrip-brand-wrap",
@@ -18087,10 +18074,6 @@ function V11TopStrip({ screen, onBrandClick, neo4jStatus }) {
       )
     ),
     /*#__PURE__*/React.createElement("div", { className: "v11-topstrip-right" },
-      /*#__PURE__*/React.createElement("div", { className: "v11-breadcrumb" },
-        /*#__PURE__*/React.createElement("div", { className: "v11-breadcrumb-dot section-" + cur.section }),
-        /*#__PURE__*/React.createElement("span", null, cur.label)
-      ),
       /*#__PURE__*/React.createElement("div", { className: "v11-topstrip-status" },
         /*#__PURE__*/React.createElement("div", { className: "v11-topstrip-status-dot" }),
         neo4jStatus?.connected
