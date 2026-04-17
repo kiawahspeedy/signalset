@@ -416,6 +416,151 @@ body {
   color: #67E8F9;
 }
 
+/* Unit C — additional chip variants */
+.ig-chip-suppressed {
+  background: rgba(248,113,113,.12); color: #FCA5A5;
+  border: 1px solid rgba(248,113,113,.3);
+}
+.ig-search-row.fmt-no-match,
+.ig-search-row.fmt-candidates {
+  border-color: rgba(245,158,11,.4);
+}
+.ig-search-row.fmt-suppressed {
+  border-color: rgba(248,113,113,.45);
+}
+
+/* Unit C — Result panel (renders below search row when resultState is candidates / no-match / suppressed) */
+.ig-result-panel {
+  margin-top: 12px;
+  background: rgba(9,9,26,.45);
+  border: 1px solid rgba(99,102,241,.18);
+  border-radius: 10px;
+  padding: 14px;
+  animation: ig-fade-in .18s ease;
+}
+@keyframes ig-fade-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+.ig-result-panel.no-match { border-color: rgba(245,158,11,.22); background: rgba(245,158,11,.03); }
+.ig-result-panel.suppressed { border-color: rgba(248,113,113,.22); background: rgba(248,113,113,.03); }
+
+.ig-result-hdr {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+}
+.ig-result-ico {
+  width: 28px; height: 28px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(99,102,241,.1); color: var(--cyan-dim);
+  flex-shrink: 0;
+}
+.ig-result-ico.amber { background: rgba(245,158,11,.1); color: var(--amber); }
+.ig-result-ico.red { background: rgba(248,113,113,.1); color: #F87171; }
+.ig-result-title { font-size: 13px; font-weight: 700; color: var(--text); }
+.ig-result-sub { font-size: 11px; color: var(--slate); font-family: var(--font-m); margin-top: 2px; }
+
+/* Candidates list */
+.ig-cand-list { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+.ig-cand-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 11px; border-radius: 8px;
+  background: rgba(14,14,32,.6);
+  border: 1px solid rgba(245,158,11,.14);
+  cursor: pointer;
+  transition: all .15s;
+}
+.ig-cand-row:hover { border-color: rgba(245,158,11,.45); background: rgba(245,158,11,.05); }
+.ig-cand-row.top { border-color: rgba(245,158,11,.35); background: rgba(245,158,11,.06); }
+.ig-cand-chip {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--amber), #FCD34D);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; font-weight: 800; color: #fff; font-family: var(--font-m); flex-shrink: 0;
+}
+.ig-cand-id { font-size: 12px; font-weight: 700; color: var(--text); font-family: var(--font-m); flex: 1; }
+.ig-cand-seg { color: var(--slate); font-weight: 500; font-size: 10px; margin-left: 6px; }
+.ig-cand-conf { font-size: 11px; color: var(--amber); font-weight: 700; font-family: var(--font-m); }
+
+/* No-match watchlist */
+.ig-nomatch-body {
+  text-align: center; padding: 10px 8px 4px;
+}
+.ig-nomatch-title { font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.ig-nomatch-sub { font-size: 10px; color: var(--slate); font-family: var(--font-m); margin-bottom: 12px; line-height: 1.55; }
+.ig-nomatch-sub b { color: var(--text); font-weight: 700; }
+.ig-watchlist-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: 7px;
+  background: rgba(99,102,241,.15); border: 1px solid rgba(99,102,241,.4);
+  color: var(--cyan-dim);
+  font-size: 11px; font-weight: 700; cursor: pointer;
+  font-family: var(--font-b);
+  transition: all .15s;
+}
+.ig-watchlist-btn:hover { background: rgba(99,102,241,.25); border-color: rgba(99,102,241,.6); }
+.ig-watchlist-note { margin-top: 10px; font-size: 10px; color: var(--slate-lt); font-family: var(--font-m); line-height: 1.5; }
+.ig-watchlist-count {
+  margin-top: 10px; padding: 6px 10px;
+  background: rgba(99,102,241,.08); border: 1px solid rgba(99,102,241,.2);
+  border-radius: 6px;
+  font-size: 10px; font-family: var(--font-m); color: var(--cyan-dim); font-weight: 600;
+  text-align: center;
+}
+
+/* Suppressed state */
+.ig-sup-note {
+  display: flex; gap: 9px; align-items: flex-start;
+  padding: 10px 12px; background: rgba(248,113,113,.05);
+  border: 1px solid rgba(248,113,113,.2); border-radius: 8px;
+  margin-top: 2px;
+}
+.ig-sup-note-icon { color: #F87171; flex-shrink: 0; margin-top: 1px; }
+.ig-sup-note-t { font-size: 11px; color: var(--text); font-weight: 700; margin-bottom: 3px; }
+.ig-sup-note-s { font-size: 10px; color: var(--slate); line-height: 1.55; }
+.ig-sup-footer {
+  margin-top: 10px; font-size: 9px; color: var(--slate-lt);
+  font-family: var(--font-m); text-align: center; letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+/* Unit D — Watchlist peek badge (persistent indicator in search row) */
+.ig-watchlist-peek {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 10px; font-weight: 700; font-family: var(--font-m);
+  padding: 3px 8px; border-radius: 5px;
+  background: rgba(99,102,241,.08);
+  border: 1px solid rgba(99,102,241,.22);
+  color: var(--cyan-dim);
+  cursor: default;
+  letter-spacing: .04em;
+}
+.ig-watchlist-peek::before {
+  content: ''; width: 5px; height: 5px; border-radius: 50%;
+  background: var(--cyan-dim);
+  box-shadow: 0 0 4px var(--cyan-dim);
+}
+
+/* Unit D — candidate keyboard focus ring */
+.ig-cand-row:focus-visible,
+.ig-cand-row.kb-focused {
+  outline: none;
+  border-color: rgba(245,158,11,.7);
+  box-shadow: 0 0 0 2px rgba(245,158,11,.25);
+}
+.ig-cand-row {
+  outline: none;
+}
+
+/* Unit D — responsive (narrow viewports / mobile) */
+@media (max-width: 768px) {
+  .ig-search-row { flex-wrap: wrap; gap: 6px; padding: 8px 10px; }
+  .ig-search-input { min-width: 0; font-size: 13px; }
+  .ig-search-chip { order: 3; }
+  .ig-search-hints { gap: 4px; }
+  .ig-search-format { font-size: 9px; padding: 2px 6px; }
+  .ig-search-hints-lbl { display: none; }
+  .ig-cand-row { padding: 10px 11px; }
+  .ig-cand-id { font-size: 11px; }
+  .ig-cand-seg { display: block; margin-left: 0; margin-top: 1px; }
+}
+
 /* ── MARKETING DESK SCREEN ── */
 .desk-wrap { display: flex; flex: 1; min-height: 0; overflow: hidden; }
 .desk-sidebar {
@@ -4301,10 +4446,24 @@ function IdentityGraph() {
   const [searchInput, setSearchInput] = useState('');
   const searchInputRef = useRef(null);
   const searchFormat = detectIdentityFormat(searchInput);
-  // Unit B — match state + ref (ref keeps highlight alive across graph redraws)
-  const [matchState, setMatchState] = useState(null); // null | { customer, confidence, resolution }
-  const matchStateRef = useRef(null);
-  useEffect(() => { matchStateRef.current = matchState; }, [matchState]);
+  // Unit B/C — unified result state
+  // { kind: 'searching'|'match'|'candidates'|'no-match'|'suppressed',
+  //   customer?, candidates?, confidence?, resolution?, input?, reason? }
+  const [resultState, setResultState] = useState(null);
+  const matchStateRef = useRef(null); // keeps .customer alive across graph redraws
+  useEffect(() => {
+    matchStateRef.current = (resultState && (resultState.kind === 'match' || resultState.kind === 'suppressed'))
+      ? resultState : null;
+  }, [resultState]);
+  // Unit C — suppressed customer set (consent-as-node P3 claim demo)
+  // Seeded deterministically by last-2 of shortId so some fraction of the graph is "suppressed"
+  const SUPPRESSED_LAST2 = React.useMemo(() => new Set(['06', '3A', '9F']), []);
+  const isSuppressed = React.useCallback(
+    (customer) => SUPPRESSED_LAST2.has((customer?.id || '').slice(-2).toUpperCase()),
+    [SUPPRESSED_LAST2]
+  );
+  // Added-to-watchlist list (local only — Supabase persistence lands in Phase 9)
+  const [watchlist, setWatchlist] = useState([]);
   // Deterministic synthetic identifiers per customer — seeded from pid via djb2-ish hash
   // Gives us something to match against for SHA-256 / UID2 / MAID inputs in the demo
   const syntheticIdentifiers = React.useCallback((pid) => {
@@ -4327,59 +4486,136 @@ function IdentityGraph() {
       id: c.id, segment: c.segment, ...syntheticIdentifiers(c.pid || c.id)
     }));
     console.log('💡 Identity Search demo · paste any of these into the search bar:', demo);
-  }, [liveCustomers, syntheticIdentifiers]);
-  // Run search — Enter key handler
-  const runSearch = React.useCallback(() => {
-    const s = (searchInput || '').trim();
-    if (!s) { setMatchState(null); return; }
+    console.log('💡 Suppressed demo · try LIG-IDs ending in:', Array.from(SUPPRESSED_LAST2));
+  }, [liveCustomers, syntheticIdentifiers, SUPPRESSED_LAST2]);
+  // Compute the final state (post-search) without the searching delay
+  const computeFinalState = React.useCallback((input) => {
+    const s = (input || '').trim();
+    if (!s) return null;
     const fmt = detectIdentityFormat(s);
-    if (!fmt || fmt.state === 'unknown') { setMatchState(null); return; }
+    if (!fmt || fmt.state === 'unknown') return { kind: 'no-match', input: s, reason: 'Unrecognized identifier format.' };
     // LIG-XXXX exact or raw 4-char last-4 match
     if (fmt.type === 'lig') {
       const raw = s.replace(/^LIG-/i, '').toUpperCase();
       const matches = liveCustomers.filter(c => ((c.id || '').slice(-4).toUpperCase()) === raw);
-      if (matches.length >= 1) {
-        // Unit B: take first on ambiguity (Unit C will surface multi-candidate UI)
+      if (matches.length > 1) {
+        const ranked = matches.map((c, i) => ({ customer: c, confidence: i === 0 ? 84 : (71 - i * 4) }));
+        return { kind: 'candidates', candidates: ranked, input: s };
+      }
+      if (matches.length === 1) {
+        const c = matches[0];
+        if (isSuppressed(c)) return { kind: 'suppressed', customer: c, reason: 'TCPA · CAN-SPAM', input: s };
         const conf = fmt.state === 'valid' ? 100 : 92;
-        setMatchState({ customer: matches[0], confidence: conf, resolution: 'Deterministic' });
-        return;
+        return { kind: 'match', customer: c, confidence: conf, resolution: 'Deterministic', input: s };
       }
     }
     // Synthetic identifier match for external types
     for (const c of liveCustomers) {
       const syn = syntheticIdentifiers(c.pid || c.id);
-      if (fmt.type === 'sha256' && syn.sha256.toLowerCase() === s.toLowerCase()) {
-        setMatchState({ customer: c, confidence: 94, resolution: 'Deterministic' }); return;
-      }
-      if (fmt.type === 'uid2' && syn.uid2 === s) {
-        setMatchState({ customer: c, confidence: 92, resolution: 'Deterministic' }); return;
-      }
-      if (fmt.type === 'maid' && syn.maid.toLowerCase() === s.toLowerCase()) {
-        setMatchState({ customer: c, confidence: 88, resolution: 'Deterministic' }); return;
+      let hit = null;
+      if (fmt.type === 'sha256' && syn.sha256.toLowerCase() === s.toLowerCase()) hit = 94;
+      else if (fmt.type === 'uid2' && syn.uid2 === s) hit = 92;
+      else if (fmt.type === 'maid' && syn.maid.toLowerCase() === s.toLowerCase()) hit = 88;
+      if (hit !== null) {
+        if (isSuppressed(c)) return { kind: 'suppressed', customer: c, reason: 'TCPA · CAN-SPAM', input: s };
+        return { kind: 'match', customer: c, confidence: hit, resolution: 'Deterministic', input: s };
       }
     }
-    // No match (Unit C will render the full no-match / watchlist UI)
-    setMatchState(null);
-  }, [searchInput, liveCustomers, syntheticIdentifiers]);
+    return { kind: 'no-match', input: s, reason: 'No node resolves to this identifier.' };
+  }, [liveCustomers, syntheticIdentifiers, isSuppressed]);
+  // Run search — Enter key handler. Shows "searching" for 600ms then final state.
+  const runSearch = React.useCallback(() => {
+    const s = (searchInput || '').trim();
+    if (!s) { setResultState(null); return; }
+    const fmt = detectIdentityFormat(s);
+    if (!fmt || fmt.state === 'unknown') { setResultState(null); return; }
+    setResultState({ kind: 'searching', input: s });
+    setTimeout(() => {
+      setResultState((prev) => {
+        // Bail if user typed something new or cleared during the delay
+        if (!prev || prev.kind !== 'searching' || prev.input !== s) return prev;
+        return computeFinalState(s);
+      });
+    }, 600);
+  }, [searchInput, computeFinalState]);
+  // Promote a candidate to full match (called from multi-candidate list)
+  const promoteCandidate = React.useCallback((candidate) => {
+    if (isSuppressed(candidate.customer)) {
+      setResultState({ kind: 'suppressed', customer: candidate.customer, reason: 'TCPA · CAN-SPAM', input: searchInput });
+    } else {
+      setResultState({
+        kind: 'match', customer: candidate.customer,
+        confidence: candidate.confidence, resolution: 'Probabilistic', input: searchInput
+      });
+    }
+  }, [searchInput, isSuppressed]);
+  // Add a failed search to the watchlist
+  const addToWatchlist = React.useCallback(() => {
+    if (!resultState || resultState.kind !== 'no-match') return;
+    const last4 = resultState.input.slice(-4);
+    setWatchlist(prev => [...prev, { input: resultState.input, last4, addedAt: new Date().toISOString() }]);
+    setResultState(null);
+    setSearchInput('');
+  }, [resultState]);
+  // Unit D — keyboard focus index for candidates, search region ref for click-outside
+  const [kbFocusedCand, setKbFocusedCand] = useState(0);
+  const searchWrapRef = useRef(null);
+  // Reset kb focus when candidate list appears/changes
+  useEffect(() => {
+    if (resultState?.kind === 'candidates') setKbFocusedCand(0);
+  }, [resultState?.kind, resultState?.candidates?.length]);
   const simRef = useRef(null);
   const nodesRef = useRef([]);
   const svgSelRef = useRef(null);
-  // ⌘K / Ctrl+K focuses the search input from anywhere on the Identity screen
+  // Keyboard handling — ⌘K focus, ESC clear, ↑/↓/Enter for candidate navigation
   useEffect(() => {
     const handler = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         searchInputRef.current?.focus();
+        return;
       }
-      if (e.key === 'Escape' && document.activeElement === searchInputRef.current) {
+      // Candidates keyboard navigation — active when candidates visible and search region has focus
+      const inSearchRegion = searchWrapRef.current?.contains(document.activeElement);
+      if (resultState?.kind === 'candidates' && inSearchRegion) {
+        const count = resultState.candidates.length;
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          setKbFocusedCand(i => (i + 1) % count);
+          return;
+        }
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          setKbFocusedCand(i => (i - 1 + count) % count);
+          return;
+        }
+        if (e.key === 'Enter' && document.activeElement === searchInputRef.current) {
+          // Only promote on Enter if input hasn't changed (otherwise let runSearch fire)
+          e.preventDefault();
+          promoteCandidate(resultState.candidates[kbFocusedCand]);
+          return;
+        }
+      }
+      if (e.key === 'Escape' && inSearchRegion) {
         setSearchInput('');
-        setMatchState(null);
+        setResultState(null);
         searchInputRef.current?.blur();
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, []);
+  }, [resultState, kbFocusedCand, promoteCandidate]);
+  // Click-outside — clear result (but keep input so user can refine and re-search)
+  useEffect(() => {
+    if (!resultState || resultState.kind === 'searching') return;
+    const handler = (e) => {
+      if (!searchWrapRef.current) return;
+      if (searchWrapRef.current.contains(e.target)) return;
+      setResultState(null);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [resultState]);
   // Update selected when live Neo4j data arrives — keep same index if possible
   useEffect(() => {
     if (graphData?.customers?.length > 0) {
@@ -5116,13 +5352,13 @@ function IdentityGraph() {
     if (svgRef.current) ro.observe(svgRef.current);
     return () => { if (simRef.current) simRef.current.stop(); ro.disconnect(); };
   }, [selected]);
-  // Helper — apply or clear cyan-ring match highlight on the graph
-  function applyMatchHighlight(ms, nodes) {
+  // Helper — apply visual state to the graph based on resultState
+  function applyMatchHighlight(rs, nodes) {
     if (!nodes || !nodes.length) return;
-    // Remove any existing badge
+    // Clear any previous badges / pulses
     d3.select('#ig-match-badge').remove();
-    if (!ms) {
-      // Reset all nodes
+    d3.select('#ig-search-pulse').remove();
+    const resetAll = () => {
       nodes.forEach((n, i) => {
         const ring = d3.select('#node-ring-' + i);
         if (ring.empty()) return;
@@ -5130,44 +5366,97 @@ function IdentityGraph() {
         const parent = ring.node()?.parentNode;
         if (parent) d3.select(parent).interrupt().style('opacity', 1);
       });
+    };
+    if (!rs) { resetAll(); return; }
+
+    // SEARCHING — pulse at graph center, leave nodes alone
+    if (rs.kind === 'searching') {
+      resetAll();
+      if (svgSelRef.current) {
+        const bbox = svgRef.current?.getBoundingClientRect();
+        const cx = (bbox?.width || 720) / 2;
+        const cy = (bbox?.height || 440) / 2;
+        const pulse = svgSelRef.current.append('circle')
+          .attr('id', 'ig-search-pulse').attr('cx', cx).attr('cy', cy).attr('r', 20)
+          .attr('fill', 'none').attr('stroke', '#6366F1').attr('stroke-width', 1.5)
+          .attr('opacity', 0.8).attr('pointer-events', 'none');
+        (function loop() {
+          pulse.transition().duration(900).ease(d3.easeCubicOut)
+            .attr('r', 140).attr('opacity', 0)
+            .transition().duration(0).attr('r', 20).attr('opacity', 0.8)
+            .on('end', loop);
+        })();
+      }
       return;
     }
-    const idx = nodes.findIndex(n => n.id === ms.customer.id);
-    if (idx === -1) return;
+
+    // CANDIDATES — highlight multiple in amber, dim others
+    if (rs.kind === 'candidates') {
+      const candIds = new Set(rs.candidates.map(c => c.customer.id));
+      nodes.forEach((n, i) => {
+        const ring = d3.select('#node-ring-' + i);
+        if (ring.empty()) return;
+        const parent = ring.node()?.parentNode;
+        if (candIds.has(n.id)) {
+          ring.interrupt().transition().duration(320)
+            .attr('stroke', '#F59E0B').attr('stroke-width', 3).attr('stroke-opacity', 1).attr('r', 26);
+          if (parent) d3.select(parent).interrupt().transition().duration(320).style('opacity', 1);
+        } else {
+          ring.interrupt().transition().duration(320).attr('stroke-width', 2).attr('stroke-opacity', 0.2);
+          if (parent) d3.select(parent).interrupt().transition().duration(320).style('opacity', 0.3);
+        }
+      });
+      return;
+    }
+
+    // MATCH or SUPPRESSED — single node highlight (cyan or red)
+    const targetCustomer = rs.customer;
+    if (!targetCustomer) { resetAll(); return; }
+    const idx = nodes.findIndex(n => n.id === targetCustomer.id);
+    if (idx === -1) { resetAll(); return; }
+    const isSup = rs.kind === 'suppressed';
+    const ringColor = isSup ? '#F87171' : '#06B6D4';
+    const badgeFill = isSup ? 'rgba(248,113,113,0.16)' : 'rgba(6,182,212,0.18)';
+    const badgeStroke = isSup ? 'rgba(248,113,113,0.55)' : 'rgba(6,182,212,0.55)';
+    const badgeText = isSup ? '#FCA5A5' : '#67E8F9';
+    const badgeLabel = isSup
+      ? '🔒 Suppressed · ' + (rs.reason || '')
+      : '✓ ' + rs.confidence + '% · ' + rs.resolution;
     nodes.forEach((n, i) => {
       const ring = d3.select('#node-ring-' + i);
       if (ring.empty()) return;
       const parent = ring.node()?.parentNode;
       if (i === idx) {
         ring.interrupt().transition().duration(320)
-          .attr('stroke', '#06B6D4').attr('stroke-width', 4).attr('stroke-opacity', 1).attr('r', 28);
+          .attr('stroke', ringColor).attr('stroke-width', 4).attr('stroke-opacity', 1).attr('r', 28);
         if (parent) d3.select(parent).interrupt().transition().duration(320).style('opacity', 1);
       } else {
-        ring.interrupt().transition().duration(320)
-          .attr('stroke-width', 2).attr('stroke-opacity', 0.3);
+        ring.interrupt().transition().duration(320).attr('stroke-width', 2).attr('stroke-opacity', 0.3);
         if (parent) d3.select(parent).interrupt().transition().duration(320).style('opacity', 0.35);
       }
     });
-    // Render floating match badge near matched node (inside SVG)
     const match = nodes[idx];
     if (match && svgSelRef.current) {
+      // width scales with label length (approx 6px per char + padding)
+      const w = Math.max(116, badgeLabel.length * 6 + 20);
       const badge = svgSelRef.current.append('g').attr('id', 'ig-match-badge').attr('pointer-events', 'none');
       badge.append('rect')
-        .attr('x', (match.x || 0) - 58).attr('y', (match.y || 0) - 58)
-        .attr('width', 116).attr('height', 22).attr('rx', 6)
-        .attr('fill', 'rgba(6,182,212,0.18)').attr('stroke', 'rgba(6,182,212,0.55)').attr('stroke-width', 1);
+        .attr('x', (match.x || 0) - w / 2).attr('y', (match.y || 0) - 58)
+        .attr('width', w).attr('height', 22).attr('rx', 6)
+        .attr('fill', badgeFill).attr('stroke', badgeStroke).attr('stroke-width', 1);
       badge.append('text')
         .attr('x', (match.x || 0)).attr('y', (match.y || 0) - 43)
         .attr('text-anchor', 'middle').attr('font-family', 'IBM Plex Mono, monospace')
-        .attr('font-size', 10).attr('font-weight', 700).attr('fill', '#67E8F9')
-        .text('✓ ' + ms.confidence + '% · ' + ms.resolution);
+        .attr('font-size', 10).attr('font-weight', 700).attr('fill', badgeText)
+        .text(badgeLabel);
     }
   }
-  // React to matchState changes immediately (not waiting for drawIG)
+  // React to resultState changes immediately
   useEffect(() => {
-    applyMatchHighlight(matchState, nodesRef.current);
-  }, [matchState]);
-  const c = matchState?.customer || selected;
+    applyMatchHighlight(resultState, nodesRef.current);
+  }, [resultState]);
+  // Detail card source: matched / suppressed customer takes precedence, else fall back to click-selected
+  const c = ((resultState?.kind === 'match' || resultState?.kind === 'suppressed') && resultState.customer) || selected;
   const intents = [{
     label: 'Credit card upgrade propensity',
     pct: c.propensity,
@@ -5197,10 +5486,20 @@ function IdentityGraph() {
   }, (totalNodes > 0 ? ('Customer Graph — ' + totalNodes + ' Nodes · ' + Object.keys(segCounts).length + ' Segments') : 'Customer Graph — 8 Nodes · 3 Segments')), /*#__PURE__*/React.createElement("span", {
     className: "badge badge-live"
   }, (graphData?.customers?.length > 0 ? 'Neo4j · Live' : 'Live · <500ms P95'))),
-  /* Phase 3.5 · Unit A — search input + format detection (matching logic lands in Unit B) */
-  /*#__PURE__*/React.createElement("div", { className: "ig-search-wrap" },
+  /* Phase 3.5 · Unit A + B + C — search input, matching, resolution states */
+  /*#__PURE__*/React.createElement("div", {
+    className: "ig-search-wrap",
+    ref: searchWrapRef,
+    role: "search",
+    "aria-label": "Identity graph search"
+  },
     /*#__PURE__*/React.createElement("div", {
-      className: "ig-search-row" + (searchFormat ? (' fmt-' + searchFormat.state) : '')
+      className: "ig-search-row"
+        + (searchFormat && !resultState ? (' fmt-' + searchFormat.state) : '')
+        + (resultState?.kind === 'match' ? ' fmt-valid' : '')
+        + (resultState?.kind === 'candidates' ? ' fmt-candidates' : '')
+        + (resultState?.kind === 'no-match' ? ' fmt-no-match' : '')
+        + (resultState?.kind === 'suppressed' ? ' fmt-suppressed' : '')
     },
       /*#__PURE__*/React.createElement("svg", {
         className: "ig-search-icon", width: 14, height: 14, viewBox: "0 0 24 24",
@@ -5218,7 +5517,7 @@ function IdentityGraph() {
         onChange: (e) => {
           const v = e.target.value;
           setSearchInput(v);
-          if (!v.trim()) setMatchState(null);
+          if (!v.trim()) setResultState(null);
         },
         onKeyDown: (e) => {
           if (e.key === 'Enter') { e.preventDefault(); runSearch(); }
@@ -5227,19 +5526,24 @@ function IdentityGraph() {
         autoComplete: "off",
         "aria-label": "Search identity graph"
       }),
-      matchState
-        ? /*#__PURE__*/React.createElement("span", {
-            className: "ig-search-chip ig-chip-valid"
-          }, "✓ " + matchState.confidence + "% · " + matchState.resolution)
-        : (searchFormat
-          ? /*#__PURE__*/React.createElement("span", {
-              className: "ig-search-chip ig-chip-" + searchFormat.state
-            }, searchFormat.label)
-          : /*#__PURE__*/React.createElement("span", {
-              className: "ig-search-chip ig-chip-kbd"
-            }, "⌘K"))
+      // Right-side chip: state-driven — searching / match / suppressed / candidates / format hint / ⌘K
+      (() => {
+        if (resultState?.kind === 'searching') return /*#__PURE__*/React.createElement("span", { className: "ig-search-chip ig-chip-kbd" }, "Searching…");
+        if (resultState?.kind === 'match') return /*#__PURE__*/React.createElement("span", { className: "ig-search-chip ig-chip-valid" }, "✓ " + resultState.confidence + "% · " + resultState.resolution);
+        if (resultState?.kind === 'suppressed') return /*#__PURE__*/React.createElement("span", { className: "ig-search-chip ig-chip-suppressed" }, "🔒 Suppressed");
+        if (resultState?.kind === 'candidates') return /*#__PURE__*/React.createElement("span", { className: "ig-search-chip ig-chip-weak" }, resultState.candidates.length + " candidates");
+        if (resultState?.kind === 'no-match') return /*#__PURE__*/React.createElement("span", { className: "ig-search-chip ig-chip-weak" }, "No match");
+        if (searchFormat) return /*#__PURE__*/React.createElement("span", { className: "ig-search-chip ig-chip-" + searchFormat.state }, searchFormat.label);
+        // Empty state — show watchlist peek if any, else ⌘K hint
+        if (watchlist.length > 0) return /*#__PURE__*/React.createElement("span", {
+          className: "ig-watchlist-peek",
+          title: "Identifiers being watched — you'll be notified if they enter the graph"
+        }, "Watching · " + watchlist.length);
+        return /*#__PURE__*/React.createElement("span", { className: "ig-search-chip ig-chip-kbd" }, "⌘K");
+      })()
     ),
-    /*#__PURE__*/React.createElement("div", { className: "ig-search-hints" },
+    // Format hints row — hidden once we have a result to avoid visual noise
+    !resultState && /*#__PURE__*/React.createElement("div", { className: "ig-search-hints" },
       /*#__PURE__*/React.createElement("span", { className: "ig-search-hints-lbl" }, "Recognizes"),
       ['sha256','uid2','maid','cookie','lig'].map((t, i) => {
         const labels = { sha256:'SHA-256 email', uid2:'UID2 token', maid:'MAID / IDFA', cookie:'Cookie ID', lig:'LIG-XXXX' };
@@ -5249,6 +5553,111 @@ function IdentityGraph() {
           className: "ig-search-format" + (isActive ? ' active' : '')
         }, labels[t]);
       })
+    ),
+    // Candidates panel — ranked list, click to promote
+    resultState?.kind === 'candidates' && /*#__PURE__*/React.createElement("div", {
+      className: "ig-result-panel",
+      role: "region",
+      "aria-label": "Multiple matches"
+    },
+      /*#__PURE__*/React.createElement("div", { className: "ig-result-hdr" },
+        /*#__PURE__*/React.createElement("div", { className: "ig-result-ico amber" },
+          /*#__PURE__*/React.createElement("svg", { width: 14, height: 14, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2 },
+            /*#__PURE__*/React.createElement("path", { d: "M12 2L2 19h20L12 2z" }),
+            /*#__PURE__*/React.createElement("line", { x1: 12, y1: 9, x2: 12, y2: 13 }),
+            /*#__PURE__*/React.createElement("line", { x1: 12, y1: 17, x2: 12.01, y2: 17 })
+          )
+        ),
+        /*#__PURE__*/React.createElement("div", null,
+          /*#__PURE__*/React.createElement("div", { className: "ig-result-title" }, resultState.candidates.length + " possible matches"),
+          /*#__PURE__*/React.createElement("div", { className: "ig-result-sub" }, "Probabilistic — ↑↓ to navigate · Enter to select")
+        )
+      ),
+      /*#__PURE__*/React.createElement("div", {
+        className: "ig-cand-list",
+        role: "listbox",
+        "aria-activedescendant": "cand-" + kbFocusedCand
+      },
+        resultState.candidates.map((cand, i) => /*#__PURE__*/React.createElement("div", {
+          key: cand.customer.id,
+          id: "cand-" + i,
+          className: "ig-cand-row" + (i === 0 ? ' top' : '') + (i === kbFocusedCand ? ' kb-focused' : ''),
+          role: "option",
+          "aria-selected": i === kbFocusedCand,
+          onClick: () => promoteCandidate(cand)
+        },
+          /*#__PURE__*/React.createElement("div", { className: "ig-cand-chip" }, (cand.customer.id || '').slice(-2)),
+          /*#__PURE__*/React.createElement("div", { className: "ig-cand-id" },
+            cand.customer.id,
+            /*#__PURE__*/React.createElement("span", { className: "ig-cand-seg" }, "· ", cand.customer.segment || cand.customer.cluster || '—')
+          ),
+          /*#__PURE__*/React.createElement("div", { className: "ig-cand-conf" }, cand.confidence + "%")
+        ))
+      )
+    ),
+    // No-match watchlist CTA
+    resultState?.kind === 'no-match' && /*#__PURE__*/React.createElement("div", { className: "ig-result-panel no-match" },
+      /*#__PURE__*/React.createElement("div", { className: "ig-nomatch-body" },
+        /*#__PURE__*/React.createElement("div", { className: "ig-result-ico amber", style: { margin: '0 auto 10px' } },
+          /*#__PURE__*/React.createElement("svg", { width: 16, height: 16, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2 },
+            /*#__PURE__*/React.createElement("circle", { cx: 12, cy: 12, r: 10 }),
+            /*#__PURE__*/React.createElement("line", { x1: 12, y1: 8, x2: 12, y2: 12 }),
+            /*#__PURE__*/React.createElement("line", { x1: 12, y1: 16, x2: 12.01, y2: 16 })
+          )
+        ),
+        /*#__PURE__*/React.createElement("div", { className: "ig-nomatch-title" }, "This identifier does not resolve to any node in the current graph"),
+        /*#__PURE__*/React.createElement("div", { className: "ig-nomatch-sub" },
+          "Last 4: ", /*#__PURE__*/React.createElement("b", null, "…" + (resultState.input || '').slice(-4)),
+          " · Checked ", (totalNodes || liveCustomers.length), " nodes · 5 identifier types"
+        ),
+        /*#__PURE__*/React.createElement("button", {
+          className: "ig-watchlist-btn",
+          onClick: addToWatchlist
+        },
+          /*#__PURE__*/React.createElement("svg", { width: 12, height: 12, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2.2, strokeLinecap: "round" },
+            /*#__PURE__*/React.createElement("line", { x1: 12, y1: 5, x2: 12, y2: 19 }),
+            /*#__PURE__*/React.createElement("line", { x1: 5, y1: 12, x2: 19, y2: 12 })
+          ),
+          "Add to watchlist"
+        ),
+        /*#__PURE__*/React.createElement("div", { className: "ig-watchlist-note" },
+          "We'll notify you if this identifier enters your graph."
+        ),
+        watchlist.length > 0 && /*#__PURE__*/React.createElement("div", { className: "ig-watchlist-count" },
+          "Watchlist: " + watchlist.length + " identifier" + (watchlist.length === 1 ? '' : 's') + " tracked"
+        )
+      )
+    ),
+    // Suppressed match — P3 consent-as-node reinforcement
+    resultState?.kind === 'suppressed' && /*#__PURE__*/React.createElement("div", { className: "ig-result-panel suppressed" },
+      /*#__PURE__*/React.createElement("div", { className: "ig-result-hdr" },
+        /*#__PURE__*/React.createElement("div", { className: "ig-result-ico red" },
+          /*#__PURE__*/React.createElement("svg", { width: 14, height: 14, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2 },
+            /*#__PURE__*/React.createElement("rect", { x: 3, y: 11, width: 18, height: 11, rx: 2 }),
+            /*#__PURE__*/React.createElement("path", { d: "M7 11V7a5 5 0 0 1 10 0v4" })
+          )
+        ),
+        /*#__PURE__*/React.createElement("div", null,
+          /*#__PURE__*/React.createElement("div", { className: "ig-result-title" }, resultState.customer?.id || 'Match'),
+          /*#__PURE__*/React.createElement("div", { className: "ig-result-sub", style: { color: '#F87171' } }, "Match found — activation blocked")
+        )
+      ),
+      /*#__PURE__*/React.createElement("div", { className: "ig-sup-note" },
+        /*#__PURE__*/React.createElement("svg", { className: "ig-sup-note-icon", width: 14, height: 14, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2 },
+          /*#__PURE__*/React.createElement("rect", { x: 3, y: 11, width: 18, height: 11, rx: 2 }),
+          /*#__PURE__*/React.createElement("path", { d: "M7 11V7a5 5 0 0 1 10 0v4" })
+        ),
+        /*#__PURE__*/React.createElement("div", null,
+          /*#__PURE__*/React.createElement("div", { className: "ig-sup-note-t" }, "Consent node blocks activation"),
+          /*#__PURE__*/React.createElement("div", { className: "ig-sup-note-s" },
+            "This person has opted out of marketing (", resultState.reason || 'TCPA · CAN-SPAM',
+            "). Profile is visible for audit but cannot be added to any activation destination. Consent propagates automatically across all linked device nodes."
+          )
+        )
+      ),
+      /*#__PURE__*/React.createElement("div", { className: "ig-sup-footer" },
+        "P3 · Consent-as-node · First-class graph propagation"
+      )
     )
   ),
   /*#__PURE__*/React.createElement("div", {
