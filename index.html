@@ -4021,7 +4021,7 @@ VISUAL PANELS AVAILABLE (reference these in followUps when relevant):
 - "Reveler Consumer Mix" — demographics, lifestyle indices, US geographic breakdown
 - "Clean Room Attribution" — identity-resolved across owned, paid, walled-garden channels
 
-At least one followUp per response MUST be a specific visual CTA: "Want to see this in the [Chart Name]?" or "Should I pull up the [Chart Name]?" Use the exact chart names above. This is how the user navigates to visual analysis from the chat.`;
+NAVIGATION: When the user asks to "see", "pull up", "show", or "open" any chart, OR when your analysis clearly points to a specific visual, include a "navigate" field in your JSON. The "navigate" value must be one of these exact strings: "waterfall", "ltv_cac", "explorer_cohorts", "reveler_mix", "clean_room". Example: {"text": "...", "followUps": [...], "navigate": "waterfall"}. Do NOT include "navigate" on general analysis questions — only when a specific chart is directly relevant to what was just discussed. At least one followUp per response should reference a specific chart by name.`;
 
   } catch(e) {
     // Fallback to static if BQ unreachable
@@ -11826,35 +11826,65 @@ function MeasurementIntro({
     label: 'L1 · Attribution',
     action: () => onEnter()
   }];
+  const CHART_LABELS = {
+    waterfall: '📊 Open Channel Attribution Waterfall',
+    ltv_cac: '📈 Open Segment LTV vs CAC Map',
+    explorer_cohorts: '🎯 Open Explorer Micro-Cohorts',
+    reveler_mix: '🌍 Open Reveler Consumer Mix',
+    clean_room: '🔐 Open Clean Room Attribution',
+  };
+
   function MZIntroResultRenderer(data, onFollowUp) {
     if (!data) return null;
     const followUps = Array.isArray(data.followUps) ? data.followUps : [];
+    const navKey = data.navigate;
+    const navLabel = navKey ? CHART_LABELS[navKey] : null;
+    // Split followUps: visual CTAs navigate, others send as chat
     return /*#__PURE__*/React.createElement("div", { className: "bubble", style: { flex: 1 } },
       /*#__PURE__*/React.createElement("div", {
         style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 10, padding: '16px 18px', boxShadow: 'var(--shadow)' }
       },
         /*#__PURE__*/React.createElement("div", {
-          style: { fontSize: 15, color: 'var(--text)', lineHeight: 1.7, marginBottom: followUps.length ? 14 : 0 }
+          style: { fontSize: 15, color: 'var(--text)', lineHeight: 1.7, marginBottom: (followUps.length || navLabel) ? 14 : 0 }
         }, data.text || JSON.stringify(data)),
-        followUps.length > 0 && /*#__PURE__*/React.createElement("div", {
+        (followUps.length > 0 || navLabel) && /*#__PURE__*/React.createElement("div", {
           style: { display: 'flex', flexWrap: 'wrap', gap: 8 }
-        }, followUps.map((q, i) =>
-          /*#__PURE__*/React.createElement("button", {
-            key: i,
-            onClick: () => onFollowUp && onFollowUp(q),
+        },
+          followUps.map((q, i) =>
+            /*#__PURE__*/React.createElement("button", {
+              key: i,
+              onClick: () => onFollowUp && onFollowUp(q),
+              style: {
+                padding: '6px 14px',
+                background: 'rgba(99,102,241,0.1)',
+                color: 'var(--indigo)',
+                border: '1px solid rgba(99,102,241,0.3)',
+                borderRadius: 20,
+                fontSize: 12,
+                fontWeight: 500,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap'
+              }
+            }, q)
+          ),
+          navLabel && /*#__PURE__*/React.createElement("button", {
+            onClick: () => onEnter(),
             style: {
-              padding: '6px 14px',
-              background: 'rgba(99,102,241,0.1)',
-              color: 'var(--indigo)',
-              border: '1px solid rgba(99,102,241,0.3)',
+              padding: '7px 16px',
+              background: 'rgba(6,182,212,0.15)',
+              color: 'var(--cyan)',
+              border: '1px solid rgba(6,182,212,0.4)',
               borderRadius: 20,
               fontSize: 12,
-              fontWeight: 500,
+              fontWeight: 700,
               cursor: 'pointer',
-              whiteSpace: 'nowrap'
+              whiteSpace: 'nowrap',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4
             }
-          }, q)
-        ))
+          }, navLabel)
+        )
       )
     );
   }
