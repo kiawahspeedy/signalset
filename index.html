@@ -332,6 +332,90 @@ body {
   pointer-events: none; transition: opacity .5s;
 }
 
+/* ── IDENTITY SEARCH (Phase 3.5) ── */
+.ig-search-wrap {
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--bdr);
+}
+.ig-search-row {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(9,9,26,.55);
+  border: 1px solid rgba(99,102,241,.22);
+  border-radius: 10px;
+  padding: 10px 14px;
+  transition: border-color .15s, box-shadow .15s;
+}
+.ig-search-row:focus-within {
+  border-color: rgba(99,102,241,.55);
+  box-shadow: 0 0 0 3px rgba(99,102,241,.1);
+}
+.ig-search-row.fmt-valid {
+  border-color: rgba(6,182,212,.5);
+  box-shadow: 0 0 0 3px rgba(6,182,212,.08);
+}
+.ig-search-row.fmt-weak {
+  border-color: rgba(245,158,11,.4);
+}
+.ig-search-row.fmt-unknown {
+  border-color: rgba(148,163,184,.25);
+}
+.ig-search-icon {
+  color: var(--slate-lt); flex-shrink: 0;
+  transition: color .15s;
+}
+.ig-search-row:focus-within .ig-search-icon,
+.ig-search-row.fmt-valid .ig-search-icon { color: var(--cyan-dim); }
+.ig-search-input {
+  flex: 1; background: transparent; border: none; outline: none;
+  font-family: var(--font-b); font-size: 13px; color: var(--text); font-weight: 500;
+}
+.ig-search-input::placeholder { color: var(--slate-lt); }
+.ig-search-input::-webkit-search-cancel-button { display: none; }
+.ig-search-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 700; font-family: var(--font-m);
+  padding: 3px 9px; border-radius: 6px; white-space: nowrap; flex-shrink: 0;
+  letter-spacing: .04em;
+}
+.ig-chip-valid {
+  background: rgba(6,182,212,.14); color: #67E8F9;
+  border: 1px solid rgba(6,182,212,.3);
+}
+.ig-chip-weak {
+  background: rgba(245,158,11,.12); color: var(--amber);
+  border: 1px solid rgba(245,158,11,.3);
+}
+.ig-chip-unknown {
+  background: rgba(148,163,184,.1); color: var(--slate);
+  border: 1px solid rgba(148,163,184,.2);
+}
+.ig-chip-kbd {
+  background: rgba(99,102,241,.12); color: var(--cyan-dim);
+  border: 1px solid rgba(99,102,241,.25);
+}
+.ig-search-hints {
+  display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; padding-left: 4px;
+  align-items: center;
+}
+.ig-search-hints-lbl {
+  font-size: 9px; font-weight: 700; color: var(--slate-lt);
+  text-transform: uppercase; letter-spacing: .1em; font-family: var(--font-m);
+  margin-right: 4px;
+}
+.ig-search-format {
+  font-size: 10px; font-weight: 600; font-family: var(--font-m);
+  padding: 3px 8px; border-radius: 5px;
+  background: rgba(99,102,241,.05);
+  border: 1px solid rgba(99,102,241,.12);
+  color: var(--slate);
+  cursor: default;
+}
+.ig-search-format.active {
+  background: rgba(6,182,212,.1);
+  border-color: rgba(6,182,212,.28);
+  color: #67E8F9;
+}
+
 /* ── MARKETING DESK SCREEN ── */
 .desk-wrap { display: flex; flex: 1; min-height: 0; overflow: hidden; }
 .desk-sidebar {
@@ -4115,8 +4199,8 @@ async function fetchNeo4jGraph() {
     const totalDevices = (detDev || 0) + (probDev || 0);
     const segDisplay = SEG_DISPLAY[seg] || seg;
     const shortId = pid ? 'LIG-' + pid.slice(-4).toUpperCase() : 'LIG-????';
-    const SEG_INITIALS = {'Explorers':'EX','Revelers':'RE','Luxuriates':'LU','Bask_Chill':'BC','Deal_Seekers':'DS'};
-    const initials = SEG_INITIALS[seg] || (seg ? seg.slice(0,2).toUpperCase() : 'LG');
+    // Per-person initials: last 2 chars of shortId — matches the LIG-XXXX on the detail card
+    const initials = shortId.slice(-2);
     const SEG_PERSONA = {'Explorers':'Premium Achiever','Revelers':'Experiential Reveler','Luxuriates':'Luxury Seeker','Bask_Chill':'Bask & Chill Loyalist','Deal_Seekers':'Deal Maximizer'};
     const persona = SEG_PERSONA[seg] || segDisplay;
     return {
@@ -4160,6 +4244,27 @@ function useNeo4jGraph() {
   return { graphData, loading, error };
 }
 
+// ── IDENTITY SEARCH · Format Detection (Phase 3.5) ──────────────────
+// Returns { type, label, state } where state ∈ 'valid' | 'weak' | 'unknown' | null
+function detectIdentityFormat(input) {
+  const s = (input || '').trim();
+  if (!s) return null;
+  // SHA-256 hash: exactly 64 hex chars
+  if (/^[a-f0-9]{64}$/i.test(s)) return { type: 'sha256', label: 'SHA-256 ✓', state: 'valid' };
+  // UID2 token — Unified ID 2.0 format: prefix "UID2-" or base64-ish 36+ chars
+  if (/^UID2-/i.test(s)) return { type: 'uid2', label: 'UID2 ✓', state: 'valid' };
+  if (/^[A-Za-z0-9+/=_-]{40,88}$/.test(s) && /[+/=]/.test(s)) return { type: 'uid2', label: 'UID2 ✓', state: 'valid' };
+  // MAID / IDFA / GAID — standard UUID format
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s)) return { type: 'maid', label: 'MAID / IDFA ✓', state: 'valid' };
+  // LIG-XXXX (internal) — prefixed or raw 4-char hex
+  if (/^LIG-[A-F0-9]{4}$/i.test(s)) return { type: 'lig', label: 'LIG-ID ✓', state: 'valid' };
+  if (/^[A-F0-9]{4}$/i.test(s)) return { type: 'lig', label: 'LIG-ID (short)', state: 'weak' };
+  // Cookie ID — heuristic: 16+ chars alphanumeric with typical cookie punctuation
+  if (s.length >= 16 && /^[A-Za-z0-9_.\-]+$/.test(s)) return { type: 'cookie', label: 'Cookie ID', state: 'weak' };
+  // Too short or unrecognized
+  return { type: 'unknown', label: 'Format unknown', state: 'unknown' };
+}
+
 function IdentityGraph() {
   const svgRef = useRef(null);
   const { graphData, loading: neo4jLoading, error: neo4jError } = useNeo4jGraph();
@@ -4173,9 +4278,28 @@ function IdentityGraph() {
   const [showListDropdown, setShowListDropdown] = useState(false);
   const [suppressed, setSuppressed] = useState(false);
   const [addedToList, setAddedToList] = useState('');
+  // Phase 3.5 — Identity Search state (Unit A: input + format detection only)
+  const [searchInput, setSearchInput] = useState('');
+  const searchInputRef = useRef(null);
+  const searchFormat = detectIdentityFormat(searchInput);
   const simRef = useRef(null);
   const nodesRef = useRef([]);
   const svgSelRef = useRef(null);
+  // ⌘K / Ctrl+K focuses the search input from anywhere on the Identity screen
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+      if (e.key === 'Escape' && document.activeElement === searchInputRef.current) {
+        setSearchInput('');
+        searchInputRef.current?.blur();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
   // Update selected when live Neo4j data arrives — keep same index if possible
   useEffect(() => {
     if (graphData?.customers?.length > 0) {
@@ -4938,7 +5062,51 @@ function IdentityGraph() {
     className: "panel-title"
   }, (totalNodes > 0 ? ('Customer Graph — ' + totalNodes + ' Nodes · ' + Object.keys(segCounts).length + ' Segments') : 'Customer Graph — 8 Nodes · 3 Segments')), /*#__PURE__*/React.createElement("span", {
     className: "badge badge-live"
-  }, (graphData?.customers?.length > 0 ? 'Neo4j · Live' : 'Live · <500ms P95'))), /*#__PURE__*/React.createElement("div", {
+  }, (graphData?.customers?.length > 0 ? 'Neo4j · Live' : 'Live · <500ms P95'))),
+  /* Phase 3.5 · Unit A — search input + format detection (matching logic lands in Unit B) */
+  /*#__PURE__*/React.createElement("div", { className: "ig-search-wrap" },
+    /*#__PURE__*/React.createElement("div", {
+      className: "ig-search-row" + (searchFormat ? (' fmt-' + searchFormat.state) : '')
+    },
+      /*#__PURE__*/React.createElement("svg", {
+        className: "ig-search-icon", width: 14, height: 14, viewBox: "0 0 24 24",
+        fill: "none", stroke: "currentColor", strokeWidth: 2
+      },
+        /*#__PURE__*/React.createElement("circle", { cx: 11, cy: 11, r: 8 }),
+        /*#__PURE__*/React.createElement("line", { x1: 21, y1: 21, x2: 16.65, y2: 16.65 })
+      ),
+      /*#__PURE__*/React.createElement("input", {
+        ref: searchInputRef,
+        type: "search",
+        className: "ig-search-input",
+        placeholder: "Enter hashed email, UID2, device ID, or LIG-XXXX…",
+        value: searchInput,
+        onChange: (e) => setSearchInput(e.target.value),
+        spellCheck: false,
+        autoComplete: "off",
+        "aria-label": "Search identity graph"
+      }),
+      searchFormat
+        ? /*#__PURE__*/React.createElement("span", {
+            className: "ig-search-chip ig-chip-" + searchFormat.state
+          }, searchFormat.label)
+        : /*#__PURE__*/React.createElement("span", {
+            className: "ig-search-chip ig-chip-kbd"
+          }, "⌘K")
+    ),
+    /*#__PURE__*/React.createElement("div", { className: "ig-search-hints" },
+      /*#__PURE__*/React.createElement("span", { className: "ig-search-hints-lbl" }, "Recognizes"),
+      ['sha256','uid2','maid','cookie','lig'].map((t, i) => {
+        const labels = { sha256:'SHA-256 email', uid2:'UID2 token', maid:'MAID / IDFA', cookie:'Cookie ID', lig:'LIG-XXXX' };
+        const isActive = searchFormat && searchFormat.type === t;
+        return /*#__PURE__*/React.createElement("span", {
+          key: t,
+          className: "ig-search-format" + (isActive ? ' active' : '')
+        }, labels[t]);
+      })
+    )
+  ),
+  /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'relative'
     }
