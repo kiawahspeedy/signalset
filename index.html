@@ -1007,17 +1007,17 @@ body {
 .home-agent-intro { padding: 16px 18px; background: linear-gradient(135deg, rgba(0,180,230,.06), rgba(5,150,105,.04)); border: 1px solid rgba(0,180,230,.2); border-radius: 10px; margin-bottom: 18px; }
 .home-chat-wrap { height: 420px; display: flex; flex-direction: column; border: 1px solid rgba(99,102,241,.28); border-radius: 10px; overflow: visible; background: var(--card); box-shadow: 0 0 0 1px rgba(99,102,241,.08), 0 8px 32px rgba(0,0,0,.4); }
 .mz-intro-wrap { display: grid; grid-template-columns: 7fr 3fr; min-height: calc(100vh - 56px); }
-.mz-intro-left { padding: 32px 36px; display: flex; flex-direction: column; border-right: 1px solid var(--bdr); }
+.mz-intro-left { padding: 32px 36px; display: flex; flex-direction: column; flex: 1; border-right: 1px solid var(--bdr); }
 .mz-intro-right { padding: 24px; background: var(--card-alt); display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
 .mz-jump-card { background: var(--card); border: 1px solid var(--bdr); border-radius: 10px; padding: 14px 16px; cursor: pointer; transition: all .18s; box-shadow: var(--shadow); }
 .mz-jump-card:hover { border-color: var(--cyan); box-shadow: 0 4px 16px rgba(0,180,230,.12); }
 .mz-jump-card-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
 .mz-jump-card-desc { font-size: 12px; color: var(--slate); }
 .mz-jump-card-badge { margin-top: 8px; display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: var(--cyan-dim); }
-.camp-hub-wrap { min-height: calc(100vh - 62px); background: var(--bg); }
+.camp-hub-wrap { display: grid; grid-template-columns: 7fr 3fr; min-height: calc(100vh - 62px); background: var(--bg); }
 .camp-hub-hero { padding: 36px 40px 32px; background: linear-gradient(135deg, var(--navy) 0%, #162D4F 100%); color: #fff; border-bottom: 3px solid rgba(0,180,230,0.2); }
 .camp-hub-body { display: grid; grid-template-columns: 7fr 3fr; min-height: calc(100vh - 56px - 130px); }
-.camp-hub-left { padding: 28px 32px; display: flex; flex-direction: column; border-right: 1px solid var(--bdr); }
+.camp-hub-left { padding: 28px 32px; display: flex; flex-direction: column; flex: 1; border-right: 1px solid var(--bdr); }
 .camp-hub-right { padding: 20px; background: var(--card-alt); display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
 .camp-tool-card { background: var(--card); border: 1.5px solid var(--bdr); border-radius: 10px; padding: 14px 16px; cursor: pointer; transition: all .18s; box-shadow: var(--shadow); }
 .camp-tool-card:hover { border-color: var(--cyan); background: rgba(0,180,230,.03); }
@@ -4012,7 +4012,16 @@ MTA PATH DATA: ${topPaths}
 
 ATTRIBUTION METHODOLOGY: Owned channels (Email, Push) = deterministic hashed identity, 100% confidence. Paid channels (Paid Search, Display, CTV) = UID2 / identity-resolved, 91–98% confidence. Walled garden (Social/Clean Room) = clean room cohort lift model, 70–74% confidence — no individual-level attribution available. When asked about walled garden or Meta/social attribution, always note the confidence delta.
 
-KEY RULES: Always cite specific BQ numbers above. If asked about MTA weights, rank channels by mta_w value. If asked about walled garden, always note the confidence limitation. Reference specific segment names and LTV/CAC ratios. Never say "I don't have access to" — use the data above.`;
+KEY RULES: Always cite specific BQ numbers above. If asked about MTA weights, rank channels by mta_w value. If asked about walled garden, always note the confidence limitation. Reference specific segment names and LTV/CAC ratios. Never say "I don't have access to" — use the data above.
+
+VISUAL PANELS AVAILABLE (reference these in followUps when relevant):
+- "Segment LTV vs CAC Map" — bubble chart plotting all 5 segments on LTV vs CAC axes
+- "Channel Attribution Waterfall" — owned vs paid vs clean room across 6 channels, 9,120 conversions
+- "Explorer Micro-Cohorts" — 12 sub-cohorts ranked by LTV/CAC efficiency
+- "Reveler Consumer Mix" — demographics, lifestyle indices, US geographic breakdown
+- "Clean Room Attribution" — identity-resolved across owned, paid, walled-garden channels
+
+At least one followUp per response MUST be a specific visual CTA: "Want to see this in the [Chart Name]?" or "Should I pull up the [Chart Name]?" Use the exact chart names above. This is how the user navigates to visual analysis from the chat.`;
 
   } catch(e) {
     // Fallback to static if BQ unreachable
@@ -7356,7 +7365,8 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
     }
   }, "AI")), /*#__PURE__*/React.createElement("div", {
     style: {
-      height: 460,
+      flex: 1,
+      minHeight: 0,
       display: 'flex',
       flexDirection: 'column',
       border: '1px solid var(--bdr)',
@@ -11775,7 +11785,8 @@ function MeasurementIntro({
   onEnter,
   setDrillLevel,
   setDrillSegment,
-  liveMzSys
+  liveMzSys,
+  liveCohorts
 }) {
   const MZ_INTRO_SAMPLES = ['Which segment should I prioritize for credit card acquisition?', 'Compare Explorers vs Revelers for LTV/CAC efficiency', 'What does the walled garden attribution tell us about Meta?', 'Show me propensity scores across all five behavioral segments'];
   const JUMP_CARDS = [{
@@ -11906,7 +11917,8 @@ function MeasurementIntro({
     }
   }, "AI")), /*#__PURE__*/React.createElement("div", {
     style: {
-      height: 460,
+      flex: 1,
+      minHeight: 0,
       display: 'flex',
       flexDirection: 'column',
       border: '1px solid var(--bdr)',
@@ -12324,7 +12336,8 @@ function MeasurementZone({
       onEnter: () => { setMzIntro(false); window.scrollTo(0,0); },
       setDrillLevel: setDrillLevel,
       setDrillSegment: setDrillSegment,
-      liveMzSys: liveMzSys
+      liveMzSys: liveMzSys,
+      liveCohorts: liveCohorts
     }));
   }
   if (drillLevel === 1 && drillSegment) {
@@ -13093,7 +13106,8 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     }
   }, "AI")), /*#__PURE__*/React.createElement("div", {
     style: {
-      height: 460,
+      flex: 1,
+      minHeight: 0,
       display: 'flex',
       flexDirection: 'column',
       border: '1px solid var(--bdr)',
@@ -13491,7 +13505,8 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     }
   }, "AI")), /*#__PURE__*/React.createElement("div", {
     style: {
-      height: 460,
+      flex: 1,
+      minHeight: 0,
       display: 'flex',
       flexDirection: 'column',
       border: '1px solid var(--bdr)',
@@ -13767,7 +13782,8 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     className: "badge badge-cyan"
   }, "AI")), /*#__PURE__*/React.createElement("div", {
     style: {
-      height: 460,
+      flex: 1,
+      minHeight: 0,
       display: 'flex',
       flexDirection: 'column',
       overflow: 'hidden'
