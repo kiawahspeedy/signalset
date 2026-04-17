@@ -5373,25 +5373,36 @@ function CreativeBuilderChat({ onTriggerBuilder }) {
       });
       const data = await res.json();
       const raw = data.content?.[0]?.text || '';
-      setMsgs(m => m.slice(0, -1).concat({ role: 'assistant', content: { text: raw } }));
-      if (raw.toLowerCase().includes('ready to build your creative')) {
-        setBuilderReady(true);
-        const ctx = {};
-        const fmtMatch = raw.match(/Format[:\s]+([^\n✅]+)/i);
-        const angMatch = raw.match(/angle[:\s]+([^\n✅]+)/i);
-        if (fmtMatch) ctx.format = fmtMatch[1].trim();
-        if (angMatch) ctx.angle = angMatch[1].trim();
-        setBuilderContext(p => ({ ...p, ...ctx }));
+      let parsed;
+      try { parsed = JSON.parse(raw.replace(/```json|```/g, '').trim()); } catch(e) { parsed = { text: raw || 'Something went wrong — please try again.' }; }
+      if (typeof parsed === 'string') parsed = { text: parsed };
+      if (parsed.beats && Array.isArray(parsed.beats) && parsed.beats.length) {
+        setMsgs(m => m.slice(0, -1));
+        parsed.beats.forEach((beat, i) => {
+          setTimeout(() => {
+            const isLast = i === parsed.beats.length - 1;
+            const content = isLast && parsed.options?.length ? { text: beat, options: parsed.options } : { text: beat };
+            setMsgs(m => [...m, { role: 'assistant', content: content }]);
+          }, i * 900);
+        });
+        setTimeout(() => setLoading(false), (parsed.beats.length - 1) * 900 + 100);
+      } else {
+        setMsgs(m => m.slice(0, -1).concat({ role: 'assistant', content: parsed }));
+        if ((parsed.text||'').toLowerCase().includes('ready to build your creative')) {
+          setBuilderReady(true);
+          const ctx = {};
+          const fmtMatch = (parsed.text||'').match(/Format[^:]*:\s*(.+)/i);
+          const angMatch = (parsed.text||'').match(/angle[^:]*:\s*(.+)/i);
+          if (fmtMatch) ctx.format = fmtMatch[1].trim();
+          if (angMatch) ctx.angle = angMatch[1].trim();
+          setBuilderContext(p => ({ ...p, ...ctx }));
+        }
+        setLoading(false);
       }
     } catch (e) {
-      let mock = getMockCreativeResponse(currentHistory, q);
-      if (typeof mock === 'string') mock = { text: mock };
-      setMsgs(m => m.slice(0, -1).concat([{ role: 'assistant', content: mock }]));
-      if ((mock.text||'').toLowerCase().includes('ready to build your creative')) {
-        setBuilderReady(true);
-      }
+      setMsgs(m => m.slice(0, -1).concat([{ role: 'assistant', content: { text: 'Something went wrong — please try again.' } }]));
+      setLoading(false);
     }
-    setLoading(false);
   }, [input, loading, msgs]);
 
   const renderPills = (options, sendFn) => {
@@ -5428,14 +5439,24 @@ function CreativeBuilderChat({ onTriggerBuilder }) {
     ),
     React.createElement('div', { style: { flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 12 } },
       msgs.length === 0 && React.createElement('div', {
-        style: { display: 'flex', flexDirection: 'column', gap: 9, marginTop: 8, padding: '0 4px' }
+        style: { display: 'flex', flexDirection: 'column', gap: 12, marginTop: 8, padding: '0 4px' }
       },
-        React.createElement('div', { style: { fontSize: 13, color: 'var(--slate)', fontWeight: 500, marginBottom: 4 } }, 'Start a conversation or try:'),
-        CREATIVE_SAMPLES.map((s, i) => React.createElement('button', {
-          key: i,
-          style: { textAlign: 'left', background: 'rgba(99,102,241,.1)', border: '1px solid rgba(99,102,241,.3)', borderLeft: '3px solid var(--cyan)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--text)', cursor: 'pointer', lineHeight: 1.45, fontFamily: 'inherit', width: '100%' },
-          onClick: () => send(s)
-        }, s))
+        React.createElement('div', { style: { fontSize: 14, color: 'var(--text)', fontWeight: 600, marginBottom: 4 } }, "What's your creative objective?"),
+        React.createElement('div', { style: { fontSize: 12, color: 'var(--slate)', marginBottom: 8 } }, 'Select one to get started — or type your goal below.'),
+        React.createElement('div', { style: { display: 'flex', flexWrap: 'wrap', gap: 8 } },
+          ['CVR Lift', 'Improve ROAS', 'Boost VTR', 'Increase CTR'].map(function(opt) {
+            return React.createElement('button', {
+              key: opt,
+              style: { padding: '9px 18px', borderRadius: 22, border: '1.5px solid rgba(99,102,241,.5)', background: 'rgba(99,102,241,.1)', color: 'var(--indigo, #6366f1)', fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all .15s', letterSpacing: '.01em' },
+              onClick: () => send(opt)
+            }, opt);
+          }),
+          React.createElement('button', {
+            key: 'other',
+            style: { padding: '9px 18px', borderRadius: 22, border: '1.5px solid rgba(148,163,184,.4)', background: 'rgba(148,163,184,.08)', color: 'var(--slate)', fontSize: 13, fontWeight: 500, cursor: 'pointer', transition: 'all .15s' },
+            onClick: () => { document.querySelector('.chat-wrap textarea') && document.querySelector('.chat-wrap textarea').focus(); }
+          }, 'Something else →')
+        )
       ),
       msgs.map((m, i) => {
         const isUser = m.role === 'user';
@@ -5921,25 +5942,26 @@ function CreativeBuilderLightbox({ open, onClose, context, onSave }) {
 const AUDIENCE_BUILDER_SYS = `You are the Smart Audience Intelligence Agent inside The Marketing Desk, built on the Living Identity Graph (LIG) at a major US financial institution. You guide marketers through building high-precision audience segments conversationally.
 
 CONVERSATION FLOW — follow strictly, one question per turn:
-1. If the user describes an audience need, acknowledge and ask: what is the primary conversion goal for this segment? (e.g., new card acquisition, product upgrade, spend activation, reactivation)
-2. Once goal is given, say you are querying the LIG identity graph. In the SAME message, surface a structured signal analysis: estimated universe size, top 3 SHAP signals, suppression count, predicted conversion likelihood. Be specific with data.
-3. Ask one refinement question: geographic focus, income tier, recency window, or channel preference?
-4. After refinement, ask: any specific suppression rules beyond standard (current cardholders, recent declines)?
-5. After suppressions, summarize the full segment spec and end with exactly: "Ready to build this audience? Click **Build Audience** below."
+1. If the user describes an audience need, acknowledge and ask: what is the primary conversion goal for this segment? (e.g., new card acquisition, product upgrade, spend activation, reactivation). Return single text + options.
+2. Once goal is given, return a BEATS response (see format below) — 5 beats that show the LIG analysis arriving sequentially: (a) "On it — querying the Living Identity Graph across 221M resolved nodes for [goal]…", (b) "📊 Universe identified: [X] qualified records after deduplication — [Y] excluded as existing cardholders or flagged accounts.", (c) "🔍 Top SHAP signals: [Signal 1] (weight [N1]), [Signal 2] (weight [N2]), [Signal 3] (weight [N3]).", (d) "🚫 Suppressed [N] records — [reason list].", (e) "✅ Predicted CVR [X]% vs [Y]% open pool · Identity match [Z]% deterministic · [Ask geographic or income refinement question with options]". The last beat includes the refinement question.
+3. After refinement, ask suppression rules. Return single text + options.
+4. After suppressions, summarize full spec and end with exactly: "Ready to build this audience? Click **Build Audience** below." Return single text, no options.
 
 RULES:
-- Keep responses to 2-4 short paragraphs. Be crisp and data-forward.
-- Always include specific mock numbers: universe size (12K-180K), conversion likelihood (60-92%), match rate (88-96%).
-- When surfacing LIG analysis, always include: universe size, top SHAP signals (with weights), suppression count, predicted CVR.
+- Universe sizes: 12K–180K. CVR: 60–92%. Match rate: 88–96%. SHAP weights: 55–91.
 - Never ask more than one question per turn.
-- When you reach step 5, always end with exactly: "Ready to build this audience? Click **Build Audience** below."
-- You understand Fair Lending, ECOA, UDAAP, GLBA, TCPA/CAN-SPAM, and GPC requirements.
+- End step 4 with exactly: "Ready to build this audience? Click **Build Audience** below."
+- You understand Fair Lending, ECOA, UDAAP, GLBA, TCPA/CAN-SPAM, GPC.
 
-RESPONSE FORMAT:
-Always return valid JSON. When presenting multiple choices for the user to select, include them in the options array so they appear as clickable pill buttons in the UI.
-{"text": "Your response here with **bold** supported", "options": ["Choice 1", "Choice 2", "Choice 3"]}
-When NOT presenting choices (e.g., surfacing LIG analysis, final summary), omit the options field:
-{"text": "Your response here"}`;
+RESPONSE FORMAT — two modes:
+
+MODE 1 — Single message (questions, refinements, summaries):
+{"text": "Your response with **bold** supported", "options": ["Choice 1", "Choice 2"]}
+Omit options when not presenting choices.
+
+MODE 2 — Beats (LIG analysis turn only — step 2):
+{"beats": ["Beat 1 text", "Beat 2 text", "Beat 3 text", "Beat 4 text", "Beat 5 text"], "options": ["Top 10 DMAs", "National reach", "Northeast corridor", "Sun Belt + Southeast"]}
+Each beat is a separate bubble that appears sequentially. Put refinement options in the top-level options field — they appear after the last beat lands. Return ONLY valid JSON, no markdown.`;
 
 // ═══════════════════════════════════════════════════════════════
 // JOURNEY BUILDER SYSTEM PROMPT (conversational + path optimization)
@@ -5947,32 +5969,34 @@ When NOT presenting choices (e.g., surfacing LIG analysis, final summary), omit 
 const JOURNEY_BUILDER_SYS = `You are the Smart Triggers Intelligence Agent inside The Marketing Desk for a major US financial institution. You help marketers design optimal conversion journeys conversationally, with a focus on path optimization.
 
 PATH OPTIMIZATION — you understand and respond to these intent signals:
-- "least number of steps" / "fewest touchpoints" → prioritize 2-3 channel journeys, skip redundant mid-funnel
-- "fastest path" / "quickest conversion" → compress timelines, front-load high-intent channels (Push first, then Email)
-- "shortest duration" → collapse journey to 7-10 days max, heavy early cadence
-- "highest ROI / ROAS" → owned-channel first (Email/Push), paid search only for warm signals, suppress paid for high-propensity
+- "least number of steps" / "fewest touchpoints" → prioritize 2-3 channel journeys
+- "fastest path" / "quickest conversion" → compress timelines, front-load high-intent channels
+- "shortest duration" → collapse journey to 7-10 days max
+- "highest ROI / ROAS" → owned-channel first (Email/Push), paid search only for warm signals
 - "highest CVR" → MTA-optimized sequencing, Email → retargeting display → Push re-engage
 
 CONVERSATION FLOW — one question per turn:
-1. If user describes a journey or optimization goal (including any path optimization request), acknowledge the optimization target and ask: which audience segment is this for? (or confirm if already stated)
-2. Once segment is known, say you are running 90-day path analysis across this segment. In the SAME message, show a structured comparison: 2-3 journey options ranked by the user's stated metric (e.g., fastest, fewest steps, highest ROAS), with projected CVR, duration, and channel count for each.
-3. Ask: which path do you want to build, or should I combine elements from multiple options?
-4. Once path is confirmed, ask: response window preference and any suppression rules (existing cardholders, recent applicants, opted-out channels)?
-5. Summarize the full trigger spec and end with exactly: "Ready to build this journey? Click **Build Trigger** below."
+1. Acknowledge optimization target and ask which audience segment this is for. Return single text + options.
+2. Once segment is known, return a BEATS response — 4 beats showing path analysis arriving: (a) "Running 90-day path analysis across [segment] — scanning [N]K conversion sequences…", (b) "🥇 **Option A — [label]:** [Channel sequence] · CVR [X]% · ROAS [Y]× · [Z]-day · [step count] steps", (c) "🥈 **Option B — [label]:** [Channel sequence] · CVR [X]% · ROAS [Y]× · [Z]-day · [step count] steps", (d) "🥉 **Option C — [label]:** [Channel sequence] · CVR [X]% · ROAS [Y]× · [Z]-day · [step count] steps · Which path, or combine elements?". Each option beat includes its full details. Vary options meaningfully by the stated metric.
+3. Ask: response window preference and suppression rules. Return single text + options.
+4. Summarize full spec and end with exactly: "Ready to build this journey? Click **Build Trigger** below." Return single text, no options.
 
 RULES:
-- Always present multiple optimized paths in step 2, ranked by the user's stated metric.
-- Include specific mock data: CVR projections (2.8-5.2%), ROAS (3.4x-5.1x), duration (7-28 days), steps (2-5 channels).
-- When user asks for "fastest" or "fewest steps", visually lead with the most aggressive option.
+- CVR: 2.8–5.2%. ROAS: 3.4–5.1×. Duration: 7–28 days. Steps: 2–5.
+- Rank options by the user's stated optimization metric.
 - Never ask more than one question per turn.
-- End step 5 with exactly: "Ready to build this journey? Click **Build Trigger** below."
-- You understand TCPA, CAN-SPAM, ECOA, UDAAP, Fair Lending, GPC signal compliance.
+- End step 4 with exactly: "Ready to build this journey? Click **Build Trigger** below."
+- You understand TCPA, CAN-SPAM, ECOA, UDAAP, Fair Lending, GPC.
 
-RESPONSE FORMAT:
-Always return valid JSON. When presenting multiple choices or asking the user to select between options, include them in the options array so they appear as clickable pill buttons.
-{"text": "Your response here with **bold** supported", "options": ["Choice 1", "Choice 2", "Choice 3"]}
-When NOT presenting choices (e.g., surfacing path analysis, final summary), omit options:
-{"text": "Your response here"}`;
+RESPONSE FORMAT — two modes:
+
+MODE 1 — Single message (questions, refinements, summaries):
+{"text": "Your response with **bold** supported", "options": ["Choice 1", "Choice 2"]}
+Omit options when not presenting choices.
+
+MODE 2 — Beats (path analysis turn only — step 2):
+{"beats": ["Beat 1", "Beat 2", "Beat 3", "Beat 4"], "options": ["Option A", "Option B", "Option C", "Combine A + B"]}
+Each beat is a separate bubble appearing sequentially. Options appear after the last beat. Return ONLY valid JSON.`;
 
 // ═══════════════════════════════════════════════════════════════
 // AUDIENCE BUILDER CHAT COMPONENT
@@ -6111,18 +6135,27 @@ function AudienceBuilderChat({ onTriggerBuilder }) {
           messages: buildHistory(history, q)
         })
       }).then(function(r) { return r.json(); }).then(function(data) {
-        var raw = (data.content && data.content[0] && data.content[0].text) || getMock(history, q);
+        var raw = (data.content && data.content[0] && data.content[0].text) || '';
         var parsed;
-        try { parsed = JSON.parse(raw.replace(/```json|```/g, '').trim()); } catch(e) { parsed = { text: raw }; }
+        try { parsed = JSON.parse(raw.replace(/```json|```/g, '').trim()); } catch(e) { parsed = { text: raw || 'Something went wrong — please try again.' }; }
         if (typeof parsed === 'string') parsed = { text: parsed };
-        setMsgs(function(m) { return m.slice(0, -1).concat([{ role: 'assistant', content: parsed }]); });
-        if ((parsed.text||'').toLowerCase().includes('build audience')) setBuilderReady(true);
-        setLoading(false);
+        if (parsed.beats && Array.isArray(parsed.beats) && parsed.beats.length) {
+          setMsgs(function(m) { return m.slice(0, -1); });
+          parsed.beats.forEach(function(beat, i) {
+            setTimeout(function() {
+              var isLast = i === parsed.beats.length - 1;
+              var content = isLast && parsed.options && parsed.options.length ? { text: beat, options: parsed.options } : { text: beat };
+              setMsgs(function(m) { return m.concat([{ role: 'assistant', content: content }]); });
+            }, i * 900);
+          });
+          setTimeout(function() { setLoading(false); }, (parsed.beats.length - 1) * 900 + 100);
+        } else {
+          setMsgs(function(m) { return m.slice(0, -1).concat([{ role: 'assistant', content: parsed }]); });
+          if ((parsed.text||'').toLowerCase().includes('build audience')) setBuilderReady(true);
+          setLoading(false);
+        }
       }).catch(function() {
-        var mock = getMock(history, q);
-        if (typeof mock === 'string') mock = { text: mock };
-        setMsgs(function(m) { return m.slice(0, -1).concat([{ role: 'assistant', content: mock }]); });
-        if ((mock.text||'').toLowerCase().includes('build audience')) setBuilderReady(true);
+        setMsgs(function(m) { return m.slice(0, -1).concat([{ role: 'assistant', content: { text: 'Something went wrong — please try again.' } }]); });
         setLoading(false);
       });
     }, 900 + Math.random() * 600);
@@ -6295,18 +6328,27 @@ function JourneyBuilderChat({ onTriggerBuilder }) {
           messages: buildHistory(history, q)
         })
       }).then(function(r) { return r.json(); }).then(function(data) {
-        var raw = (data.content && data.content[0] && data.content[0].text) || getMock(history, q);
+        var raw = (data.content && data.content[0] && data.content[0].text) || '';
         var parsed;
-        try { parsed = JSON.parse(raw.replace(/```json|```/g, '').trim()); } catch(e) { parsed = { text: raw }; }
+        try { parsed = JSON.parse(raw.replace(/```json|```/g, '').trim()); } catch(e) { parsed = { text: raw || 'Something went wrong — please try again.' }; }
         if (typeof parsed === 'string') parsed = { text: parsed };
-        setMsgs(function(m) { return m.slice(0, -1).concat([{ role: 'assistant', content: parsed }]); });
-        if ((parsed.text||'').toLowerCase().includes('build trigger')) setBuilderReady(true);
-        setLoading(false);
+        if (parsed.beats && Array.isArray(parsed.beats) && parsed.beats.length) {
+          setMsgs(function(m) { return m.slice(0, -1); });
+          parsed.beats.forEach(function(beat, i) {
+            setTimeout(function() {
+              var isLast = i === parsed.beats.length - 1;
+              var content = isLast && parsed.options && parsed.options.length ? { text: beat, options: parsed.options } : { text: beat };
+              setMsgs(function(m) { return m.concat([{ role: 'assistant', content: content }]); });
+            }, i * 1100);
+          });
+          setTimeout(function() { setLoading(false); }, (parsed.beats.length - 1) * 1100 + 100);
+        } else {
+          setMsgs(function(m) { return m.slice(0, -1).concat([{ role: 'assistant', content: parsed }]); });
+          if ((parsed.text||'').toLowerCase().includes('build trigger')) setBuilderReady(true);
+          setLoading(false);
+        }
       }).catch(function() {
-        var mock = getMock(history, q);
-        if (typeof mock === 'string') mock = { text: mock };
-        setMsgs(function(m) { return m.slice(0, -1).concat([{ role: 'assistant', content: mock }]); });
-        if ((mock.text||'').toLowerCase().includes('build trigger')) setBuilderReady(true);
+        setMsgs(function(m) { return m.slice(0, -1).concat([{ role: 'assistant', content: { text: 'Something went wrong — please try again.' } }]); });
         setLoading(false);
       });
     }, 900 + Math.random() * 600);
@@ -9372,22 +9414,29 @@ function StackedBar({
 
 // ── US Choropleth Map — proper Albers-like layout ──────────
 // Real approximate state positions and sizes
-const CREATIVE_SYS = `You are the Creative Intelligence Assistant inside The Marketing Desk — a financial institution's AI-powered marketing platform. You guide marketers through building new, high-performing creatives for credit card campaigns using a conversational, predictive approach.
+const CREATIVE_SYS = `You are the Creative Intelligence Assistant inside The Marketing Desk — a financial institution's AI-powered marketing platform. You guide marketers through building high-performing creatives for credit card campaigns.
 
-CONVERSATION FLOW — follow this strictly:
-1. If the user mentions building or creating a new creative, ask them which campaign and what objective they're targeting (e.g., CVR lift, ROAS, VTR, CTR). Ask only one question at a time.
-2. Once the user gives an objective, acknowledge it and say you are analyzing the past 90 days of that campaign's creative performance data. Then (in the SAME message) surface a structured insight: top-performing format, winning headline pattern, best audience segment, predicted lift range for the objective they stated. Be specific with mock data (real-sounding percentages, formats, copy patterns).
-3. Follow up by asking: which format they want to focus on (Email, Display, Push, CTV), or confirm the recommended one.
-4. Once format is confirmed, ask about the core message angle (e.g., urgency, aspiration, rewards value, exclusivity).
-5. After message angle confirmed, say you have enough context to generate the creative treatment. End your message with exactly this phrase: "Ready to build your creative? Click **Build Creative** below to open the builder."
+CONVERSATION FLOW — follow strictly:
+1. User selects an objective via pill (CVR Lift, Improve ROAS, Boost VTR, Increase CTR) or types their goal. Acknowledge and confirm the campaign context. Return single text, no options.
+2. Return a BEATS response — 4 beats showing the 90-day analysis arriving: (a) "Analyzing 90 days of travel rewards creative performance for [objective]…", (b) "📊 **Format finding:** [Top format] outperforms [other format] by [X]% [metric] for this segment — [specific data point].", (c) "🎯 **Audience insight:** [Segment] responds [X]% better to [message style] vs. [alternative] — [supporting data].", (d) "✅ **Projected lift:** [X–Y]% [metric] with optimized format + message direction. Which format do you want to build?" Put format options in the options field.
+3. Once format confirmed, ask message angle. Return single text + options: Aspiration | Rewards value | Urgency | Cost offset | Something else.
+4. Once angle confirmed, summarize and end with exactly: "Ready to build your creative? Click **Build Creative** below to open the builder." Return single text, no options.
 
-IMPORTANT RULES:
-- Keep each response to 2–4 short paragraphs max. Be crisp and confident, not verbose.
-- When surfacing 90-day analysis, always include: top format, winning CTR/CVR figure, recommended headline pattern, and a predicted objective lift (e.g., "+12–15% CVR projected").
+RULES:
 - Never ask more than one question per turn.
-- When you reach step 5 (build ready), always include the exact phrase "Ready to build your creative? Click **Build Creative** below to open the builder." — this triggers the builder UI.
-- For all other (non-build) questions about compliance, selecting existing creatives, or modifications, answer normally and helpfully.
-- You understand Financial Promotions rules, WCAG 2.1 AA, UDAAP, Fair Lending, TCPA/CAN-SPAM, and brand guidelines.`;
+- Step 4 must include exact phrase: "Ready to build your creative? Click **Build Creative** below to open the builder."
+- For compliance/library questions, answer normally in single text format.
+- You understand Financial Promotions, WCAG 2.1 AA, UDAAP, Fair Lending, TCPA/CAN-SPAM.
+
+RESPONSE FORMAT — two modes:
+
+MODE 1 — Single message:
+{"text": "Your response with **bold** supported", "options": ["Choice 1", "Choice 2"]}
+Omit options when not presenting choices.
+
+MODE 2 — Beats (step 2 analysis only):
+{"beats": ["Beat 1", "Beat 2", "Beat 3", "Beat 4"], "options": ["Email HTML 600px", "Display 300×250", "Mobile Push", "CTV 15s", "Email + Display pairing"]}
+Return ONLY valid JSON, no markdown.`;
 const CREATIVE_SAMPLES = ['I want to build a new creative for the travel rewards acquisition campaign', 'Which creative has the best compliance score for a travel rewards offer?', 'Run a full compliance check on the Display 300×250 variant'];
 
 const US_STATES = [
