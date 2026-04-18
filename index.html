@@ -1086,7 +1086,7 @@ div:has(> .ig-layout) > .hero { display: none; }
 .mz-sidebar { grid-column: 2; grid-row: 1 / span 2; display: grid; grid-template-rows: subgrid; gap: 14px; }
 .mz-main > *, .mz-sidebar > * { min-height: 0; }
 .mz-attr-panel { grid-column: 1; grid-row: 2; }
-.mz-chat-panel { grid-column: 2; grid-row: 2; height: 400px; overflow: hidden; }
+.mz-chat-panel { grid-column: 2; grid-row: 2; overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
 .bubble-panel { position: relative; }
 #mz-svg { width: 100%; height: 440px; background: var(--card); border-radius: var(--r); border: 1px solid var(--bdr); box-shadow: var(--shadow); }
 
@@ -13635,8 +13635,9 @@ function MeasurementZone({
   }, row.join)))))), /*#__PURE__*/React.createElement("div", {
     className: "panel mz-chat-panel",
     style: {
-      height: 360,
-      overflow: 'hidden'
+      overflow: 'hidden',
+      display: 'flex',
+      flexDirection: 'column'
     }
   }, /*#__PURE__*/React.createElement("div", {
     className: "panel-hdr"
@@ -13646,7 +13647,8 @@ function MeasurementZone({
     className: "badge badge-cyan"
   }, "AI")), /*#__PURE__*/React.createElement("div", {
     style: {
-      height: 'calc(100% - 48px)',
+      flex: 1,
+      minHeight: 0,
       display: 'flex',
       flexDirection: 'column'
     }
