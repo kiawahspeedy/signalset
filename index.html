@@ -5754,9 +5754,15 @@ function IdentityGraph() {
     applyMatchHighlight(matchStateRef.current, nodesRef.current);
     }; // end drawIG
     drawIG();
-    const ro = new ResizeObserver(() => { if (svgRef.current && svgRef.current.getBoundingClientRect().width > 10) drawIG(); });
+    let roTimeout;
+    const ro = new ResizeObserver(() => {
+      clearTimeout(roTimeout);
+      roTimeout = setTimeout(() => {
+        if (svgRef.current && svgRef.current.getBoundingClientRect().width > 10) drawIG();
+      }, 150);
+    });
     if (svgRef.current) ro.observe(svgRef.current);
-    return () => { if (simRef.current) simRef.current.stop(); ro.disconnect(); };
+    return () => { clearTimeout(roTimeout); if (simRef.current) simRef.current.stop(); ro.disconnect(); };
   }, [selected]);
   // Helper — apply visual state to the graph based on resultState
   function applyMatchHighlight(rs, nodes) {
