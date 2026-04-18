@@ -586,27 +586,27 @@ body.v11-sidebar-open .v11-sidebar { transform: translateX(0); }
 .chat-input:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
 .chat-input::placeholder { color: #94A3B8; }
 .chat-icon-btn {
-  width: 30px; height: 30px; background: transparent; border: 1px solid transparent;
+  width: 32px; height: 32px; background: transparent; border: 1px solid transparent;
   border-radius: 7px; cursor: pointer; color: var(--slate);
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
   transition: all .12s;
 }
 .chat-icon-btn:hover { background: rgba(99,102,241,.1); color: var(--cyan-pale); border-color: rgba(99,102,241,.25); }
 .chat-model-pill {
-  font-size: 11px; color: var(--slate); padding: 5px 10px;
-  border: 1px solid rgba(99,102,241,.2); border-radius: 6px;
+  height: 32px; font-size: 11px; color: var(--slate); padding: 0 10px;
+  border: 1px solid rgba(99,102,241,.2); border-radius: 7px;
   font-family: var(--font-m); display: flex; align-items: center; gap: 5px;
   cursor: pointer; flex-shrink: 0;
 }
 .send-btn {
-  width: 38px; height: 38px; background: var(--cyan); color: #FFFFFF;
-  border: none; border-radius: 8px; font-family: var(--font-b);
+  width: 32px; height: 32px; background: var(--cyan); color: #FFFFFF;
+  border: none; border-radius: 7px; font-family: var(--font-b);
   cursor: pointer; transition: all .15s; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
 }
 .send-btn:hover { background: #5254E8; }
 .send-btn:disabled { opacity: .4; cursor: not-allowed; }
-.send-btn svg { width: 16px; height: 16px; }
+.send-btn svg { width: 14px; height: 14px; }
 
 /* Typing dots */
 .typing { display: flex; gap: 5px; align-items: center; padding: 12px 16px; }
@@ -5754,15 +5754,9 @@ function IdentityGraph() {
     applyMatchHighlight(matchStateRef.current, nodesRef.current);
     }; // end drawIG
     drawIG();
-    let roTimeout;
-    const ro = new ResizeObserver(() => {
-      clearTimeout(roTimeout);
-      roTimeout = setTimeout(() => {
-        if (svgRef.current && svgRef.current.getBoundingClientRect().width > 10) drawIG();
-      }, 150);
-    });
+    const ro = new ResizeObserver(() => { if (svgRef.current && svgRef.current.getBoundingClientRect().width > 10) drawIG(); });
     if (svgRef.current) ro.observe(svgRef.current);
-    return () => { clearTimeout(roTimeout); if (simRef.current) simRef.current.stop(); ro.disconnect(); };
+    return () => { if (simRef.current) simRef.current.stop(); ro.disconnect(); };
   }, [selected]);
   // Helper — apply visual state to the graph based on resultState
   function applyMatchHighlight(rs, nodes) {
@@ -8599,7 +8593,7 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
       },
       onClick: () => { setDeskHub(false); window.scrollTo(0,0); }
     }, label)))
-  })), /*#__PURE__*/React.createElement("div", { className: "v11-home-pills", style: { marginTop: 18, justifyContent: "center" } }, /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setDeskHub(false); setTab('audience'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'target', size: 13, color: 'currentColor' })), 'Audiences'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setDeskHub(false); setTab('journey'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'lightning', size: 13, color: 'currentColor' })), 'Triggers'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setDeskHub(false); setTab('creative'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'palette', size: 13, color: 'currentColor' })), 'Creatives'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => alert('From Drive integration coming in Phase 11'), role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'store', size: 13, color: 'currentColor' })), 'From Drive'))), /*#__PURE__*/React.createElement("div", {
+  })), /*#__PURE__*/React.createElement("div", { className: "v11-home-pills", style: { marginTop: 18, justifyContent: "center" } }, /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setDeskHub(false); setTab('audience'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'target', size: 13, color: 'currentColor' })), 'Audiences'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setDeskHub(false); setTab('journey'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'lightning', size: 13, color: 'currentColor' })), 'Triggers'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setDeskHub(false); setTab('creative'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'palette', size: 13, color: 'currentColor' })), 'Creatives'), false && /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => alert('From Drive integration coming in Phase 11'), role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'store', size: 13, color: 'currentColor' })), 'From Drive'))), /*#__PURE__*/React.createElement("div", {
     className: "camp-hub-right"
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -13041,7 +13035,7 @@ function MeasurementIntro({
     name: "chart",
     size: 15,
     color: "white"
-  }), "Open Cohort Analysis \u2192"), /*#__PURE__*/React.createElement("div", { className: "v11-home-pills", style: { marginTop: 18, justifyContent: "center" } }, /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => alert('Saved directly into Measurement — jumps into a new analysis.'), role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'chart', size: 13, color: 'currentColor' })), 'LTV · CAC'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => alert('Saved directly into Measurement — jumps into a new analysis.'), role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'sync', size: 13, color: 'currentColor' })), 'Attribution'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => alert('Saved directly into Measurement — jumps into a new analysis.'), role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'chart', size: 13, color: 'currentColor' })), 'Incrementality'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => alert('From Drive integration coming in Phase 11'), role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'store', size: 13, color: 'currentColor' })), 'From Drive'))), /*#__PURE__*/React.createElement("div", {
+  }), "Open Cohort Analysis \u2192"), /*#__PURE__*/React.createElement("div", { className: "v11-home-pills", style: { marginTop: 18, justifyContent: "center" } }, /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => alert('Saved directly into Measurement — jumps into a new analysis.'), role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'chart', size: 13, color: 'currentColor' })), 'LTV · CAC'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => alert('Saved directly into Measurement — jumps into a new analysis.'), role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'sync', size: 13, color: 'currentColor' })), 'Attribution'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => alert('Saved directly into Measurement — jumps into a new analysis.'), role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'chart', size: 13, color: 'currentColor' })), 'Incrementality'), false && /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => alert('From Drive integration coming in Phase 11'), role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'store', size: 13, color: 'currentColor' })), 'From Drive'))), /*#__PURE__*/React.createElement("div", {
     className: "mz-intro-right"
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -14272,7 +14266,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     name: "store",
     size: 14,
     color: "white"
-  }), " Explore Merchant Portal \u2192"), /*#__PURE__*/React.createElement("div", { className: "v11-home-pills", style: { marginTop: 18, justifyContent: "center" } }, /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('build'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'store', size: 13, color: 'currentColor' })), 'Campaigns'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('results'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'chart', size: 13, color: 'currentColor' })), 'Results'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('manage'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'sync', size: 13, color: 'currentColor' })), 'Collaboration'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => alert('From Drive integration coming in Phase 11'), role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'store', size: 13, color: 'currentColor' })), 'From Drive'))), /*#__PURE__*/React.createElement("div", {
+  }), " Explore Merchant Portal \u2192"), /*#__PURE__*/React.createElement("div", { className: "v11-home-pills", style: { marginTop: 18, justifyContent: "center" } }, /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('build'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'store', size: 13, color: 'currentColor' })), 'Campaigns'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('results'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'chart', size: 13, color: 'currentColor' })), 'Results'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('manage'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'sync', size: 13, color: 'currentColor' })), 'Collaboration'), false && /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => alert('From Drive integration coming in Phase 11'), role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'store', size: 13, color: 'currentColor' })), 'From Drive'))), /*#__PURE__*/React.createElement("div", {
     className: "camp-hub-right"
   }, /*#__PURE__*/React.createElement("div", {
     style: {
