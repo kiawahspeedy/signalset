@@ -13954,6 +13954,8 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
   const [catSel, setCatSel] = useState([]);
   const [intentSel, setIntentSel] = useState([]);
   const [expandedCampaign, setExpandedCampaign] = useState(null);
+  const [selectedCampaignIdx, setSelectedCampaignIdx] = useState(0);
+  const [campaignFilter, setCampaignFilter] = useState('');
   const [editingBid, setEditingBid] = useState(null);
   const [campaignData, setCampaignData] = useState([{
     id: 'CMP-7F3A',
@@ -14009,6 +14011,60 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     startDate: 'Mar 10',
     endDate: 'Mar 24',
     flightDays: 14
+  }, {
+    id: 'CMP-4E1D',
+    name: 'Upgrade Eligibility Nurture',
+    status: 'active',
+    creative: 'Email',
+    segment: 'Deal Seekers',
+    dmas: 'Phoenix · Denver · Atlanta',
+    budget: 60,
+    spent: 46,
+    impressions: 890000,
+    clicks: 41830,
+    conversions: 1520,
+    lift: 18,
+    roas: 3.3,
+    bidMod: 0.95,
+    startDate: 'Mar 5',
+    endDate: 'Apr 5',
+    flightDays: 31
+  }, {
+    id: 'CMP-0B6A',
+    name: 'Luxury Getaway Rewards Bundle',
+    status: 'paused',
+    creative: 'CTV + Email',
+    segment: 'Luxuriates',
+    dmas: 'NYC · LA · Miami',
+    budget: 80,
+    spent: 35,
+    impressions: 560000,
+    clicks: 27440,
+    conversions: 890,
+    lift: 22,
+    roas: 4.4,
+    bidMod: 1.1,
+    startDate: 'Mar 12',
+    endDate: 'Apr 12',
+    flightDays: 31
+  }, {
+    id: 'CMP-8D2F',
+    name: 'Weekend Getaway Q2 Push',
+    status: 'active',
+    creative: 'Display',
+    segment: 'Bask & Chill',
+    dmas: 'Orlando · Nashville · Austin',
+    budget: 45,
+    spent: 5,
+    impressions: 120000,
+    clicks: 5640,
+    conversions: 180,
+    lift: 12,
+    roas: 2.9,
+    bidMod: 1.0,
+    startDate: 'Mar 17',
+    endDate: 'Apr 17',
+    flightDays: 31
   }]);
   const [expandedTargeting, setExpandedTargeting] = useState(null);
   const [selectedDMA, setSelectedDMA] = useState(null);
@@ -15707,564 +15763,141 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
       fontSize: 16
     },
     onClick: () => setActivated(false)
-  }, "\xD7")), campaignData.map((camp, idx) => /*#__PURE__*/React.createElement("div", {
-    key: camp.id,
-    style: {
-      background: 'var(--card)',
-      border: `1px solid ${expandedCampaign === idx ? 'var(--cyan)' : 'var(--bdr)'}`,
-      borderRadius: 12,
-      overflow: 'hidden',
-      boxShadow: 'var(--shadow)',
-      transition: 'border-color .2s'
-    }
+  }, "\xD7")), /*#__PURE__*/React.createElement("div", {
+    style: { display: 'grid', gridTemplateColumns: '360px 1fr', gap: 14, minHeight: 560 }
   }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      padding: '14px 18px',
-      display: 'flex',
-      alignItems: 'center',
-      gap: 14,
-      flexWrap: 'wrap'
-    }
+    style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 10, display: 'flex', flexDirection: 'column', overflow: 'hidden' }
   }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: 10,
-      height: 10,
-      borderRadius: '50%',
-      background: camp.status === 'active' ? 'var(--green)' : 'var(--amber)',
-      flexShrink: 0,
-      boxShadow: camp.status === 'active' ? '0 0 0 3px rgba(5,150,105,.2)' : '0 0 0 3px rgba(217,119,6,.2)',
-      animation: camp.status === 'active' ? 'pulse 2s ease infinite' : 'none'
-    }
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      flex: 1,
-      minWidth: 200
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 15,
-      fontWeight: 700,
-      color: 'var(--text)'
-    }
-  }, camp.name), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: 'var(--slate)',
-      marginTop: 2
-    }
-  }, camp.id, " \xB7 ", camp.creative, " \xB7 ", camp.segment)), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      gap: 20
-    }
-  }, [['Spend', `$${camp.spent}K / $${camp.budget}K`], ['Impressions', `${(camp.impressions / 1000).toFixed(0)}K`], ['Conversions', camp.conversions.toLocaleString()], ['ROAS', `${camp.roas}×`], ['Lift', `+${camp.lift}%`]].map(([k, v]) => /*#__PURE__*/React.createElement("div", {
-    key: k,
-    style: {
-      textAlign: 'center'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'Satoshi, sans-serif',
-      fontSize: 15,
-      fontWeight: 800,
-      color: k === 'ROAS' || k === 'Lift' ? 'var(--green)' : 'var(--text)'
-    }
-  }, v), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: 'var(--slate)'
-    }
-  }, k)))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      gap: 7,
-      flexShrink: 0
-    }
-  }, /*#__PURE__*/React.createElement("button", {
+    style: { padding: '10px 12px', borderBottom: '1px solid var(--bdr-soft)', display: 'flex', gap: 6 }
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    placeholder: "Filter campaigns\u2026",
+    value: campaignFilter,
+    onChange: e => setCampaignFilter(e.target.value),
+    style: { flex: 1, background: 'var(--card-alt2)', border: '1px solid var(--bdr-soft)', borderRadius: 6, padding: '7px 10px', fontSize: 12, color: 'var(--text)', fontFamily: 'IBM Plex Mono, monospace', outline: 'none' }
+  }), /*#__PURE__*/React.createElement("button", {
     className: "btn btn-secondary",
-    style: {
-      fontSize: 12,
-      color: 'var(--text)',
-      fontWeight: 600
-    },
-    onClick: () => setCampaignData(prev => prev.map((c, i) => i === idx ? {
-      ...c,
-      status: c.status === 'active' ? 'paused' : 'active'
-    } : c))
-  }, camp.status === 'active' ? 'Pause' : 'Resume'), /*#__PURE__*/React.createElement("button", {
-    className: "btn btn-secondary",
-    style: {
-      fontSize: 12,
-      color: 'var(--text)',
-      fontWeight: 600
-    },
-    onClick: () => setExpandedCampaign(expandedCampaign === idx ? null : idx)
-  }, expandedCampaign === idx ? 'Collapse' : 'Manage'))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      height: 4,
-      background: '#E2E8F0',
-      margin: '0 18px'
+    style: { fontSize: 11, padding: '6px 10px', color: 'var(--text)' }
+  }, "Sort \u25be")), /*#__PURE__*/React.createElement("div", {
+    style: { flex: 1, overflowY: 'auto', maxHeight: 560 }
+  }, campaignData.filter(c => !campaignFilter || c.name.toLowerCase().includes(campaignFilter.toLowerCase()) || c.id.toLowerCase().includes(campaignFilter.toLowerCase())).map(camp => {
+    const idx = campaignData.indexOf(camp);
+    const isSelected = selectedCampaignIdx === idx;
+    return /*#__PURE__*/React.createElement("div", {
+      key: camp.id,
+      onClick: () => setSelectedCampaignIdx(idx),
+      style: { padding: '12px 14px', borderBottom: '1px solid var(--bdr-soft)', cursor: 'pointer', background: isSelected ? 'rgba(99,102,241,.12)' : 'transparent', borderLeft: isSelected ? '2px solid var(--cyan)' : '2px solid transparent', paddingLeft: isSelected ? 12 : 14 }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: { width: 7, height: 7, borderRadius: '50%', background: camp.status === 'active' ? 'var(--green)' : 'var(--amber)', flexShrink: 0 }
+    }), /*#__PURE__*/React.createElement("span", {
+      style: { fontSize: 13, fontWeight: 700, color: 'var(--text)', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }
+    }, camp.name), /*#__PURE__*/React.createElement("span", {
+      style: { fontSize: 11, color: 'var(--green)', fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace', flexShrink: 0 }
+    }, camp.roas + "\u00d7")), /*#__PURE__*/React.createElement("div", {
+      style: { fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', letterSpacing: '.04em' }
+    }, camp.id + " \u00b7 " + camp.creative), /*#__PURE__*/React.createElement("div", {
+      style: { height: 2, background: 'var(--card-alt2)', borderRadius: 1, marginTop: 7, overflow: 'hidden' }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: { height: '100%', width: Math.min(100, camp.spent / camp.budget * 100) + '%', background: 'linear-gradient(90deg, var(--cyan), var(--green))' }
+    })));
+  }))), (function() {
+    const camp = campaignData[selectedCampaignIdx] || campaignData[0];
+    if (!camp) return /*#__PURE__*/React.createElement("div", null);
+    const pct = Math.round(camp.spent / camp.budget * 100);
+    const cpm = (camp.spent * 1000 / (camp.impressions / 1000)).toFixed(2);
+    const cpa = (camp.spent * 1000 / camp.conversions).toFixed(2);
+    const days = 14;
+    const points = [];
+    for (let i = 0; i < days; i++) {
+      const base = camp.roas * 0.6;
+      const growth = (camp.roas - base) * (i / (days - 1));
+      const noise = Math.sin(i * 1.3 + camp.id.charCodeAt(4)) * 0.15;
+      points.push(base + growth + noise);
     }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      height: '100%',
-      width: `${Math.min(100, camp.spent / camp.budget * 100)}%`,
-      background: `linear-gradient(90deg, var(--cyan), var(--green))`,
-      borderRadius: 2,
-      transition: 'width .6s ease'
-    }
-  })), /*#__PURE__*/React.createElement("div", {
-    style: {
-      padding: '4px 18px 10px',
-      display: 'flex',
-      justifyContent: 'space-between',
-      fontSize: 11,
-      color: 'var(--slate)'
-    }
-  }, /*#__PURE__*/React.createElement("span", null, camp.startDate, " \u2192 ", camp.endDate, " \xB7 ", camp.flightDays, "d flight"), /*#__PURE__*/React.createElement("span", null, Math.round(camp.spent / camp.budget * 100), "% of budget \xB7 ", camp.dmas)), expandedCampaign === idx && /*#__PURE__*/React.createElement("div", {
-    style: {
-      borderTop: '1px solid var(--bdr)',
-      background: '#F8FAFC'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'grid',
-      gridTemplateColumns: '1fr 1fr 1fr',
-      gap: 0
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      padding: '16px 18px',
-      borderRight: '1px solid var(--bdr)'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      fontWeight: 700,
-      color: 'var(--text)',
-      textTransform: 'uppercase',
-      letterSpacing: '.06em',
-      marginBottom: 12
-    }
-  }, "Bid Modifiers"), [{
-    label: 'Base Bid Modifier',
-    key: 'bidMod',
-    val: camp.bidMod,
-    min: 0.5,
-    max: 2.0,
-    step: 0.05,
-    fmt: v => `${v.toFixed(2)}×`
-  }].map(f => /*#__PURE__*/React.createElement("div", {
-    key: f.label,
-    style: {
-      marginBottom: 14
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      marginBottom: 5
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 13,
-      color: 'var(--slate)'
-    }
-  }, f.label), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontFamily: 'Satoshi, sans-serif',
-      fontSize: 15,
-      fontWeight: 800,
-      color: f.val > 1 ? 'var(--green)' : f.val < 1 ? 'var(--amber)' : 'var(--navy)'
-    }
-  }, f.fmt(f.val))), /*#__PURE__*/React.createElement("input", {
-    type: "range",
-    min: f.min,
-    max: f.max,
-    step: f.step,
-    value: f.val,
-    onChange: e => setCampaignData(prev => prev.map((c, i) => i === idx ? {
-      ...c,
-      [f.key]: +e.target.value
-    } : c)),
-    style: {
-      width: '100%',
-      accentColor: 'var(--cyan)'
-    }
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      fontSize: 11,
-      color: '#94A3B8',
-      marginTop: 2
-    }
-  }, /*#__PURE__*/React.createElement("span", null, "0.5\xD7 (reduce)"), /*#__PURE__*/React.createElement("span", null, "1.0\xD7 (baseline)"), /*#__PURE__*/React.createElement("span", null, "2.0\xD7 (boost)")))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      fontWeight: 700,
-      color: 'var(--text)',
-      textTransform: 'uppercase',
-      letterSpacing: '.06em',
-      margin: '14px 0 10px'
-    }
-  }, "Segment Adjustments"), [{
-    seg: 'Explorers',
-    mod: idx === 0 ? 1.2 : 1.0
-  }, {
-    seg: 'Revelers',
-    mod: idx === 0 ? 1.1 : idx === 2 ? 1.3 : 0.9
-  }, {
-    seg: 'Luxuriates',
-    mod: idx === 1 ? 1.4 : 0.8
-  }, {
-    seg: 'Deal Seekers',
-    mod: 0.6
-  }].map(({
-    seg,
-    mod
-  }, si) => /*#__PURE__*/React.createElement("div", {
-    key: seg,
-    style: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      padding: '6px 0',
-      borderBottom: '1px solid rgba(99,102,241,.15)'
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 13,
-      color: 'var(--slate)'
-    }
-  }, seg), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 8
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontFamily: 'Satoshi, sans-serif',
-      fontSize: 13,
-      fontWeight: 700,
-      color: mod > 1 ? 'var(--green)' : mod < 0.8 ? 'var(--red)' : 'var(--slate)'
-    }
-  }, mod.toFixed(1), "\xD7"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      gap: 3
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    style: {
-      width: 22,
-      height: 22,
-      borderRadius: 4,
-      border: '1px solid var(--bdr)',
-      background: 'var(--card)',
-      fontSize: 12,
-      cursor: 'pointer',
-      color: 'var(--text)'
-    }
-  }, "\u2212"), /*#__PURE__*/React.createElement("button", {
-    style: {
-      width: 22,
-      height: 22,
-      borderRadius: 4,
-      border: '1px solid var(--bdr)',
-      background: 'var(--card)',
-      fontSize: 12,
-      cursor: 'pointer',
-      color: 'var(--text)'
-    }
-  }, "+")))))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      padding: '16px 18px',
-      borderRight: '1px solid var(--bdr)'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      fontWeight: 700,
-      color: 'var(--text)',
-      textTransform: 'uppercase',
-      letterSpacing: '.06em',
-      marginBottom: 12
-    }
-  }, "Budget & Flight"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 14
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      marginBottom: 5
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 13,
-      color: 'var(--slate)'
-    }
-  }, "Monthly Budget"), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontFamily: 'Satoshi, sans-serif',
-      fontSize: 15,
-      fontWeight: 800,
-      color: 'var(--cyan)'
-    }
-  }, "$", camp.budget, "K")), /*#__PURE__*/React.createElement("input", {
-    type: "range",
-    min: 25,
-    max: 500,
-    step: 25,
-    value: camp.budget,
-    onChange: e => setCampaignData(prev => prev.map((c, i) => i === idx ? {
-      ...c,
-      budget: +e.target.value
-    } : c)),
-    style: {
-      width: '100%',
-      accentColor: 'var(--cyan)'
-    }
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      fontSize: 11,
-      color: '#94A3B8',
-      marginTop: 2
-    }
-  }, /*#__PURE__*/React.createElement("span", null, "$25K"), /*#__PURE__*/React.createElement("span", null, "$500K"))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 14
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      marginBottom: 5
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 13,
-      color: 'var(--slate)'
-    }
-  }, "Flight Extension"), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontFamily: 'Satoshi, sans-serif',
-      fontSize: 15,
-      fontWeight: 800,
-      color: 'var(--cyan)'
-    }
-  }, "+", camp.flightDays, "d")), /*#__PURE__*/React.createElement("input", {
-    type: "range",
-    min: 0,
-    max: 60,
-    step: 7,
-    value: camp.flightDays,
-    onChange: e => setCampaignData(prev => prev.map((c, i) => i === idx ? {
-      ...c,
-      flightDays: +e.target.value
-    } : c)),
-    style: {
-      width: '100%',
-      accentColor: 'var(--cyan)'
-    }
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      fontSize: 11,
-      color: '#94A3B8',
-      marginTop: 2
-    }
-  }, /*#__PURE__*/React.createElement("span", null, "No extension"), /*#__PURE__*/React.createElement("span", null, "+60 days"))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 14
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      fontWeight: 700,
-      color: 'var(--text)',
-      textTransform: 'uppercase',
-      letterSpacing: '.06em',
-      marginBottom: 8
-    }
-  }, "Frequency Cap"), [['Daily impressions / user', '3×'], ['Weekly impressions / user', '12×'], ['Recency window', '24h']].map(([k, v]) => /*#__PURE__*/React.createElement("div", {
-    key: k,
-    style: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      padding: '5px 0',
-      borderBottom: '1px solid rgba(99,102,241,.15)',
-      fontSize: 13
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: 'var(--slate)'
-    }
-  }, k), /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: 'var(--text)',
-      fontWeight: 600
-    }
-  }, v, " ", /*#__PURE__*/React.createElement("button", {
-    style: {
-      background: 'none',
-      border: 'none',
-      color: 'var(--cyan-dim)',
-      cursor: 'pointer',
-      fontSize: 12
-    }
-  }, "edit")))))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      padding: '16px 18px'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      fontWeight: 700,
-      color: 'var(--text)',
-      textTransform: 'uppercase',
-      letterSpacing: '.06em',
-      marginBottom: 12
-    }
-  }, "Targeting & Suppression"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 14
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      fontWeight: 600,
-      color: 'var(--slate)',
-      marginBottom: 6
-    }
-  }, "Active DMA Targeting"), camp.dmas.split(' · ').map(dma => /*#__PURE__*/React.createElement("div", {
-    key: dma,
-    style: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      padding: '5px 8px',
-      background: 'var(--card)',
-      borderRadius: 6,
-      border: '1px solid var(--bdr)',
-      marginBottom: 4
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 13,
-      color: 'var(--text)'
-    }
-  }, dma), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      gap: 5
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    style: {
-      fontSize: 11,
-      padding: '2px 7px',
-      border: '1px solid var(--bdr)',
-      borderRadius: 4,
-      background: 'transparent',
-      cursor: 'pointer',
-      color: 'var(--slate)'
-    }
-  }, "+bid"), /*#__PURE__*/React.createElement("button", {
-    style: {
-      fontSize: 11,
-      padding: '2px 7px',
-      border: '1px solid rgba(239,68,68,.3)',
-      borderRadius: 4,
-      background: 'transparent',
-      cursor: 'pointer',
-      color: 'var(--red)'
-    }
-  }, "\u2715")))), /*#__PURE__*/React.createElement("button", {
-    className: "btn btn-secondary",
-    style: {
-      fontSize: 12,
-      width: '100%',
-      marginTop: 4
-    }
-  }, "+ Add DMA")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 14
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      fontWeight: 600,
-      color: 'var(--slate)',
-      marginBottom: 6
-    }
-  }, "Suppression Rules"), ['Converters (last 30d)', 'Current card holders', 'Declined applications'].map(rule => /*#__PURE__*/React.createElement("div", {
-    key: rule,
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 7,
-      padding: '5px 0',
-      borderBottom: '1px solid rgba(99,102,241,.15)'
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 13,
-      color: 'var(--green)'
-    }
-  }, "\u2713"), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 13,
-      color: 'var(--slate)',
-      flex: 1
-    }
-  }, rule), /*#__PURE__*/React.createElement("button", {
-    style: {
-      background: 'none',
-      border: 'none',
-      color: 'var(--cyan-dim)',
-      cursor: 'pointer',
-      fontSize: 12
-    }
-  }, "edit"))), /*#__PURE__*/React.createElement("button", {
-    className: "btn btn-secondary",
-    style: {
-      fontSize: 12,
-      width: '100%',
-      marginTop: 6
-    }
-  }, "+ Add Suppression Rule")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      gap: 7,
-      marginTop: 8,
-      paddingTop: 12,
-      borderTop: '1px solid var(--bdr)'
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "btn btn-primary",
-    style: {
-      fontSize: 12,
-      flex: 1
-    }
-  }, "Apply Changes"), /*#__PURE__*/React.createElement("button", {
-    className: "btn btn-secondary",
-    style: {
-      fontSize: 12
-    },
-    onClick: () => setCmnTab('results')
-  }, "Results"), /*#__PURE__*/React.createElement("button", {
-    className: "btn btn-secondary",
-    style: {
-      fontSize: 12,
-      color: 'var(--red)',
-      borderColor: 'rgba(239,68,68,.3)'
-    }
-  }, "End"))))))))), /*#__PURE__*/React.createElement("div", {
+    const maxP = Math.max.apply(null, points) * 1.1;
+    const minP = Math.min.apply(null, points) * 0.9;
+    const pathD = points.map((p, i) => {
+      const x = (i / (days - 1)) * 560 + 20;
+      const y = 100 - ((p - minP) / (maxP - minP)) * 80;
+      return (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1);
+    }).join(' ');
+    const areaD = pathD + ' L580,110 L20,110 Z';
+    return /*#__PURE__*/React.createElement("div", {
+      style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 10, padding: 22, display: 'flex', flexDirection: 'column', gap: 18, overflowY: 'auto' }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: 14, borderBottom: '1px solid var(--bdr-soft)' }
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: { width: 10, height: 10, borderRadius: '50%', background: camp.status === 'active' ? 'var(--green)' : 'var(--amber)', boxShadow: camp.status === 'active' ? '0 0 0 3px rgba(74,222,128,.2)' : '0 0 0 3px rgba(245,158,11,.2)' }
+    }), /*#__PURE__*/React.createElement("div", {
+      style: { fontSize: 20, fontWeight: 700 }
+    }, camp.name)), /*#__PURE__*/React.createElement("div", {
+      style: { fontSize: 12, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace' }
+    }, camp.id + " \u00b7 " + camp.creative + " \u00b7 " + camp.segment + " \u00b7 " + camp.startDate + " \u2192 " + camp.endDate + " \u00b7 " + camp.dmas)), /*#__PURE__*/React.createElement("div", {
+      style: { display: 'flex', gap: 6 }
+    }, /*#__PURE__*/React.createElement("button", {
+      className: "btn btn-secondary",
+      style: { fontSize: 12, color: 'var(--text)', fontWeight: 600 },
+      onClick: () => setCampaignData(prev => prev.map((c, i) => i === selectedCampaignIdx ? Object.assign({}, c, { status: c.status === 'active' ? 'paused' : 'active' }) : c))
+    }, camp.status === 'active' ? 'Pause' : 'Resume'), /*#__PURE__*/React.createElement("button", {
+      className: "btn btn-secondary",
+      style: { fontSize: 12, color: 'var(--text)', fontWeight: 600 }
+    }, "Edit"), /*#__PURE__*/React.createElement("button", {
+      className: "btn btn-secondary",
+      style: { fontSize: 12, color: 'var(--text)', fontWeight: 600 },
+      onClick: () => setCmnTab('results')
+    }, "Results \u2197"))), /*#__PURE__*/React.createElement("div", {
+      style: { display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }
+    }, [['Spend', '$' + camp.spent + 'K', pct + '% of $' + camp.budget + 'K', 'var(--text)'], ['Impressions', (camp.impressions / 1000).toFixed(0) + 'K', '$' + cpm + ' CPM', 'var(--text)'], ['Conversions', camp.conversions.toLocaleString(), '$' + cpa + ' CPA', 'var(--text)'], ['ROAS', camp.roas + '\u00d7', '+' + (camp.roas - 3.8).toFixed(1) + '\u00d7 vs target', 'var(--green)'], ['Lift', '+' + camp.lift + '%', 'vs control', 'var(--green)']].map(kpi => /*#__PURE__*/React.createElement("div", {
+      key: kpi[0],
+      style: { background: 'var(--card-alt)', border: '1px solid var(--bdr-soft)', borderRadius: 7, padding: 12 }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: { fontSize: 10, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '.06em', fontFamily: 'IBM Plex Mono, monospace' }
+    }, kpi[0]), /*#__PURE__*/React.createElement("div", {
+      style: { fontSize: 19, fontWeight: 800, marginTop: 4, color: kpi[3] }
+    }, kpi[1]), /*#__PURE__*/React.createElement("div", {
+      style: { fontSize: 10, color: kpi[3] === 'var(--green)' ? 'var(--green)' : 'var(--slate-lt)', marginTop: 2, fontFamily: 'IBM Plex Mono, monospace' }
+    }, kpi[2])))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: { fontSize: 11, fontWeight: 700, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 10, fontFamily: 'IBM Plex Mono, monospace' }
+    }, "Performance \u00b7 last 14 days"), /*#__PURE__*/React.createElement("div", {
+      style: { height: 120, background: 'var(--card-alt2)', border: '1px dashed var(--bdr-soft)', borderRadius: 7, overflow: 'hidden' }
+    }, /*#__PURE__*/React.createElement("svg", {
+      viewBox: "0 0 600 120",
+      preserveAspectRatio: "none",
+      style: { width: '100%', height: '100%' }
+    }, /*#__PURE__*/React.createElement("defs", null, /*#__PURE__*/React.createElement("linearGradient", {
+      id: "mdperfgrad-" + camp.id,
+      x1: "0", y1: "0", x2: "0", y2: "1"
+    }, /*#__PURE__*/React.createElement("stop", { offset: "0%", stopColor: "#6366F1", stopOpacity: ".35" }), /*#__PURE__*/React.createElement("stop", { offset: "100%", stopColor: "#6366F1", stopOpacity: "0" }))), /*#__PURE__*/React.createElement("path", {
+      d: areaD,
+      fill: "url(#mdperfgrad-" + camp.id + ")"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: pathD,
+      fill: "none",
+      stroke: "#818CF8",
+      strokeWidth: "2"
+    })))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: { fontSize: 11, fontWeight: 700, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 10, fontFamily: 'IBM Plex Mono, monospace' }
+    }, "Top creatives"), /*#__PURE__*/React.createElement("div", {
+      style: { display: 'flex', flexDirection: 'column', gap: 7 }
+    }, [{ id: 'CRV-01', nm: 'Earn 5\u00d7 miles on your next booking', sub: 'Email \u00b7 Subject: "Your next trip just got sweeter"', ctr: '5.2%', grad: 'linear-gradient(135deg,#818CF8,#4F46E5)' }, { id: 'CRV-02', nm: 'Upgrade to Business Class for the price of Economy', sub: 'Display \u00b7 728\u00d790 + 300\u00d7250', ctr: '6.8%', grad: 'linear-gradient(135deg,#A78BFA,#7C3AED)' }].map(c => /*#__PURE__*/React.createElement("div", {
+      key: c.id,
+      style: { display: 'flex', gap: 10, alignItems: 'center', padding: 10, background: 'var(--card-alt)', border: '1px solid var(--bdr-soft)', borderRadius: 7 }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: { width: 56, height: 42, borderRadius: 4, background: c.grad, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: '#fff', flexShrink: 0 }
+    }, c.id), /*#__PURE__*/React.createElement("div", {
+      style: { flex: 1 }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: { fontSize: 12, fontWeight: 700 }
+    }, c.nm), /*#__PURE__*/React.createElement("div", {
+      style: { fontSize: 10, color: 'var(--slate)', marginTop: 2 }
+    }, c.sub)), /*#__PURE__*/React.createElement("div", {
+      style: { fontSize: 13, fontWeight: 700, color: 'var(--green)', fontFamily: 'IBM Plex Mono, monospace' }
+    }, c.ctr + " CTR"))))));
+  })()))), /*#__PURE__*/React.createElement("div", {
     className: `cmn-pane ${cmnTab === 'results' ? 'active' : ''}`
   }, /*#__PURE__*/React.createElement("div", {
     style: {
