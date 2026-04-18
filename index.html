@@ -1082,8 +1082,9 @@ div:has(> .ig-layout) > .hero { display: none; }
 
 /* ── MEASUREMENT ZONE SCREEN ── */
 .mz-layout { display: grid; grid-template-columns: 3fr 2fr; grid-template-rows: auto auto; gap: 20px; padding: 24px 28px; }
-.mz-main { grid-column: 1; grid-row: 1; display: flex; flex-direction: column; gap: 16px; }
-.mz-sidebar { grid-column: 2; grid-row: 1; display: flex; flex-direction: column; gap: 14px; }
+.mz-main { grid-column: 1; grid-row: 1 / span 2; display: grid; grid-template-rows: subgrid; gap: 16px; }
+.mz-sidebar { grid-column: 2; grid-row: 1 / span 2; display: grid; grid-template-rows: subgrid; gap: 14px; }
+.mz-main > *, .mz-sidebar > * { min-height: 0; }
 .mz-attr-panel { grid-column: 1; grid-row: 2; }
 .mz-chat-panel { grid-column: 2; grid-row: 2; height: 400px; overflow: hidden; }
 .bubble-panel { position: relative; }
