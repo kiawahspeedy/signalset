@@ -515,6 +515,13 @@ body.v11-sidebar-open .v11-sidebar { transform: translateX(0); }
 }
 /* v11.2 — radical minimal: eyebrow-only headers. H1 and paragraph are killed on all section heroes. */
 .hero h1, .hero p { display: none; }
+/* v11.3 Apr 18 — Partners rename · kill landing eyebrows, keep in-tab breadcrumbs only.
+   .hero-eyebrow-nav (with back-arrow) functions as breadcrumb when inside a tab — kept.
+   Plain .hero-eyebrow (static section label on landing pages) hidden — the rail icon
+   and chat placeholder already convey section context. */
+.hero-eyebrow:not(.hero-eyebrow-nav) { display: none; }
+/* Collapse the now-empty .hero wrapper so it doesn't leave vertical space */
+.hero:not(:has(.hero-eyebrow-nav)) { padding: 0 !important; min-height: 0 !important; border: none !important; }
 
 /* ── CARDS & PANELS ── */
 .panel {
@@ -3758,7 +3765,7 @@ const JOURNEY_SYS = `You are the Auto-Journey Builder inside The Marketing Desk 
 }
 Rules: 4-6 channels + convert node; owned-first; realistic CC KPIs; return ONLY JSON.`;
 const MZ_CHATBOT_SYS = `You are the Measurement Intelligence assistant inside The Marketing Desk for a major US financial institution. Analyze cohort performance and attribution data with these specifics: 5 behavioral segments — Explorers (LTV $4,200, CAC $48, 48.2K customers, 82% propensity), Revelers (LTV $5,100, CAC $72, 31K), Luxuriates (LTV $6,800, CAC $94, 22K), Bask & Chill (LTV $2,400, CAC $31, 58K), Deal Seekers (LTV $1,800, CAC $22, 62K). Attribution channels: Email/SMS/Push (248K impressions, 3,210 conversions, 100% confidence, deterministic hashed email), Open Web TTD/Yahoo (1.2M impressions, 890 conversions, 94% confidence, UID2), Paid Search Google (44K impressions, 1,840 conversions, 98% confidence), Meta/TikTok/YouTube (3.4M impressions, 4,200 conversions, +18% lift, clean room modeled). Always reference specific segment names, LTV/CAC ratios, and channel attribution data. Keep responses 2-4 sentences, actionable, plain text.`;
-const CMN_CHATBOT_SYS = `You are the Audience Discovery assistant inside the Merchant Campaign Portal for Meridian Air, a premium travel rewards brand. You help Meridian Air build targeting strategies using Signalset FI cardholder transaction data via LiveRamp clean room (zero PII exposure). Key segments available: Explorers (48.2K frequent travelers, LTV $4,200, 82% propensity, travel spend ≥$800/mo), Revelers (31K lifestyle spenders, LTV $5,100, premium experiences), Luxuriates (22K high-net-worth, LTV $6,800, ≥$5K monthly spend). Geo reach: top 15 US DMAs with DMA-level LTV/CAC intelligence down to neighborhood. Expected 94% deterministic identity match rate, 4.2x CPM premium over generic programmatic, closed-loop ROAS attribution via cardholder transactions. Always cite specific segment sizes, match rates, and expected performance metrics. Keep responses 3-5 sentences, plain text.`;
+const CMN_CHATBOT_SYS = `You are the Audience Discovery assistant inside the Partner Campaign Portal for Meridian Air, a premium travel rewards brand. You help Meridian Air build targeting strategies using Signalset FI cardholder transaction data via LiveRamp clean room (zero PII exposure). Key segments available: Explorers (48.2K frequent travelers, LTV $4,200, 82% propensity, travel spend ≥$800/mo), Revelers (31K lifestyle spenders, LTV $5,100, premium experiences), Luxuriates (22K high-net-worth, LTV $6,800, ≥$5K monthly spend). Geo reach: top 15 US DMAs with DMA-level LTV/CAC intelligence down to neighborhood. Expected 94% deterministic identity match rate, 4.2x CPM premium over generic programmatic, closed-loop ROAS attribution via cardholder transactions. Always cite specific segment sizes, match rates, and expected performance metrics. Keep responses 3-5 sentences, plain text.`;
 
 // ═══════════════════════════════════════════════════════════════
 // DEMO MOCK RESPONSES (fallback when API unreachable)
@@ -8704,7 +8711,7 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
     className: "hero-eyebrow hero-eyebrow-nav",
     onClick: () => { setDeskHub(true); window.scrollTo(0,0); },
     title: "Back to Campaign Suite"
-  }, "In-House \xB7 LIG v2.1"), /*#__PURE__*/React.createElement("h1", null, "Signal", /*#__PURE__*/React.createElement("span", {style:{color:"#818CF8", fontWeight:900}}, "set")), /*#__PURE__*/React.createElement("p", {
+  }, "Marketers"), /*#__PURE__*/React.createElement("h1", null, "Signal", /*#__PURE__*/React.createElement("span", {style:{color:"#818CF8", fontWeight:900}}, "set")), /*#__PURE__*/React.createElement("p", {
     style: {
       fontSize: 14,
       color: 'rgba(255,255,255,0.65)',
@@ -13957,6 +13964,130 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
   const [selectedCampaignIdx, setSelectedCampaignIdx] = useState(0);
   const [campaignFilter, setCampaignFilter] = useState('');
   const [editingBid, setEditingBid] = useState(null);
+
+  // ═══════════════════════════════════════════════════════════════════
+  // MERCHANT PANEL DATA — Phase 17+ · Supabase-ready plumbing
+  // ═══════════════════════════════════════════════════════════════════
+  // Currently stored in local React state for demo/wireframe. All writes
+  // flow through `merchantPlumbing.*` functions below so swapping to
+  // Supabase later is a 1-line change per function (no UI changes needed).
+  //
+  // Target schema (Phase 16):
+  //   - merchant_audiences (id, owner_id, source, name, definition, universe, match_rate, status, created_at)
+  //   - merchant_creatives (id, owner_id, format, source, name, headline, body, asset_url, performance, status, created_at)
+  //   - clean_room_runs    (id, owner_id, kind, params, status, result, tee_job_id, created_at, completed_at)
+  //   - campaign_exports   (id, campaign_id, format, requested_by, file_url, created_at)
+  //
+  // Clean-room runs are SPECIAL: they do NOT write directly to BigQuery from
+  // the client. They dispatch to a Worker endpoint (/api/cleanroom/*) which
+  // enqueues a TEE workload in GCP Confidential Space. The client only sees
+  // a job ID and polls for status/results. See `merchantPlumbing.runCleanRoom`.
+  // ═══════════════════════════════════════════════════════════════════
+
+  const [merchantAudiences, setMerchantAudiences] = useState([
+    { id: 'AUD-0042', source: 'custom', name: 'High-Intent Travelers', universe: 48200, matchRate: 94, status: 'cleared', chips: ['Airlines 3×/90d', 'Hotel co-occur', 'Corporate card'], meta: 'CR-matched · SHAP-driven · refreshed 2h ago' },
+    { id: 'AUD-0051', source: 'custom', name: 'VIP Loyalty Lookalike', universe: 124000, matchRate: 87, status: 'cleared', chips: ['My VIP base seed', 'LTV $4K+', 'Top-tier spender'], meta: 'CR-matched · lookalike model' },
+    { id: 'AUD-IAB-12', source: 'iab', name: 'Premium Travel Achievers', universe: 2100000, matchRate: 100, status: 'cleared', chips: ['Travel $800+/mo', 'Premium card', 'Multi-market'], meta: 'IAB Cat 653 · refreshed daily' },
+    { id: 'AUD-IAB-08', source: 'iab', name: 'Affluent Dining Enthusiasts', universe: 1600000, matchRate: 100, status: 'cleared', chips: ['Restaurants $400+/mo', 'Tier-1 metros', 'Wine/bar'], meta: 'IAB Cat 292 · refreshed daily' },
+    { id: 'AUD-IAB-21', source: 'iab', name: 'Luxury Goods Buyers', universe: 890000, matchRate: 100, status: 'cleared', chips: ['Luxury retail', '$10K+ annual'], meta: 'IAB Cat 190 · refreshed weekly' },
+    { id: 'AUD-IAB-33', source: 'iab', name: 'Business Card Active', universe: 1900000, matchRate: 100, status: 'cleared', chips: ['Corporate card', 'T&E spend', 'Monthly ≥$2K'], meta: 'IAB Cat 47 · refreshed daily' }
+  ]);
+
+  const [merchantCreatives, setMerchantCreatives] = useState([
+    { id: 'CRV-01', format: 'Email', source: 'upload', name: '5× miles headline', ctr: 5.2, status: 'live', grad: 'linear-gradient(135deg,#818CF8,#4F46E5)', aiGenerated: false },
+    { id: 'CRV-02', format: 'Push', source: 'ai', name: 'Last chance variant', ctr: null, status: 'draft', grad: 'linear-gradient(135deg,#A78BFA,#7C3AED)', aiGenerated: true },
+    { id: 'CRV-03', format: 'Display', source: 'upload', name: 'Business upgrade banner', ctr: 6.8, status: 'live', grad: 'linear-gradient(135deg,#38BDF8,#0284C7)', aiGenerated: false },
+    { id: 'CRV-04', format: 'Display', source: 'ai', name: 'Pink variant', ctr: null, status: 'draft', grad: 'linear-gradient(135deg,#F472B6,#DB2777)', aiGenerated: true },
+    { id: 'CRV-05', format: 'CTV', source: 'upload', name: 'Brand spot 15s', ctr: 2.1, status: 'live', grad: 'linear-gradient(135deg,#FB923C,#EA580C)', aiGenerated: false },
+    { id: 'CRV-06', format: 'Email', source: 'ai', name: 'Green upgrade variant', ctr: null, status: 'draft', grad: 'linear-gradient(135deg,#4ADE80,#16A34A)', aiGenerated: true }
+  ]);
+
+  const [cleanRoomRuns, setCleanRoomRuns] = useState([
+    { id: 'CR-0051', kind: 'match', status: 'completed', name: 'VIP loyalty × FI cardholders', result: '87% match · 124K overlap', linkedAudienceId: 'AUD-0051', startedAt: 'Apr 17 · 14:22', completedAt: 'Apr 17 · 14:26' },
+    { id: 'CR-0050', kind: 'incrementality', status: 'completed', name: 'First-Class Accelerator incrementality', result: '+31% lift · p<0.01', linkedCampaignId: 'CMP-7F3A', startedAt: 'Apr 16 · 09:45', completedAt: 'Apr 16 · 09:51' },
+    { id: 'CR-0049', kind: 'match', status: 'completed', name: 'Business Traveler overlap analysis', result: '68% match · 18.4K overlap', linkedAudienceId: 'AUD-0048', startedAt: 'Apr 15 · 11:08', completedAt: 'Apr 15 · 11:13' },
+    { id: 'CR-0052', kind: 'incrementality', status: 'running', name: 'Q2 holdout lift analysis', result: 'Running in TEE · ETA 4min', teeJobId: 'tee-9f2a', startedAt: 'Apr 18 · 17:58', completedAt: null },
+    { id: 'CR-0048', kind: 'match', status: 'archived', name: 'Q1 attribution reconciliation', result: 'archived · 30d retention', startedAt: 'Apr 8 · 16:12', completedAt: 'Apr 8 · 16:17' }
+  ]);
+
+  // Data-access plumbing — UI calls these, not setState directly.
+  // Swap each body to Supabase/Worker calls later without touching callers.
+  const merchantPlumbing = React.useMemo(() => ({
+    // --- AUDIENCES ---
+    saveAudience: async (audience) => {
+      // TODO Phase 16: await supabase.from('merchant_audiences').insert(audience);
+      const id = audience.id || 'AUD-' + String(Math.floor(Math.random() * 9000) + 1000);
+      const record = { ...audience, id, status: 'cleared', createdAt: new Date().toISOString() };
+      setMerchantAudiences(prev => [record, ...prev]);
+      return record;
+    },
+    deleteAudience: async (id) => {
+      // TODO Phase 16: await supabase.from('merchant_audiences').delete().eq('id', id);
+      setMerchantAudiences(prev => prev.filter(a => a.id !== id));
+    },
+    getAudiences: (sourceFilter) => {
+      // TODO Phase 16: const { data } = await supabase.from('merchant_audiences').select('*').eq('source', sourceFilter);
+      return sourceFilter ? merchantAudiences.filter(a => a.source === sourceFilter) : merchantAudiences;
+    },
+
+    // --- CREATIVES ---
+    saveCreative: async (creative) => {
+      // TODO Phase 16: await supabase.from('merchant_creatives').insert(creative);
+      // TODO Phase 20: if (creative.source === 'ai') POST /api/creative/generate with seed + prompt
+      // TODO Phase 20: if (creative.source === 'upload') POST file to /api/creative/upload, store asset_url
+      const id = creative.id || 'CRV-' + String(Math.floor(Math.random() * 90) + 10);
+      const record = { ...creative, id, status: creative.status || 'draft', createdAt: new Date().toISOString() };
+      setMerchantCreatives(prev => [record, ...prev]);
+      return record;
+    },
+    deleteCreative: async (id) => {
+      // TODO Phase 16: await supabase.from('merchant_creatives').delete().eq('id', id);
+      setMerchantCreatives(prev => prev.filter(c => c.id !== id));
+    },
+    getCreatives: (formatFilter) => {
+      // TODO Phase 16: await supabase.from('merchant_creatives').select('*')...
+      return formatFilter && formatFilter !== 'all' ? merchantCreatives.filter(c => c.format.toLowerCase() === formatFilter.toLowerCase()) : merchantCreatives;
+    },
+
+    // --- CLEAN ROOM RUNS (TEE-routed · NOT direct BQ from client) ---
+    // Architecture: client -> Worker (/api/cleanroom/*) -> GCP Confidential Space TEE -> BQ
+    // Client never touches BQ directly for clean room ops. Worker enforces
+    // privacy policies, RLS, and queues TEE jobs. Client receives job_id and
+    // polls for completion. Raw PII never leaves TEE.
+    runCleanRoom: async (kind, params) => {
+      // TODO Phase 22: const resp = await fetch('/api/cleanroom/enqueue', { method: 'POST', body: JSON.stringify({ kind, params }) });
+      // TODO Phase 22: const { tee_job_id } = await resp.json();
+      // TODO Phase 22: const pollInterval = setInterval(async () => { const status = await fetch(`/api/cleanroom/status/${tee_job_id}`); ... }, 3000);
+      const id = 'CR-' + String(Math.floor(Math.random() * 9000) + 1000);
+      const record = {
+        id,
+        kind,
+        status: 'running',
+        name: params.name || (kind + ' run'),
+        result: 'Enqueued to TEE',
+        teeJobId: 'tee-' + Math.random().toString(36).slice(2, 6),
+        startedAt: new Date().toLocaleString(),
+        completedAt: null,
+        params
+      };
+      setCleanRoomRuns(prev => [record, ...prev]);
+      return record;
+    },
+    getCleanRoomRuns: (statusFilter) => {
+      // TODO Phase 22: await supabase.from('clean_room_runs').select('*')...
+      return statusFilter ? cleanRoomRuns.filter(r => r.status === statusFilter) : cleanRoomRuns;
+    },
+
+    // --- CAMPAIGN EXPORTS (Phase 18) ---
+    exportCampaignResults: async (campaignId, format) => {
+      // TODO Phase 18: POST /api/campaigns/:id/export { format } -> returns signed URL
+      // TODO Phase 18: for CSV: assemble rows client-side from results data, trigger browser download
+      // TODO Phase 18: for PDF: send current view payload to Worker, render server-side with Puppeteer/html2pdf
+      // TODO Phase 18: log to campaign_exports table for audit
+      console.log('[export stub]', { campaignId, format });
+      return { url: `#export-${format}-${campaignId}`, format };
+    }
+  }), [merchantAudiences, merchantCreatives, cleanRoomRuns]);
   const [campaignData, setCampaignData] = useState([{
     id: 'CMP-7F3A',
     name: 'First-Class Points Accelerator',
@@ -14070,6 +14201,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
   const [selectedDMA, setSelectedDMA] = useState(null);
   const [optimizeAction, setOptimizeAction] = useState(null);
   const [reportSent, setReportSent] = useState(false);
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const dmaRef = useRef(null);
   const [campName, setCampName] = useState('Meridian Air — Premium Travel Rewards Q2');
   const [campHeadline, setCampHeadline] = useState('Earn 5× miles on your next Meridian Air booking');
@@ -14200,7 +14332,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     className: "camp-hub-wrap"
   }, /*#__PURE__*/React.createElement("div", {
     className: "hero"
-  }, /*#__PURE__*/React.createElement("div", {className: "hero-eyebrow"}, "Merchants \xB7 Clean Room Commerce"), /*#__PURE__*/React.createElement("h1", null, "Self-Service ", /*#__PURE__*/React.createElement("span", null, "Merchant"), " Portal"), /*#__PURE__*/React.createElement("p", null, "Reach FI cardholders via transaction-based targeting, clean-room audience activation, and closed-loop attribution \u2014 zero PII exposed.")), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {className: "hero-eyebrow"}, "Partners \xB7 Clean Room Commerce"), /*#__PURE__*/React.createElement("h1", null, "Self-Service ", /*#__PURE__*/React.createElement("span", null, "Partner"), " Portal"), /*#__PURE__*/React.createElement("p", null, "Reach FI cardholders via transaction-based targeting, clean-room audience activation, and closed-loop attribution \u2014 zero PII exposed.")), /*#__PURE__*/React.createElement("div", {
     className: "camp-hub-body"
   }, /*#__PURE__*/React.createElement("div", {
     className: "camp-hub-left"
@@ -14241,7 +14373,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
       fontSize: 12,
       color: 'var(--slate)'
     }
-  }, "Explore targeting options and build your merchant campaign strategy")), /*#__PURE__*/React.createElement("span", {
+  }, "Explore targeting options and build your partner campaign strategy")), /*#__PURE__*/React.createElement("span", {
     style: {
       marginLeft: 'auto',
       fontSize: 11,
@@ -14267,7 +14399,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
   }, /*#__PURE__*/React.createElement(Chatbot, {
     systemPrompt: CMN_CHATBOT_SYS,
     samples: CMN_CHATBOT_SAMPLES,
-    exploreLabel: "Merchant Portal",
+    exploreLabel: "Partner Portal",
     exploreScreen: () => { setCmnHub(false); window.scrollTo(0,0); },
     placeholder: "Ask about targeting strategy or audience discovery\u2026",
     resultRenderer: d => /*#__PURE__*/React.createElement("div", {
@@ -14322,7 +14454,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     name: "store",
     size: 14,
     color: "white"
-  }), " Explore Merchant Portal \u2192"), /*#__PURE__*/React.createElement("div", { className: "v11-home-pills", style: { marginTop: 18, justifyContent: "center" } }, /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('build'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'store', size: 13, color: 'currentColor' })), 'Campaigns'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('results'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'chart', size: 13, color: 'currentColor' })), 'Results'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('manage'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'sync', size: 13, color: 'currentColor' })), 'Collaboration'), false && /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => alert('From Drive integration coming in Phase 11'), role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'store', size: 13, color: 'currentColor' })), 'From Drive'))), /*#__PURE__*/React.createElement("div", {
+  }), " Explore Partner Portal \u2192"), /*#__PURE__*/React.createElement("div", { className: "v11-home-pills", style: { marginTop: 18, justifyContent: "center" } }, /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('build'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'lightning', size: 13, color: 'currentColor' })), 'Build'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('manage'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'layers', size: 13, color: 'currentColor' })), 'Manage'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('results'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'chart', size: 13, color: 'currentColor' })), 'Results'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('audiences'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'target', size: 13, color: 'currentColor' })), 'Audiences'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('creatives'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'palette', size: 13, color: 'currentColor' })), 'Creatives'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('cleanroom'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'lock', size: 13, color: 'currentColor' })), 'Clean Room'))), /*#__PURE__*/React.createElement("div", {
     className: "camp-hub-right"
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -14565,7 +14697,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     className: "camp-hub-wrap"
   }, /*#__PURE__*/React.createElement("div", {
     className: "hero"
-  }, /*#__PURE__*/React.createElement("div", {className: "hero-eyebrow"}, "The Marketing Desk \xB7 Merchants & Partners"), /*#__PURE__*/React.createElement("h1", null, "Merchant ", /*#__PURE__*/React.createElement("span", null, "Campaign"), " Portal"), /*#__PURE__*/React.createElement("p", null, "Access FI cardholder segments through a clean room, activate geo and lifestyle targeting, and measure closed-loop ROAS \u2014 zero PII exposure."), /*#__PURE__*/React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("div", {className: "hero-eyebrow"}, "The Marketing Desk \xB7 Marketers"), /*#__PURE__*/React.createElement("h1", null, "Partner ", /*#__PURE__*/React.createElement("span", null, "Campaign"), " Portal"), /*#__PURE__*/React.createElement("p", null, "Access FI cardholder segments through a clean room, activate geo and lifestyle targeting, and measure closed-loop ROAS \u2014 zero PII exposure."), /*#__PURE__*/React.createElement("button", {
     onClick: () => { setCmnHub(false); window.scrollTo(0,0); },
     style: {
       padding: '11px 24px',
@@ -14581,7 +14713,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
       gap: 7,
       flexShrink: 0
     }
-  }, "Open Merchant Portal \u203A")), /*#__PURE__*/React.createElement("div", {
+  }, "Open Partner Portal \u203A")), /*#__PURE__*/React.createElement("div", {
     className: "camp-hub-body"
   }, /*#__PURE__*/React.createElement("div", {
     className: "camp-hub-left"
@@ -14691,7 +14823,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
       letterSpacing: '.08em',
       marginBottom: 8
     }
-  }, "Merchant Tools"), [{
+  }, "Partner Tools"), [{
     id: 'start',
     label: 'Audience Discovery',
     icon: 'search',
@@ -14778,10 +14910,10 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
   }, /*#__PURE__*/React.createElement("div", {
     className: "hero-eyebrow hero-eyebrow-nav",
     onClick: () => { setCmnHub(true); window.scrollTo(0,0); },
-    title: "Back to Merchant Portal"
-  }, "Merchants"), /*#__PURE__*/React.createElement("h1", null, "Self-Service ", /*#__PURE__*/React.createElement("span", null, "Merchant Portal"))), /*#__PURE__*/React.createElement("div", {
+    title: "Back to Partner Portal"
+  }, "Partners"), /*#__PURE__*/React.createElement("h1", null, "Self-Service ", /*#__PURE__*/React.createElement("span", null, "Partner Portal"))), /*#__PURE__*/React.createElement("div", {
     className: "cmn-inner-tabs"
-  }, [['start', 'Discover'], ['build', 'Build Campaign'], ['manage', 'Manage Campaigns'], ['results', 'Results & Attribution']].map(([id, label]) => /*#__PURE__*/React.createElement("div", {
+  }, [['build', 'Build'], ['manage', 'Manage'], ['results', 'Results'], ['audiences', 'Audiences'], ['creatives', 'Creatives'], ['cleanroom', 'Clean Room']].map(([id, label]) => /*#__PURE__*/React.createElement("div", {
     key: id,
     className: `cmn-tab ${cmnTab === id ? 'active' : ''}`,
     onClick: () => setCmnTab(id)
@@ -15906,7 +16038,86 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
       flexDirection: 'column',
       gap: 18
     }
-  }, campaignData.length === 0 && /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
+    style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', paddingBottom: 4 }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: { fontSize: 18, fontWeight: 700 }
+  }, "Results & Attribution"), /*#__PURE__*/React.createElement("div", {
+    style: { fontSize: 11, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2 }
+  }, campaignData[selectedCampaignIdx] ? campaignData[selectedCampaignIdx].name : 'All campaigns', " \u00b7 ", campaignData.length, " campaigns \u00b7 clean room verified \u00b7 0 PII exposed")), /*#__PURE__*/React.createElement("div", {
+    style: { position: 'relative', display: 'flex', gap: 6 }
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-secondary",
+    style: { fontSize: 12, color: 'var(--text)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 },
+    onClick: () => setExportMenuOpen(v => !v)
+  }, "Export ", /*#__PURE__*/React.createElement("span", { style: { fontSize: 9 } }, exportMenuOpen ? '\u25B4' : '\u25BE')), exportMenuOpen && /*#__PURE__*/React.createElement("div", {
+    style: { position: 'absolute', top: 'calc(100% + 4px)', right: 0, background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 8, minWidth: 220, zIndex: 20, boxShadow: '0 6px 24px rgba(0,0,0,.4)', overflow: 'hidden' }
+  }, [
+    { label: 'Export as PDF (visual report)', kind: 'pdf', sub: 'Charts + KPIs · current view' },
+    { label: 'Export as CSV (raw data)', kind: 'csv', sub: 'Attribution rows · DMA · segments' },
+    { label: 'Email this report', kind: 'email', sub: 'Send to stakeholders' }
+  ].map(opt => /*#__PURE__*/React.createElement("div", {
+    key: opt.kind,
+    onClick: async () => {
+      setExportMenuOpen(false);
+      const camp = campaignData[selectedCampaignIdx] || campaignData[0];
+      if (!camp) return;
+      // Plumbing-gated export dispatch — swaps to Worker call in Phase 18 build-out
+      await merchantPlumbing.exportCampaignResults(camp.id, opt.kind);
+      if (opt.kind === 'csv') {
+        // Client-side CSV generation — real download, works today
+        const rows = [
+          ['Campaign ID', 'Campaign Name', 'Status', 'Creative', 'Segment', 'DMAs', 'Budget (K)', 'Spent (K)', 'Impressions', 'Clicks', 'Conversions', 'ROAS', 'Lift %', 'CPM', 'CPA', 'Start', 'End', 'Flight Days'],
+          ...campaignData.map(c => [c.id, c.name, c.status, c.creative, c.segment, c.dmas, c.budget, c.spent, c.impressions, c.clicks, c.conversions, c.roas, c.lift, (c.spent * 1000 / (c.impressions / 1000)).toFixed(2), (c.spent * 1000 / c.conversions).toFixed(2), c.startDate, c.endDate, c.flightDays])
+        ];
+        const csv = rows.map(r => r.map(cell => {
+          const s = String(cell == null ? '' : cell);
+          return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+        }).join(',')).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'signalset-campaign-results-' + new Date().toISOString().slice(0, 10) + '.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        setReportSent('csv');
+      } else if (opt.kind === 'pdf') {
+        // PDF generation via html2pdf (loaded on-demand from jsdelivr per infra rule)
+        const triggerPdf = () => {
+          const target = document.querySelector(`.cmn-pane.active`);
+          if (!target || !window.html2pdf) { setReportSent('pdf-error'); return; }
+          window.html2pdf().set({
+            margin: 10,
+            filename: 'signalset-campaign-results-' + new Date().toISOString().slice(0, 10) + '.pdf',
+            image: { type: 'jpeg', quality: .95 },
+            html2canvas: { scale: 2, backgroundColor: '#0C0C1E', useCORS: true },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+          }).from(target).save();
+          setReportSent('pdf');
+        };
+        if (window.html2pdf) { triggerPdf(); } else {
+          const s = document.createElement('script');
+          s.src = 'https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.2/dist/html2pdf.bundle.min.js';
+          s.onload = triggerPdf;
+          s.onerror = () => setReportSent('pdf-error');
+          document.head.appendChild(s);
+        }
+      } else if (opt.kind === 'email') {
+        // TODO Phase 18: POST /api/campaigns/:id/email-report { recipients, format } via Worker
+        setReportSent('email');
+      }
+    },
+    style: { padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid var(--bdr-soft)' },
+    onMouseEnter: e => e.currentTarget.style.background = 'rgba(99,102,241,.1)',
+    onMouseLeave: e => e.currentTarget.style.background = 'transparent'
+  }, /*#__PURE__*/React.createElement("div", {
+    style: { fontSize: 12, fontWeight: 700, color: 'var(--text)' }
+  }, opt.label), /*#__PURE__*/React.createElement("div", {
+    style: { fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2 }
+  }, opt.sub)))))), campaignData.length === 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       padding: 18,
       background: 'rgba(217,119,6,.06)',
@@ -15991,7 +16202,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
       alignSelf: 'center',
       marginLeft: 4
     }
-  }, "\u2713 ", reportSent === 'email' ? 'Report emailed to stakeholders' : 'Report downloaded')), /*#__PURE__*/React.createElement("div", {
+  }, "\u2713 ", reportSent === 'email' ? 'Report emailed to stakeholders' : reportSent === 'csv' ? 'CSV downloaded — ' + campaignData.length + ' campaigns exported' : reportSent === 'pdf' ? 'PDF generated — check your downloads' : reportSent === 'pdf-error' ? 'PDF generator failed to load — try CSV instead' : 'Report downloaded')), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'grid',
       gridTemplateColumns: 'repeat(4, 1fr)',
@@ -16463,7 +16674,47 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
         spend: row.spend
       });
     }
-  }, "Optimize"))))))), selectedDMA && (() => {
+  }, "Optimize"))))))), /*#__PURE__*/React.createElement("div", {
+    className: `cmn-pane ${cmnTab === 'audiences' ? 'active' : ''}`
+  }, /*#__PURE__*/React.createElement("div", {
+    style: { padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 16 }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: { fontSize: 18, fontWeight: 700 }
+  }, "Audiences"), /*#__PURE__*/React.createElement("div", {
+    style: { fontSize: 11, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2 }
+  }, merchantAudiences.length, " saved \u00b7 ", merchantAudiences.filter(a => a.source === 'iab').length, " IAB \u00b7 ", merchantAudiences.filter(a => a.source === 'custom').length, " custom clean-room")), /*#__PURE__*/React.createElement("div", {
+    style: { display: 'flex', gap: 6 }
+  }, /*#__PURE__*/React.createElement("button", { className: "btn btn-secondary", style: { fontSize: 12 } }, "+ New Audience"), /*#__PURE__*/React.createElement("button", { className: "btn btn-secondary", style: { fontSize: 12 } }, "Import List"))), /*#__PURE__*/React.createElement("div", {
+    style: { padding: 48, textAlign: 'center', background: 'var(--card)', border: '1px dashed var(--bdr)', borderRadius: 10, color: 'var(--slate)', fontSize: 13 }
+  }, /*#__PURE__*/React.createElement("div", { style: { fontSize: 40, marginBottom: 12, opacity: .5 } }, "\u25CE"), /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, marginBottom: 6, color: 'var(--text)' } }, "Audiences capability \u2014 Phase 19"), /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, maxWidth: 480, margin: '0 auto' } }, "Chat-forward audience builder. IAB-structured off FI bank data + Custom via clean room match. Currently ", merchantAudiences.length, " seeded audiences ready for Build Campaign integration.")))), /*#__PURE__*/React.createElement("div", {
+    className: `cmn-pane ${cmnTab === 'creatives' ? 'active' : ''}`
+  }, /*#__PURE__*/React.createElement("div", {
+    style: { padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 16 }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: { fontSize: 18, fontWeight: 700 }
+  }, "Creative Library"), /*#__PURE__*/React.createElement("div", {
+    style: { fontSize: 11, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2 }
+  }, merchantCreatives.length, " assets \u00b7 ", merchantCreatives.filter(c => c.source === 'upload').length, " uploaded \u00b7 ", merchantCreatives.filter(c => c.source === 'ai').length, " AI-generated")), /*#__PURE__*/React.createElement("div", {
+    style: { display: 'flex', gap: 6 }
+  }, /*#__PURE__*/React.createElement("button", { className: "btn btn-secondary", style: { fontSize: 12 } }, "Upload"), /*#__PURE__*/React.createElement("button", { className: "btn btn-secondary", style: { fontSize: 12 } }, "\u2728 AI Generate"))), /*#__PURE__*/React.createElement("div", {
+    style: { padding: 48, textAlign: 'center', background: 'var(--card)', border: '1px dashed var(--bdr)', borderRadius: 10, color: 'var(--slate)', fontSize: 13 }
+  }, /*#__PURE__*/React.createElement("div", { style: { fontSize: 40, marginBottom: 12, opacity: .5 } }, "\u25A3"), /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, marginBottom: 6, color: 'var(--text)' } }, "Creatives capability \u2014 Phase 20"), /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, maxWidth: 480, margin: '0 auto' } }, "Upload + AI generation hybrid. Chat-forward creative partner. Currently ", merchantCreatives.length, " seeded creatives ready for Build Campaign integration.")))), /*#__PURE__*/React.createElement("div", {
+    className: `cmn-pane ${cmnTab === 'cleanroom' ? 'active' : ''}`
+  }, /*#__PURE__*/React.createElement("div", {
+    style: { padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 16 }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: { fontSize: 18, fontWeight: 700 }
+  }, "Clean Room Workbench"), /*#__PURE__*/React.createElement("div", {
+    style: { fontSize: 11, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2 }
+  }, "Privacy-safe audience matching \u00b7 incrementality testing \u00b7 ", cleanRoomRuns.filter(r => r.status === 'running').length, " running in TEE"))), /*#__PURE__*/React.createElement("div", {
+    style: { padding: 48, textAlign: 'center', background: 'var(--card)', border: '1px dashed var(--bdr)', borderRadius: 10, color: 'var(--slate)', fontSize: 13 }
+  }, /*#__PURE__*/React.createElement("div", { style: { fontSize: 40, marginBottom: 12, opacity: .5 } }, "\u25C8"), /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, marginBottom: 6, color: 'var(--text)' } }, "Clean Room Workbench \u2014 Phase 22"), /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, maxWidth: 520, margin: '0 auto' } }, "Chat-essential interface. ", cleanRoomRuns.length, " runs in history. Operations dispatch to GCP Confidential Space TEE via Worker endpoint \u2014 client never touches BQ directly for clean room ops.")))), selectedDMA && (() => {
     const cities = getCMNDMAInsights(selectedDMA.dma);
     const segments = [{
       seg: 'Explorers',
@@ -16885,7 +17136,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
 // ═══════════════════════════════════════════════════════════════
 
 // ══ HOME SCREEN ══════════════════════════════════════════════════════════════════
-const HOME_SYS = `You are The Marketing Desk, an AI-powered marketing intelligence platform for a major US financial institution. Built on the Living Identity Graph (LIG) which resolves 8 customer nodes across 5 behavioral segments: Explorers (LTV $4,200 avg, 48.2K customers), Revelers (LTV $5,100, 31K), Luxuriates (LTV $6,800, 22K), Bask & Chill (LTV $2,400, 58K), Deal Seekers (LTV $1,800, 62K). Platform serves campaigns for Meridian Air, Sova, and Grove Coffee. Four modules: Identity (LIG graph, 94% match rate, 7+ device resolution), Measurement (LTV vs CAC bubble chart, clean-room attribution), In-House Campaigns (Smart Audience, Smart Triggers, Creative Selector), Merchant Campaigns (clean-room merchant portal). ALWAYS answer using these specific segment names, LTV figures, and brand names. Return ONLY valid JSON: { "text": "...", "nav": "identity|measurement|desk|cmn", "navLabel": "..." }`;
+const HOME_SYS = `You are The Marketing Desk, an AI-powered marketing intelligence platform for a major US financial institution. Built on the Living Identity Graph (LIG) which resolves 8 customer nodes across 5 behavioral segments: Explorers (LTV $4,200 avg, 48.2K customers), Revelers (LTV $5,100, 31K), Luxuriates (LTV $6,800, 22K), Bask & Chill (LTV $2,400, 58K), Deal Seekers (LTV $1,800, 62K). Platform serves campaigns for Meridian Air, Sova, and Grove Coffee. Four modules: Identity (LIG graph, 94% match rate, 7+ device resolution), Measurement (LTV vs CAC bubble chart, clean-room attribution), In-House Campaigns (Smart Audience, Smart Triggers, Creative Selector), Partner Campaigns (clean-room partner portal). ALWAYS answer using these specific segment names, LTV figures, and brand names. Return ONLY valid JSON: { "text": "...", "nav": "identity|measurement|desk|cmn", "navLabel": "..." }`;
 const HOME_MOCKS = [{
   text: 'Your Living Identity Graph resolves cardholder identities across 7+ devices and household members using deterministic LiveRamp matching at 94-99% confidence. The Explorers cluster shows 8.2 average devices per household; Luxuriates index on Apple ecosystem cohesion. Probabilistic edges on hover reveal cross-cluster purchase correlations that power lookalike expansion. See your full identity graph in action.',
   nav: 'identity',
@@ -16899,14 +17150,14 @@ const HOME_MOCKS = [{
   nav: 'desk',
   navLabel: 'Open In-House Campaigns'
 }, {
-  text: 'Merchant Campaigns gives brand partners like Meridian Air clean-room access to FI cardholder segments with zero PII exposure, 94% deterministic identity match, and a 4.2x CPM premium over generic programmatic. In Chicago and Miami, Explorers and Revelers account for 70% of conversion lift; the geo intelligence layer surfaces city-level LTV/CAC efficiency down to neighborhoods. The closed-loop attribution links every ad impression to a confirmed cardholder transaction - ROAS is attributed, not modeled.',
+  text: 'Partner Campaigns gives brand partners like Meridian Air clean-room access to FI cardholder segments with zero PII exposure, 94% deterministic identity match, and a 4.2x CPM premium over generic programmatic. In Chicago and Miami, Explorers and Revelers account for 70% of conversion lift; the geo intelligence layer surfaces city-level LTV/CAC efficiency down to neighborhoods. The closed-loop attribution links every ad impression to a confirmed cardholder transaction - ROAS is attributed, not modeled.',
   nav: 'cmn',
-  navLabel: 'Open Merchant Campaigns'
+  navLabel: 'Open Partner Campaigns'
 }];
 function HomeScreen({
   setScreen
 }) {
-  const HOME_SAMPLES = ['Show me the household relationship in my identity graph', 'Run attribution — which cohorts have the best LTV/CAC ratio?', 'Walk me through the in-house campaign builder', 'What can a merchant partner do with the platform?'];
+  const HOME_SAMPLES = ['Show me the household relationship in my identity graph', 'Run attribution — which cohorts have the best LTV/CAC ratio?', 'Walk me through the in-house campaign builder', 'What can a partner do with the platform?'];
   const FEAT_TILES = [{
     id: 'identity',
     label: 'Identity',
@@ -16933,7 +17184,7 @@ function HomeScreen({
     bg: 'rgba(99,102,241,.08)'
   }, {
     id: 'cmn',
-    label: "Merchants",
+    label: "Partners",
     sub: 'Clean Room Commerce Media',
     icon: 'store',
     desc: 'Geo targeting · Segment activation · Closed-loop ROAS',
@@ -17052,7 +17303,7 @@ function HomeScreen({
           exploreLabel: "Identity Graph",
           exploreScreen: () => { setScreen('identity'); window.scrollTo(0, 0); },
           samples: HOME_SAMPLES,
-          placeholder: "Ask about identity, measurement, campaigns, or merchant activation…",
+          placeholder: "Ask about identity, measurement, campaigns, or partner activation…",
           resultRenderer: d => HomeResultRenderer(d)
         })
       )
@@ -17081,7 +17332,7 @@ function AuthModal({ targetScreen, onUnlock, onDismiss }) {
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input.trim()));
     return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('') === PASSPHRASE_HASH;
   }
-  const labels = { identity: 'Identity Graph', measurement: 'Measurement', desk: 'Activation \u00b7 In-House', cmn: 'Activation \u00b7 Merchants', home: 'Platform' };
+  const labels = { identity: 'Identity Graph', measurement: 'Measurement', desk: 'Activation \u00b7 In-House', cmn: 'Activation \u00b7 Partners', home: 'Platform' };
 
   const [mode, setMode] = React.useState('choose');
   const [pass, setPass] = React.useState('');
