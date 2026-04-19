@@ -555,9 +555,9 @@ body.v11-sidebar-open .v11-sidebar { transform: translateX(0); }
 /* ── CHATBOT ── */
 .chat-wrap { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .chat-messages {
-  flex: 0 1 auto; overflow-y: auto; padding: 14px 20px;
+  flex: 1 1 auto; overflow-y: auto; padding: 14px 20px;
   display: flex; flex-direction: column; gap: 16px;
-  background: transparent; min-height: 0; max-height: 200px;
+  background: transparent; min-height: 0;
 }
 .chat-messages:empty { padding: 0; }
 .chat-empty { color: var(--slate); font-size: 16px; text-align: center; padding-top: 40px; line-height: 1.8; }
@@ -4097,7 +4097,7 @@ function Chatbot({
       }
     },
     disabled: loading
-  }), samples && /*#__PURE__*/React.createElement("div", {
+  }), samples && msgs.length === 0 && /*#__PURE__*/React.createElement("div", {
     className: "sample-chips"
   }, samples.map(s => /*#__PURE__*/React.createElement("span", {
     key: s,
@@ -4143,7 +4143,7 @@ function Chatbot({
     }
   }, msg.content?.error || msg.content?.text || JSON.stringify(msg.content)))), /*#__PURE__*/React.createElement("div", {
     ref: endRef
-  })), msgs.some(m => m.role === 'assistant' && m.content && !m.loading) && /*#__PURE__*/React.createElement("div", {
+  })), false && msgs.some(m => m.role === 'assistant' && m.content && !m.loading) && /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '10px 20px',
       borderTop: '1px solid var(--bdr)',
@@ -10991,7 +10991,7 @@ function StateDMADrill({
     style: {
       position: 'fixed',
       inset: 0,
-      background: 'rgba(14,31,56,.45)',
+      background: 'rgba(0,0,0,.75)',
       zIndex: 400,
       display: 'flex',
       alignItems: 'flex-end'
@@ -11001,12 +11001,12 @@ function StateDMADrill({
     style: {
       background: 'var(--bg)',
       width: '100%',
-      height: '88vh',
+      height: '92vh',
       borderRadius: '18px 18px 0 0',
       overflowY: 'auto',
       display: 'flex',
       flexDirection: 'column',
-      boxShadow: '0 -8px 48px rgba(14,31,56,.25)',
+      boxShadow: '0 -8px 48px rgba(0,0,0,.5)',
       animation: 'sheetUp .3s cubic-bezier(.22,.68,0,1.1)'
     },
     onClick: e => e.stopPropagation()
@@ -11018,7 +11018,10 @@ function StateDMADrill({
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      flexShrink: 0
+      flexShrink: 0,
+      position: 'sticky',
+      top: 0,
+      zIndex: 5
     }
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -11080,7 +11083,7 @@ function StateDMADrill({
       gridTemplateColumns: 'repeat(4,1fr)',
       gap: 10
     }
-  }, [['Consumers', `${(stateInfo.consumers / 1000).toFixed(0)}K`, 'var(--cyan)'], ['Revenue', `$${(stateInfo.revenue / 1000).toFixed(0)}K`, 'var(--green)'], ['Conv. Rate', `${stateInfo.cvr}%`, 'var(--green)'], ['Impressions', stateInfo.impressions.toLocaleString(), 'var(--navy)']].map(([k, v, c]) => /*#__PURE__*/React.createElement("div", {
+  }, [['Consumers', `${(stateInfo.consumers / 1000).toFixed(0)}K`, 'var(--cyan)'], ['Revenue', `$${(stateInfo.revenue / 1000).toFixed(0)}K`, 'var(--green)'], ['Conv. Rate', `${stateInfo.cvr}%`, 'var(--green)'], ['Impressions', stateInfo.impressions.toLocaleString(), 'var(--text)']].map(([k, v, c]) => /*#__PURE__*/React.createElement("div", {
     key: k,
     style: {
       background: 'var(--card)',
@@ -12060,7 +12063,7 @@ function CohortConsumerMix({
         gridTemplateColumns: 'repeat(4,1fr)',
         gap: 10
       }
-    }, [['Total Audience', `${(cohort.size / 1000).toFixed(0)}K`, 'var(--cyan)'], ['Conversion Rate', `${mix.purchaseFreq}%`, 'var(--green)'], ['Avg. Journey', `${Math.round(14 + cohort.id.replace('C-', '') * 2)} days`, 'var(--navy)'], ['LTV at Conversion', `$${cohort.ltv.toLocaleString()}`, 'var(--green)']].map(([k, v, c]) => /*#__PURE__*/React.createElement("div", {
+    }, [['Total Audience', `${(cohort.size / 1000).toFixed(0)}K`, 'var(--cyan)'], ['Conversion Rate', `${mix.purchaseFreq}%`, 'var(--green)'], ['Avg. Journey', `${Math.round(14 + cohort.id.replace('C-', '') * 2)} days`, 'var(--text)'], ['LTV at Conversion', `$${cohort.ltv.toLocaleString()}`, 'var(--green)']].map(([k, v, c]) => /*#__PURE__*/React.createElement("div", {
       key: k,
       style: {
         background: 'var(--bg)',
@@ -16703,204 +16706,8 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
   }, "Optimize"))))))), /*#__PURE__*/React.createElement("div", {
     className: `cmn-pane ${cmnTab === 'audiences' ? 'active' : ''}`
   }, /*#__PURE__*/React.createElement("div", {
-    style: { padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 14 }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }
-  }, /*#__PURE__*/React.createElement("div", null,
-    /*#__PURE__*/React.createElement("div", { style: { fontSize: 18, fontWeight: 700 } }, "Audiences"),
-    /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2 } }, merchantAudiences.length, " saved \u00b7 ", merchantAudiences.filter(a => a.source === 'iab').length, " IAB \u00b7 ", merchantAudiences.filter(a => a.source === 'custom').length, " custom \u00b7 ", merchantAudiences.reduce((s, a) => s + a.universe, 0).toLocaleString(), " total records")
-  ), /*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 6 } },
-    /*#__PURE__*/React.createElement("button", {
-      className: "btn btn-secondary",
-      style: { fontSize: 12, color: 'var(--text)' },
-      onClick: () => setAudNewAudModal(true)
-    }, "+ New Audience"),
-    /*#__PURE__*/React.createElement("button", {
-      className: "btn btn-secondary",
-      style: { fontSize: 12, color: 'var(--text)' },
-      onClick: () => setAudUploadModal(true)
-    }, "Import List")
-  )), /*#__PURE__*/React.createElement("div", {
-    style: { display: 'grid', gridTemplateColumns: '1fr 360px', gap: 14, minHeight: 560 }
-  },
-    /*#__PURE__*/React.createElement("div", {
-      style: { display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'auto', maxHeight: 620, paddingRight: 4 }
-    },
-      /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 2, paddingBottom: 6, borderBottom: '1px dashed rgba(99,102,241,.2)' } }, "\u25C8 Custom \u00b7 privacy-safe match"),
-      /*#__PURE__*/React.createElement("div", {
-        style: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }
-      }, merchantAudiences.filter(a => a.source === 'custom').map(aud => /*#__PURE__*/React.createElement("div", {
-        key: aud.id,
-        style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 9, padding: 12, display: 'flex', flexDirection: 'column', gap: 6 }
-      },
-        /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 } },
-          /*#__PURE__*/React.createElement("div", { style: { flex: 1, minWidth: 0 } },
-            /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: 'var(--text)' } }, aud.name),
-            /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2 } }, aud.id, " \u00b7 ", aud.meta)
-          ),
-          /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: 'var(--cyan-pale)', fontFamily: 'IBM Plex Mono, monospace', fontWeight: 700, whiteSpace: 'nowrap' } }, aud.universe >= 1000000 ? (aud.universe / 1000000).toFixed(1) + 'M' : (aud.universe / 1000).toFixed(1) + 'K')
-        ),
-        /*#__PURE__*/React.createElement("div", { style: { display: 'flex', flexWrap: 'wrap', gap: 4 } },
-          aud.chips.map(chip => /*#__PURE__*/React.createElement("span", {
-            key: chip,
-            style: { fontSize: 9, padding: '2px 7px', background: 'rgba(99,102,241,.1)', color: 'var(--cyan-pale)', borderRadius: 9, fontFamily: 'IBM Plex Mono, monospace', letterSpacing: '.04em' }
-          }, chip))
-        ),
-        /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 10, color: 'var(--slate)', marginTop: 2 } },
-          /*#__PURE__*/React.createElement("span", null, aud.matchRate, "% match"),
-          /*#__PURE__*/React.createElement("button", {
-            style: { background: 'none', border: '1px solid var(--bdr-soft)', borderRadius: 5, padding: '3px 8px', fontSize: 10, color: 'var(--slate)', cursor: 'pointer', fontFamily: 'IBM Plex Mono, monospace' },
-            onClick: () => {
-              if (confirm('Delete ' + aud.name + '?')) merchantPlumbing.deleteAudience(aud.id);
-            }
-          }, "Remove")
-        )
-      ))),
-      /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', letterSpacing: '.08em', textTransform: 'uppercase', marginTop: 10, paddingBottom: 6, borderBottom: '1px dashed rgba(99,102,241,.2)' } }, "\u25CE IAB-structured \u00b7 off FI bank data"),
-      /*#__PURE__*/React.createElement("div", {
-        style: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }
-      }, merchantAudiences.filter(a => a.source === 'iab').map(aud => /*#__PURE__*/React.createElement("div", {
-        key: aud.id,
-        style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 9, padding: 12, display: 'flex', flexDirection: 'column', gap: 6 }
-      },
-        /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 } },
-          /*#__PURE__*/React.createElement("div", { style: { flex: 1, minWidth: 0 } },
-            /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: 'var(--text)' } }, aud.name),
-            /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2 } }, aud.id, " \u00b7 ", aud.meta)
-          ),
-          /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: 'var(--cyan-pale)', fontFamily: 'IBM Plex Mono, monospace', fontWeight: 700, whiteSpace: 'nowrap' } }, aud.universe >= 1000000 ? (aud.universe / 1000000).toFixed(1) + 'M' : (aud.universe / 1000).toFixed(1) + 'K')
-        ),
-        /*#__PURE__*/React.createElement("div", { style: { display: 'flex', flexWrap: 'wrap', gap: 4 } },
-          aud.chips.map(chip => /*#__PURE__*/React.createElement("span", {
-            key: chip,
-            style: { fontSize: 9, padding: '2px 7px', background: 'rgba(99,102,241,.1)', color: 'var(--cyan-pale)', borderRadius: 9, fontFamily: 'IBM Plex Mono, monospace', letterSpacing: '.04em' }
-          }, chip))
-        )
-      )))
-    ),
-    /*#__PURE__*/React.createElement("div", {
-      style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 9, display: 'flex', flexDirection: 'column', overflow: 'hidden', maxHeight: 620 }
-    },
-      /*#__PURE__*/React.createElement("div", {
-        style: { padding: '10px 14px', borderBottom: '1px solid var(--bdr-soft)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }
-      },
-        /*#__PURE__*/React.createElement("span", { style: { fontSize: 10, fontWeight: 700, color: 'var(--cyan-pale)', letterSpacing: '.08em', textTransform: 'uppercase', fontFamily: 'IBM Plex Mono, monospace' } }, "Audience Builder"),
-        /*#__PURE__*/React.createElement("span", { style: { fontSize: 10, color: 'var(--slate)' } }, "chat-forward")
-      ),
-      /*#__PURE__*/React.createElement("div", {
-        style: { flex: 1, padding: 12, display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto', minHeight: 280 }
-      }, audChatHistory.map((m, i) => /*#__PURE__*/React.createElement("div", {
-        key: i,
-        style: {
-          background: m.role === 'user' ? 'rgba(99,102,241,.15)' : m.role === 'sys' ? 'rgba(167,139,250,.08)' : 'var(--card-alt)',
-          border: '1px solid ' + (m.role === 'user' ? 'var(--bdr)' : m.role === 'sys' ? 'rgba(167,139,250,.25)' : 'var(--bdr-soft)'),
-          borderRadius: m.role === 'user' ? '9px 9px 3px 9px' : '9px 9px 9px 3px',
-          padding: '8px 11px',
-          fontSize: 12,
-          lineHeight: 1.5,
-          color: m.role === 'sys' ? 'var(--purple)' : m.role === 'user' ? 'var(--text)' : 'var(--slate)',
-          maxWidth: m.role === 'user' ? '82%' : '92%',
-          marginLeft: m.role === 'user' ? 'auto' : 0,
-          fontStyle: m.role === 'sys' ? 'italic' : 'normal'
-        }
-      }, m.text, m.actions && /*#__PURE__*/React.createElement("div", {
-        style: { marginTop: 8, display: 'flex', gap: 6, flexWrap: 'wrap' }
-      }, m.actions.map((act, ai) => /*#__PURE__*/React.createElement("button", {
-        key: ai,
-        onClick: async () => {
-          if (act.kind === 'save' && act.audience) {
-            const saved = await merchantPlumbing.saveAudience(act.audience);
-            setAudChatHistory(prev => [...prev, { role: 'sys', text: 'Saved as ' + saved.id + ' \u00b7 available in Build Campaign' }]);
-          }
-        },
-        style: { background: 'var(--cyan)', color: '#fff', border: 'none', borderRadius: 5, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }
-      }, act.label))))) ),
-      audChatBusy && /*#__PURE__*/React.createElement("div", {
-        style: { padding: '6px 14px', fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', borderTop: '1px solid var(--bdr-soft)' }
-      }, "Computing against FI bank data\u2026"),
-      /*#__PURE__*/React.createElement("div", {
-        style: { padding: 10, borderTop: '1px solid var(--bdr-soft)', display: 'flex', gap: 6 }
-      },
-        /*#__PURE__*/React.createElement("input", {
-          type: "text",
-          value: audChatInput,
-          onChange: e => setAudChatInput(e.target.value),
-          onKeyDown: e => {
-            if (e.key === 'Enter' && audChatInput.trim() && !audChatBusy) {
-              const q = audChatInput.trim();
-              setAudChatInput('');
-              setAudChatHistory(prev => [...prev, { role: 'user', text: q }]);
-              setAudChatBusy(true);
-              setTimeout(() => {
-                const ql = q.toLowerCase();
-                let resp;
-                if (ql.includes('lookalike') || ql.includes('lal')) {
-                  const size = Math.floor(80 + Math.random() * 200) * 1000;
-                  resp = { role: 'assistant', text: 'Built a lookalike off your seed. Estimated universe: ' + (size/1000).toFixed(0) + 'K FI cardholders. 87% cosine-similarity match. Top dimensions: high travel spend, premium card holders, multi-metro.', actions: [{ kind: 'save', label: 'Save audience', audience: { source: 'custom', name: 'Lookalike \u2014 ' + new Date().toLocaleTimeString().slice(0,5), universe: size, matchRate: 87, chips: ['Seed-derived', 'Propensity model', 'Multi-metro'], meta: 'CR-matched \u00b7 cosine similarity \u00b7 ' + new Date().toLocaleDateString() } }] };
-                } else if (ql.includes('match') || ql.includes('upload') || ql.includes('csv') || ql.includes('loyalty')) {
-                  resp = { role: 'assistant', text: 'Sure \u2014 I can match your list against FI cardholders in the TEE. Upload your CSV (hashed emails) and I will run the match privately. Click Import List, or type the size of your list and I will estimate overlap.' };
-                } else if (ql.includes('combine') || ql.includes('overlap') || ql.includes('exclude')) {
-                  const size = Math.floor(30 + Math.random() * 60) * 1000;
-                  resp = { role: 'assistant', text: 'Combined audience ready. Estimated size: ' + (size/1000).toFixed(0) + 'K cardholders after overlap + exclusion logic. Overlap between the two seed audiences = 42%.', actions: [{ kind: 'save', label: 'Save audience', audience: { source: 'custom', name: 'Combined \u2014 ' + new Date().toLocaleTimeString().slice(0,5), universe: size, matchRate: 92, chips: ['Combined', 'Excluded subset', 'Custom logic'], meta: 'Composite audience \u00b7 ' + new Date().toLocaleDateString() } }] };
-                } else {
-                  const size = Math.floor(40 + Math.random() * 100) * 1000;
-                  resp = { role: 'assistant', text: 'Found ' + size.toLocaleString() + ' FI cardholders matching your criteria. Top DMAs: NYC (18%), LA (12%), Chicago (9%). SHAP-driven propensity: 76%. Want to save this?', actions: [{ kind: 'save', label: 'Save audience', audience: { source: 'iab', name: 'Custom query \u2014 ' + new Date().toLocaleTimeString().slice(0,5), universe: size, matchRate: 100, chips: ['Query-derived', '76% propensity', 'Top metros'], meta: 'IAB-structured \u00b7 query-based \u00b7 ' + new Date().toLocaleDateString() } }] };
-                }
-                setAudChatHistory(prev => [...prev, resp]);
-                setAudChatBusy(false);
-              }, 900);
-            }
-          },
-          placeholder: "Describe the audience you want\u2026",
-          style: { flex: 1, background: 'var(--card-alt2)', border: '1px solid var(--bdr-soft)', borderRadius: 6, padding: '8px 11px', fontSize: 12, color: 'var(--text)', outline: 'none', fontFamily: 'inherit' }
-        })
-      )
-    )
-  ), audUploadModal && /*#__PURE__*/React.createElement("div", {
-    onClick: () => setAudUploadModal(false),
-    style: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,.6)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }
-  }, /*#__PURE__*/React.createElement("div", {
-    onClick: e => e.stopPropagation(),
-    style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 12, padding: 24, maxWidth: 500, width: '90%' }
-  },
-    /*#__PURE__*/React.createElement("div", { style: { fontSize: 16, fontWeight: 700, marginBottom: 10 } }, "Import Custom Audience"),
-    /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: 'var(--slate)', marginBottom: 16, lineHeight: 1.5 } }, "Upload a CSV of hashed emails. We match against FI cardholder data in a secure TEE \u2014 only the overlap count returns. No row-level PII is exposed."),
-    /*#__PURE__*/React.createElement("input", { type: "file", accept: ".csv", style: { marginBottom: 16, color: 'var(--slate)', fontSize: 12 } }),
-    /*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 8, justifyContent: 'flex-end' } },
-      /*#__PURE__*/React.createElement("button", { className: "btn btn-secondary", style: { fontSize: 12 }, onClick: () => setAudUploadModal(false) }, "Cancel"),
-      /*#__PURE__*/React.createElement("button", {
-        className: "btn btn-primary",
-        style: { fontSize: 12, background: 'var(--cyan)', color: '#fff', border: 'none', borderRadius: 6, padding: '7px 14px', cursor: 'pointer', fontWeight: 700 },
-        onClick: async () => {
-          setAudUploadModal(false);
-          setAudChatHistory(prev => [...prev, { role: 'user', text: 'Uploaded VIP loyalty CSV \u2014 matching in TEE...' }, { role: 'sys', text: 'Running in Confidential Space TEE \u00b7 ETA ~4min' }]);
-          const run = await merchantPlumbing.runCleanRoom('match', { name: 'Uploaded list match', sourceRows: 32400 });
-          setTimeout(async () => {
-            const saved = await merchantPlumbing.saveAudience({ source: 'custom', name: 'Uploaded list \u2014 ' + new Date().toLocaleDateString(), universe: 19800, matchRate: 61, chips: ['Uploaded CSV', 'TEE-matched', 'k>50 enforced'], meta: 'CR-matched \u00b7 TEE job ' + run.teeJobId });
-            setAudChatHistory(prev => [...prev, { role: 'assistant', text: 'Match complete: 19,800 of your 32,400 loyalty members are also FI cardholders (61% match). Saved as ' + saved.id + '. TEE job ' + run.teeJobId + ' completed. 0 PII exposed.' }]);
-          }, 1800);
-        }
-      }, "Match in TEE")
-    )
-  )), audNewAudModal && /*#__PURE__*/React.createElement("div", {
-    onClick: () => setAudNewAudModal(false),
-    style: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,.6)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }
-  }, /*#__PURE__*/React.createElement("div", {
-    onClick: e => e.stopPropagation(),
-    style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 12, padding: 24, maxWidth: 500, width: '90%' }
-  },
-    /*#__PURE__*/React.createElement("div", { style: { fontSize: 16, fontWeight: 700, marginBottom: 10 } }, "New Audience"),
-    /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: 'var(--slate)', marginBottom: 16, lineHeight: 1.5 } }, "Use the chat panel on the right to describe what you want in plain English. Examples:"),
-    /*#__PURE__*/React.createElement("ul", { style: { fontSize: 12, color: 'var(--slate)', lineHeight: 1.8, marginLeft: 18, marginBottom: 16 } },
-      /*#__PURE__*/React.createElement("li", null, "\"Find travelers who spent over $500 on airlines in 90 days\""),
-      /*#__PURE__*/React.createElement("li", null, "\"Build a lookalike of my VIP loyalty base\""),
-      /*#__PURE__*/React.createElement("li", null, "\"Combine Explorers and Revelers, exclude under 25\""),
-      /*#__PURE__*/React.createElement("li", null, "\"Match my CRM list\" \u2192 triggers TEE upload")
-    ),
-    /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'flex-end' } },
-      /*#__PURE__*/React.createElement("button", { className: "btn btn-primary", style: { fontSize: 12, background: 'var(--cyan)', color: '#fff', border: 'none', borderRadius: 6, padding: '7px 14px', cursor: 'pointer', fontWeight: 700 }, onClick: () => setAudNewAudModal(false) }, "Got it")
-    )
-  )))), /*#__PURE__*/React.createElement("div", {
+    style: { padding: '40px 28px', color: 'var(--text)' }
+  }, /*#__PURE__*/React.createElement("h2", { style: { fontSize: 20, marginBottom: 12 } }, "Audiences \u2014 diagnostic"), /*#__PURE__*/React.createElement("p", null, "If you can read this, the pane render is working. ", merchantAudiences.length, " audiences in state."), /*#__PURE__*/React.createElement("p", null, "audChatHistory entries: ", audChatHistory.length))), /*#__PURE__*/React.createElement("div", {
     className: `cmn-pane ${cmnTab === 'creatives' ? 'active' : ''}`
   }, /*#__PURE__*/React.createElement("div", {
     style: { padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 14 }
