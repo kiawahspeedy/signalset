@@ -4069,7 +4069,7 @@ function buildActionRenderer(opts) {
       border: '1px dashed var(--bdr)',
       fontWeight: 500
     });
-    return React.createElement('div', { className: 'bubble', style: { flex: 1 } },
+    return React.createElement('div', { style: { flex: 1 } },
       React.createElement('div', {
         style: {
           background: 'var(--card)',
@@ -8718,9 +8718,81 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
     exploreLabel: "Campaign Platform",
     exploreScreen: () => { setDeskHub(false); window.scrollTo(0,0); },
     placeholder: "Describe the audience for your credit card campaign\u2026",
-    resultRenderer: d => /*#__PURE__*/React.createElement(AudienceResult, {
+    resultRenderer: d => /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(AudienceResult, {
       data: d
-    }),
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: 8,
+        marginTop: 10,
+        padding: '12px 16px',
+        background: 'var(--card)',
+        border: '1px solid var(--bdr)',
+        borderRadius: 10,
+        alignItems: 'center'
+      }
+    }, /*#__PURE__*/React.createElement("button", {
+      key: 'journey',
+      onClick: () => { setDeskHub(false); setTab('journey'); window.scrollTo(0, 0); },
+      style: {
+        padding: '6px 14px',
+        borderRadius: 20,
+        fontSize: 12,
+        cursor: 'pointer',
+        whiteSpace: 'nowrap',
+        fontFamily: 'inherit',
+        background: 'rgba(6,182,212,0.15)',
+        color: 'var(--cyan)',
+        border: '1px solid rgba(6,182,212,0.4)',
+        fontWeight: 700
+      }
+    }, "Build trigger journey \u2192"), /*#__PURE__*/React.createElement("button", {
+      key: 'creative',
+      onClick: () => { setDeskHub(false); setTab('creative'); window.scrollTo(0, 0); },
+      style: {
+        padding: '6px 14px',
+        borderRadius: 20,
+        fontSize: 12,
+        cursor: 'pointer',
+        whiteSpace: 'nowrap',
+        fontFamily: 'inherit',
+        background: 'rgba(99,102,241,0.1)',
+        color: 'var(--indigo)',
+        border: '1px solid rgba(99,102,241,0.3)',
+        fontWeight: 500
+      }
+    }, "Build creative"), /*#__PURE__*/React.createElement("button", {
+      key: 'approve',
+      onClick: () => { setDeskHub(false); setTab('summary'); window.scrollTo(0, 0); },
+      style: {
+        padding: '6px 14px',
+        borderRadius: 20,
+        fontSize: 12,
+        cursor: 'pointer',
+        whiteSpace: 'nowrap',
+        fontFamily: 'inherit',
+        background: 'rgba(99,102,241,0.1)',
+        color: 'var(--indigo)',
+        border: '1px solid rgba(99,102,241,0.3)',
+        fontWeight: 500
+      }
+    }, "Review & approve"), /*#__PURE__*/React.createElement("button", {
+      key: 'escape',
+      onClick: () => { const el = document.querySelector('.screen.active .chat-input'); if (el) el.focus(); },
+      style: {
+        padding: '6px 14px',
+        borderRadius: 20,
+        fontSize: 12,
+        cursor: 'pointer',
+        whiteSpace: 'nowrap',
+        fontFamily: 'inherit',
+        background: 'transparent',
+        color: 'var(--slate)',
+        border: '1px dashed var(--bdr)',
+        fontWeight: 500
+      }
+    }, "Something else\u2026"))),
     actionBar: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 12,
