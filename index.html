@@ -3816,12 +3816,16 @@ RESPONSE FORMAT — return ONLY valid JSON, no markdown, no preamble:
 }
 
 ACTION VOCABULARY — these are the ONLY valid "action" values. Never invent new ones. Pick the single most relevant action based on the user's question:
-- "build_audience" → user wants to define/refine a target audience. Label: "Build this audience" or "Open audience builder".
-- "campaign_builder" → user wants to activate, launch, configure, or "create a campaign". Label: "Open campaign builder".
+- "build_audience" → user explicitly wants to DEFINE A NEW AUDIENCE FROM SCRATCH — new rules, new combinations of signals, a segment that does not exist yet. Label: "Build this audience" or "Open audience builder".
+- "campaign_builder" → user wants to launch, activate, configure, "create a campaign," OR wants to APPLY TARGETING STRATEGY using audiences that already exist (e.g., "target X DMAs using High-Intent Travelers," "layer Premium Travel Achievers with geo filtering," "use VIP Loyalty Lookalike across top markets"). If your answer recommends USING or LAYERING existing audiences from the AUDIENCE SOURCES list rather than constructing a new one, this is the correct action. Label: "Launch campaign" or "Open campaign builder".
 - "manage" → user wants to pause, adjust, or manage an already-running campaign. Label: "Manage campaigns".
 - "results" → user wants to see performance, attribution, or delivered results. Label: "View results".
 - "creatives" → user wants to work on ads, creative assets, or variants. Label: "Browse creatives".
 - null → no single action is the clear next step (rare; use when genuinely open-ended).
+
+DISAMBIGUATION — when in doubt between build_audience and campaign_builder:
+- If your answer mentions audiences BY NAME from the AUDIENCE SOURCES list (High-Intent Travelers, VIP Loyalty Lookalike, Premium Travel Achievers, Business Card Active, Affluent Dining Enthusiasts, Luxury Goods Buyers) and recommends using them → campaign_builder.
+- If your answer describes constructing a new segment from transaction patterns, behavioral signals, or geographic filters that combine into something that does not yet exist → build_audience.
 
 The "followUps" must be exactly 3 short, specific questions Meridian Air would naturally ask next. Not generic prompts. Reference specific audiences or DMAs from your answer.`;
 
@@ -8793,27 +8797,6 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
         fontWeight: 500
       }
     }, "Something else\u2026"))),
-    actionBar: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 12,
-        color: 'var(--slate)',
-        marginRight: 4,
-        alignSelf: 'center'
-      }
-    }, "With this audience:"), [['Activate to Desk', 'var(--navy)', '#fff'], ['Build Campaign', 'var(--card)', 'var(--navy)']].map(([label, bg, color]) => /*#__PURE__*/React.createElement("button", {
-      key: label,
-      style: {
-        padding: '6px 13px',
-        borderRadius: 7,
-        fontSize: 12,
-        fontWeight: 600,
-        cursor: 'pointer',
-        background: bg,
-        color,
-        border: `1px solid ${bg === 'var(--card)' ? 'var(--bdr)' : 'transparent'}`
-      },
-      onClick: () => { setDeskHub(false); window.scrollTo(0,0); }
-    }, label)))
   })), /*#__PURE__*/React.createElement("div", { className: "v11-home-pills", style: { marginTop: 18, justifyContent: "center" } }, /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setDeskHub(false); setTab('audience'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'target', size: 13, color: 'currentColor' })), 'Audiences'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setDeskHub(false); setTab('journey'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'lightning', size: 13, color: 'currentColor' })), 'Triggers'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setDeskHub(false); setTab('creative'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'palette', size: 13, color: 'currentColor' })), 'Creatives'), false && /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => alert('From Drive integration coming in Phase 11'), role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'store', size: 13, color: 'currentColor' })), 'From Drive'))), /*#__PURE__*/React.createElement("div", {
     className: "camp-hub-right"
   }, /*#__PURE__*/React.createElement("div", {
@@ -14161,6 +14144,8 @@ const CMN_INTENT = ['In-market flight search (7d)', 'Premium card application in
 function CommerceMedia({ jumpTab, onTabConsumed }) {
   const [cmnTab, setCmnTab] = useState('start');
   const [cmnHub, setCmnHub] = useState(true);
+  const [audSourceFilter, setAudSourceFilter] = useState('all');
+  const [crRunKind, setCrRunKind] = useState('match');
   const [liveSegContribs, setLiveSegContribs] = useState(SEGMENT_CONTRIBUTIONS);
   const [liveChannelWaterfall, setLiveChannelWaterfall] = useState(CHANNEL_WATERFALL);
   const CMN_SUB_MAP = { discover: 'start', build: 'build', manage: 'manage', results: 'results' };
@@ -14190,6 +14175,8 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
   const cmnHomeSendRef = useRef(null);
   const cmnStartSendRef = useRef(null);
   const cmnBuildSendRef = useRef(null);
+  const cmnAudienceSendRef = useRef(null);
+  const cmnCleanRoomSendRef = useRef(null);
   const partnersNavMap = {
     build_audience:   { label: 'Build this audience',     onClick: () => { setCmnHub(false); setCmnTab('audiences'); window.scrollTo(0,0); } },
     campaign_builder: { label: 'Open campaign builder',   onClick: () => { setCmnHub(false); setCmnTab('build');     window.scrollTo(0,0); } },
@@ -14682,7 +14669,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     name: "store",
     size: 14,
     color: "white"
-  }), " Explore Partner Portal \u2192"), /*#__PURE__*/React.createElement("div", { className: "v11-home-pills", style: { marginTop: 18, justifyContent: "center" } }, /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('audiences'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'target', size: 13, color: 'currentColor' })), 'Audiences'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('creatives'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'palette', size: 13, color: 'currentColor' })), 'Creatives'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('build'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'lightning', size: 13, color: 'currentColor' })), 'Build'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('manage'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'layers', size: 13, color: 'currentColor' })), 'Manage'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('results'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'chart', size: 13, color: 'currentColor' })), 'Results'))), /*#__PURE__*/React.createElement("div", {
+  }), " Explore Partner Portal \u2192"), /*#__PURE__*/React.createElement("div", { className: "v11-home-pills", style: { marginTop: 18, justifyContent: "center" } }, /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('audiences'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'target', size: 13, color: 'currentColor' })), 'Audiences'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('creatives'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'palette', size: 13, color: 'currentColor' })), 'Creatives'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('build'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'lightning', size: 13, color: 'currentColor' })), 'Build'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('manage'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'layers', size: 13, color: 'currentColor' })), 'Manage'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('results'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'chart', size: 13, color: 'currentColor' })), 'Results'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('cleanroom'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0, style: { borderColor: 'rgba(6,182,212,0.4)' } }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'shield', size: 13, color: 'currentColor' })), 'Clean Room'))), /*#__PURE__*/React.createElement("div", {
     className: "camp-hub-right"
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -15116,7 +15103,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     title: "Back to Partner Portal"
   }, "Partners"), /*#__PURE__*/React.createElement("h1", null, "Self-Service ", /*#__PURE__*/React.createElement("span", null, "Partner Portal"))), /*#__PURE__*/React.createElement("div", {
     className: "cmn-inner-tabs"
-  }, [['audiences', 'Audiences'], ['creatives', 'Creatives'], ['build', 'Build'], ['manage', 'Manage'], ['results', 'Results']].map(([id, label]) => /*#__PURE__*/React.createElement("div", {
+  }, [['audiences', 'Audiences'], ['creatives', 'Creatives'], ['build', 'Build'], ['manage', 'Manage'], ['results', 'Results'], ['cleanroom', 'Clean Room']].map(([id, label]) => /*#__PURE__*/React.createElement("div", {
     key: id,
     className: `cmn-tab ${cmnTab === id ? 'active' : ''}`,
     onClick: () => setCmnTab(id)
@@ -17268,8 +17255,106 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
   }, /*#__PURE__*/React.createElement("strong", null, "Closed-loop verified."), " Every Meridian Air booking made by an FI cardholder in this audience flows back through the clean room \u2014 linking ad exposure to confirmed purchase. Premium CPM is now auditable, not assumed. ROAS of ", /*#__PURE__*/React.createElement("strong", null, estROAS, "\xD7"), " is attributed, not modeled."))), /*#__PURE__*/React.createElement("div", {
     className: `cmn-pane ${cmnTab === 'audiences' ? 'active' : ''}`
   }, /*#__PURE__*/React.createElement("div", {
-    style: { padding: '40px 28px', color: 'var(--text)' }
-  }, /*#__PURE__*/React.createElement("h2", { style: { fontSize: 20, marginBottom: 12 } }, "Audiences \u2014 diagnostic"), /*#__PURE__*/React.createElement("p", null, "If you can read this, the pane render is working. ", merchantAudiences.length, " audiences in state."), /*#__PURE__*/React.createElement("p", null, "audChatHistory entries: ", audChatHistory.length))), /*#__PURE__*/React.createElement("div", {
+    style: { padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 16 }
+  },
+    /*#__PURE__*/React.createElement("div", {
+      style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', paddingBottom: 4 }
+    },
+      /*#__PURE__*/React.createElement("div", null,
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 18, fontWeight: 700 } }, "Audience Library"),
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2 } },
+          merchantAudiences.length, " audiences \u00b7 ",
+          merchantAudiences.filter(a => a.source === 'custom').length, " custom (clean room) \u00b7 ",
+          merchantAudiences.filter(a => a.source === 'iab').length, " IAB syndicated"
+        )
+      ),
+      /*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 6 } },
+        [['all', 'All'], ['custom', 'Custom (CR)'], ['iab', 'IAB']].map(([val, lbl]) => /*#__PURE__*/React.createElement("button", {
+          key: val,
+          className: "btn btn-secondary",
+          onClick: () => setAudSourceFilter(val),
+          style: {
+            fontSize: 12,
+            fontWeight: 600,
+            padding: '6px 12px',
+            background: audSourceFilter === val ? 'rgba(6,182,212,0.15)' : 'var(--card)',
+            color: audSourceFilter === val ? 'var(--cyan)' : 'var(--text)',
+            border: '1px solid ' + (audSourceFilter === val ? 'rgba(6,182,212,0.4)' : 'var(--bdr)')
+          }
+        }, lbl))
+      )
+    ),
+    /*#__PURE__*/React.createElement("div", {
+      style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 10, overflow: 'hidden' }
+    },
+      /*#__PURE__*/React.createElement("div", {
+        style: { padding: '12px 16px', borderBottom: '1px solid var(--bdr)', display: 'flex', alignItems: 'center', gap: 10, background: 'var(--card-alt)' }
+      },
+        /*#__PURE__*/React.createElement(Ico, { name: 'sparkles', size: 14, color: 'var(--cyan)' }),
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, fontWeight: 600, color: 'var(--text)' } }, "Describe the audience you want"),
+        /*#__PURE__*/React.createElement("div", { style: { marginLeft: 'auto', fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace' } }, "Natural language \u00b7 AI-resolved \u00b7 clean-room gated")
+      ),
+      /*#__PURE__*/React.createElement("div", { style: { padding: 14 } },
+        /*#__PURE__*/React.createElement(Chatbot, {
+          systemPrompt: CMN_CHATBOT_SYS,
+          samples: [
+            'Show me travelers who spent more than $500 on airlines in 90 days',
+            'Build a lookalike of my VIP base',
+            'Find high-intent cardholders in NYC, SF, and DC',
+            'Who overlaps between Premium Travelers and Luxury Goods Buyers?'
+          ],
+          exploreLabel: "Partner Portal",
+          exploreScreen: () => { setCmnHub(false); setCmnTab('start'); window.scrollTo(0, 0); },
+          placeholder: "Describe the audience \u2014 behaviors, geography, overlaps\u2026",
+          resultRenderer: buildActionRenderer({
+            navMap: partnersNavMap,
+            onFollowUp: cmnOnFollowUp(cmnAudienceSendRef),
+            onEscape: cmnOnEscape
+          }),
+          sendRef: cmnAudienceSendRef
+        })
+      )
+    ),
+    /*#__PURE__*/React.createElement("div", {
+      style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }
+    }, merchantAudiences
+      .filter(a => audSourceFilter === 'all' || a.source === audSourceFilter)
+      .map(a => /*#__PURE__*/React.createElement("div", {
+        key: a.id,
+        style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 10, padding: 14, display: 'flex', flexDirection: 'column', gap: 8 }
+      },
+        /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+          /*#__PURE__*/React.createElement("div", {
+            style: { fontSize: 9, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: a.source === 'custom' ? 'var(--cyan)' : 'var(--indigo)', padding: '2px 7px', borderRadius: 4, background: a.source === 'custom' ? 'rgba(6,182,212,0.12)' : 'rgba(99,102,241,0.12)' }
+          }, a.source === 'custom' ? 'Custom \u00b7 CR' : 'IAB Syndicated'),
+          /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--green)', fontWeight: 700 } }, "\u2713 Cleared")
+        ),
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 15, fontWeight: 700, color: 'var(--text)' } }, a.name),
+        /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace' } },
+          /*#__PURE__*/React.createElement("div", null, (a.universe >= 1000000 ? (a.universe / 1000000).toFixed(1) + 'M' : (a.universe / 1000).toFixed(0) + 'K'), " universe"),
+          /*#__PURE__*/React.createElement("div", null, a.matchRate, "% match")
+        ),
+        /*#__PURE__*/React.createElement("div", { style: { display: 'flex', flexWrap: 'wrap', gap: 4 } },
+          (a.chips || []).map((c, i) => /*#__PURE__*/React.createElement("span", {
+            key: i,
+            style: { fontSize: 10, padding: '2px 7px', borderRadius: 10, background: 'rgba(99,102,241,0.08)', color: 'var(--slate)', border: '1px solid var(--bdr)' }
+          }, c))
+        ),
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', fontStyle: 'italic' } }, a.meta),
+        /*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 6, marginTop: 4 } },
+          /*#__PURE__*/React.createElement("button", {
+            className: "btn btn-secondary",
+            style: { fontSize: 11, fontWeight: 600, padding: '5px 10px', flex: 1, background: 'rgba(6,182,212,0.12)', color: 'var(--cyan)', border: '1px solid rgba(6,182,212,0.3)' },
+            onClick: () => { setCmnTab('build'); window.scrollTo(0, 0); }
+          }, "Use in campaign \u2192"),
+          /*#__PURE__*/React.createElement("button", {
+            className: "btn btn-secondary",
+            style: { fontSize: 11, fontWeight: 600, padding: '5px 10px', color: 'var(--text)' },
+            title: "Copy audience ID"
+          }, a.id)
+        )
+      )))
+  )), /*#__PURE__*/React.createElement("div", {
     className: `cmn-pane ${cmnTab === 'creatives' ? 'active' : ''}`
   }, /*#__PURE__*/React.createElement("div", {
     style: { padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 14 }
@@ -17461,16 +17546,91 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
   )))), /*#__PURE__*/React.createElement("div", {
     className: `cmn-pane ${cmnTab === 'cleanroom' ? 'active' : ''}`
   }, /*#__PURE__*/React.createElement("div", {
-    style: { padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 16 }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: { fontSize: 18, fontWeight: 700 }
-  }, "Clean Room Workbench"), /*#__PURE__*/React.createElement("div", {
-    style: { fontSize: 11, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2 }
-  }, "Privacy-safe audience matching \u00b7 incrementality testing \u00b7 ", cleanRoomRuns.filter(r => r.status === 'running').length, " running in TEE"))), /*#__PURE__*/React.createElement("div", {
-    style: { padding: 48, textAlign: 'center', background: 'var(--card)', border: '1px dashed var(--bdr)', borderRadius: 10, color: 'var(--slate)', fontSize: 13 }
-  }, /*#__PURE__*/React.createElement("div", { style: { fontSize: 40, marginBottom: 12, opacity: .5 } }, "\u25C8"), /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, marginBottom: 6, color: 'var(--text)' } }, "Clean Room Workbench \u2014 Phase 22"), /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, maxWidth: 520, margin: '0 auto' } }, "Chat-essential interface. ", cleanRoomRuns.length, " runs in history. Operations dispatch to GCP Confidential Space TEE via Worker endpoint \u2014 client never touches BQ directly for clean room ops.")))));
+    style: { padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 16 }
+  },
+    /*#__PURE__*/React.createElement("div", {
+      style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', paddingBottom: 4 }
+    },
+      /*#__PURE__*/React.createElement("div", null,
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 18, fontWeight: 700 } }, "Clean Room Workbench"),
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2 } },
+          "Privacy-safe matching \u00b7 incrementality testing \u00b7 data collaboration \u00b7 ",
+          cleanRoomRuns.filter(r => r.status === 'running').length, " running in TEE"
+        )
+      ),
+      /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, padding: '4px 10px', borderRadius: 4, background: 'rgba(5,150,105,0.12)', color: 'var(--green)', fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase' } }, "TEE \u00b7 Attested")
+    ),
+    /*#__PURE__*/React.createElement("div", {
+      style: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }
+    }, [
+      { kind: 'match', title: 'Custom Audience Match', desc: 'Upload first-party list. Match against FI cardholders in clean room. Output is a privacy-safe audience usable in Campaign Builder.', icon: 'target', color: 'var(--cyan)' },
+      { kind: 'incrementality', title: 'Incrementality / Lift Test', desc: 'Design holdout groups, run causal test, get statistical significance + lift estimates. Chat-driven test design.', icon: 'lightning', color: 'var(--indigo)' },
+      { kind: 'collab', title: 'Data Collaboration', desc: 'Shared dashboards between FI and merchant. Governed by clean room permissions. Neither side sees raw PII.', icon: 'layers', color: 'var(--purple)' }
+    ].map(s => /*#__PURE__*/React.createElement("div", {
+      key: s.kind,
+      onClick: () => setCrRunKind(s.kind),
+      style: { padding: 14, background: crRunKind === s.kind ? 'rgba(6,182,212,0.08)' : 'var(--card)', border: '1px solid ' + (crRunKind === s.kind ? 'rgba(6,182,212,0.4)' : 'var(--bdr)'), borderRadius: 10, cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 8 }
+    },
+      /*#__PURE__*/React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8 } },
+        /*#__PURE__*/React.createElement("div", { style: { width: 28, height: 28, borderRadius: 6, background: s.color + '22', display: 'flex', alignItems: 'center', justifyContent: 'center' } },
+          /*#__PURE__*/React.createElement(Ico, { name: s.icon, size: 15, color: s.color })
+        ),
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: 'var(--text)' } }, s.title)
+      ),
+      /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: 'var(--slate)', lineHeight: 1.5 } }, s.desc)
+    ))),
+    /*#__PURE__*/React.createElement("div", {
+      style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 10, overflow: 'hidden' }
+    },
+      /*#__PURE__*/React.createElement("div", {
+        style: { padding: '12px 16px', borderBottom: '1px solid var(--bdr)', display: 'flex', alignItems: 'center', gap: 10, background: 'var(--card-alt)' }
+      },
+        /*#__PURE__*/React.createElement(Ico, { name: 'sparkles', size: 14, color: 'var(--cyan)' }),
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, fontWeight: 600, color: 'var(--text)' } }, "Clean room operations \u2014 chat-driven"),
+        /*#__PURE__*/React.createElement("div", { style: { marginLeft: 'auto', fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace' } }, "Phase 22 full buildout \u00b7 stubbed for MVP")
+      ),
+      /*#__PURE__*/React.createElement("div", { style: { padding: 14 } },
+        /*#__PURE__*/React.createElement(Chatbot, {
+          systemPrompt: CMN_CHATBOT_SYS,
+          samples: [
+            'Did my last campaign actually cause sales or would those customers have bought anyway?',
+            'Match my loyalty list against FI cardholders and tell me the overlap',
+            'Design a holdout test for the Premium Rewards campaign',
+            'What does my customer overlap with the FI look like by DMA?'
+          ],
+          exploreLabel: "Partner Portal",
+          exploreScreen: () => { setCmnHub(false); setCmnTab('start'); window.scrollTo(0, 0); },
+          placeholder: crRunKind === 'match' ? "Describe the list you want matched\u2026" : crRunKind === 'incrementality' ? "Describe the test you want to run\u2026" : "Ask about shared dashboards or data collaboration\u2026",
+          resultRenderer: buildActionRenderer({
+            navMap: partnersNavMap,
+            onFollowUp: cmnOnFollowUp(cmnCleanRoomSendRef),
+            onEscape: cmnOnEscape
+          }),
+          sendRef: cmnCleanRoomSendRef
+        })
+      )
+    ),
+    /*#__PURE__*/React.createElement("div", null,
+      /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 8 } }, "Recent clean room runs"),
+      /*#__PURE__*/React.createElement("div", { style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 10, overflow: 'hidden' } },
+        cleanRoomRuns.map((r, i) => /*#__PURE__*/React.createElement("div", {
+          key: r.id,
+          style: { padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: i < cleanRoomRuns.length - 1 ? '1px solid var(--bdr)' : 'none' }
+        },
+          /*#__PURE__*/React.createElement("div", {
+            style: { fontSize: 9, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', padding: '2px 7px', borderRadius: 4, background: r.kind === 'match' ? 'rgba(6,182,212,0.12)' : 'rgba(99,102,241,0.12)', color: r.kind === 'match' ? 'var(--cyan)' : 'var(--indigo)' }
+          }, r.kind === 'match' ? 'Match' : 'Incrementality'),
+          /*#__PURE__*/React.createElement("div", { style: { flex: 1 } },
+            /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, fontWeight: 600, color: 'var(--text)' } }, r.name),
+            /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 1 } }, r.result, " \u00b7 ", r.startedAt)
+          ),
+          /*#__PURE__*/React.createElement("div", {
+            style: { fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 4, background: r.status === 'running' ? 'rgba(245,158,11,0.15)' : r.status === 'completed' ? 'rgba(5,150,105,0.15)' : 'rgba(100,116,139,0.15)', color: r.status === 'running' ? 'var(--amber)' : r.status === 'completed' ? 'var(--green)' : 'var(--slate)', textTransform: 'uppercase', letterSpacing: '.05em' }
+          }, r.status)
+        ))
+      )
+    )
+  )));
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -17686,7 +17846,6 @@ function AuthModal({ targetScreen, onUnlock, onDismiss }) {
   const [err, setErr] = React.useState('');
 
   function unlock() {
-    try { sessionStorage.setItem('lig_auth', '1'); } catch(e) {}
     onUnlock();
   }
 
@@ -17728,7 +17887,6 @@ function AuthModal({ targetScreen, onUnlock, onDismiss }) {
       const data = await res.json();
       if (!res.ok) { setErr(data.error || 'Incorrect code.'); }
       else {
-        try { sessionStorage.setItem('lig_token', data.token); } catch(e) {}
         unlock();
       }
     } catch(e) { setErr('Network error -- please try again.'); }
@@ -18262,9 +18420,7 @@ function App() {
   const [navSub, setNavSub] = React.useState(null);
   // Phase 10 Unit A.5 — sidebar open/closed state (persists across screen changes)
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
-  const [authed, setAuthed] = React.useState(() => {
-    try { return sessionStorage.getItem('lig_auth') === '1'; } catch(e) { return false; }
-  });
+  const [authed, setAuthed] = React.useState(false);
   const [authTarget, setAuthTarget] = React.useState(null);
   const neo4jStatus = useNeo4jStatus();
 
@@ -18281,7 +18437,6 @@ function App() {
     }
   }
   function onUnlocked(id) {
-    try { sessionStorage.setItem('lig_auth', '1'); } catch(e) {}
     setAuthed(true);
     setScreen(id === 'home' ? 'home' : id);
     setAppState('platform');
