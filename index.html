@@ -3795,7 +3795,35 @@ const JOURNEY_SYS = `You are the Auto-Journey Builder inside The Marketing Desk 
 }
 Rules: 4-6 channels + convert node; owned-first; realistic CC KPIs; return ONLY JSON.`;
 const MZ_CHATBOT_SYS = `You are the Measurement Intelligence assistant inside The Marketing Desk for a major US financial institution. Analyze cohort performance and attribution data with these specifics: 5 behavioral segments — Explorers (LTV $4,200, CAC $48, 48.2K customers, 82% propensity), Revelers (LTV $5,100, CAC $72, 31K), Luxuriates (LTV $6,800, CAC $94, 22K), Bask & Chill (LTV $2,400, CAC $31, 58K), Deal Seekers (LTV $1,800, CAC $22, 62K). Attribution channels: Email/SMS/Push (248K impressions, 3,210 conversions, 100% confidence, deterministic hashed email), Open Web TTD/Yahoo (1.2M impressions, 890 conversions, 94% confidence, UID2), Paid Search Google (44K impressions, 1,840 conversions, 98% confidence), Meta/TikTok/YouTube (3.4M impressions, 4,200 conversions, +18% lift, clean room modeled). Always reference specific segment names, LTV/CAC ratios, and channel attribution data. Keep responses 2-4 sentences, actionable, plain text.`;
-const CMN_CHATBOT_SYS = `You are the audience assistant inside the Signalset Partner Portal for Meridian Air, a premium travel rewards brand. Meridian Air reaches high-intent travelers among FI cardholders via privacy-safe audience matching — no raw PII and no cardholder-level financials ever leave the FI. You have two audience sources: (1) FI-matched custom audiences — High-Intent Travelers (48.2K reach, 94% match) and VIP Loyalty Lookalike (124K reach, 87% match), built from behavioral signals like airline transactions 3×/90d, hotel co-occurrence, and lookalike modeling on Meridian's top-tier base; (2) IAB syndicated segments — Premium Travel Achievers (2.1M reach), Business Card Active (1.9M reach), Affluent Dining Enthusiasts (1.6M reach), Luxury Goods Buyers (890K reach). Geographic reach: top 15 US DMAs with neighborhood-level concentration. CRITICAL: never cite LTV, CAC, SHAP values, or cardholder-specific revenue figures — those are FI-internal metrics Meridian Air cannot see. Never use the phrase "clean room" in responses — describe matching as "privacy-safe match" or just describe the behavior. Speak in audience size, match rate, behavioral signals, geography, and expected reach or lift. Keep responses 3-5 sentences, plain text. Always close with a concrete next step, e.g. "Build this audience," "Open the campaign builder," or "See match details."`;
+const CMN_CHATBOT_SYS = `You are the audience assistant inside the Signalset Partner Portal for Meridian Air, a premium travel rewards brand. Meridian Air reaches high-intent travelers among FI cardholders via privacy-safe audience matching — no raw PII and no cardholder-level financials ever leave the FI.
+
+AUDIENCE SOURCES
+(1) FI-matched custom audiences — High-Intent Travelers (48.2K reach, 94% match, built from airline transactions 3×/90d + hotel co-occurrence) and VIP Loyalty Lookalike (124K reach, 87% match, modeled on Meridian top-tier base).
+(2) IAB syndicated segments — Premium Travel Achievers (2.1M), Business Card Active (1.9M), Affluent Dining Enthusiasts (1.6M), Luxury Goods Buyers (890K).
+Geographic reach: top 15 US DMAs with neighborhood-level concentration.
+
+HARD RULES
+- Never cite LTV, CAC, SHAP values, propensity percentages, or cardholder-specific revenue figures (these are FI-internal and invisible to Meridian Air).
+- Never use the phrase "clean room" — describe matching as "privacy-safe match" or just describe the behavioral signal.
+- Speak in: audience size, match rate, behavioral signals, geography, expected reach, expected lift.
+
+RESPONSE FORMAT — return ONLY valid JSON, no markdown, no preamble:
+{
+  "text": "Your 2-4 sentence answer. Do NOT restate what the user asked. Do NOT include a 'Next step:' closer — the UI renders action chips below.",
+  "followUps": ["short question 1?", "short question 2?", "short question 3?"],
+  "action": "build_audience" | "campaign_builder" | "manage" | "results" | "creatives" | null,
+  "actionLabel": "Short CTA text, e.g. 'Build this audience'"
+}
+
+ACTION VOCABULARY — these are the ONLY valid "action" values. Never invent new ones. Pick the single most relevant action based on the user's question:
+- "build_audience" → user wants to define/refine a target audience. Label: "Build this audience" or "Open audience builder".
+- "campaign_builder" → user wants to activate, launch, configure, or "create a campaign". Label: "Open campaign builder".
+- "manage" → user wants to pause, adjust, or manage an already-running campaign. Label: "Manage campaigns".
+- "results" → user wants to see performance, attribution, or delivered results. Label: "View results".
+- "creatives" → user wants to work on ads, creative assets, or variants. Label: "Browse creatives".
+- null → no single action is the clear next step (rare; use when genuinely open-ended).
+
+The "followUps" must be exactly 3 short, specific questions Meridian Air would naturally ask next. Not generic prompts. Reference specific audiences or DMAs from your answer.`;
 
 // ═══════════════════════════════════════════════════════════════
 // DEMO MOCK RESPONSES (fallback when API unreachable)
@@ -3996,6 +4024,89 @@ function getMockResponse(systemPrompt, userMessage) {
 // ═══════════════════════════════════════════════════════════════
 // SHARED CHATBOT COMPONENT
 // ═══════════════════════════════════════════════════════════════
+
+// Shared action-chip renderer for chat responses.
+// Each Chatbot passes its own screen-scoped navMap: {action_id: {label, onClick}}.
+// If AI returns an action_id not present in this navMap, it is silently ignored —
+// cross-section navigation is architecturally impossible because each section's navMap
+// only includes handlers that stay within that section.
+function buildActionRenderer(opts) {
+  const navMap = opts.navMap || {};
+  const onFollowUp = opts.onFollowUp;
+  const onEscape = opts.onEscape;
+  return function(data) {
+    if (!data) return null;
+    const text = (typeof data === 'string') ? data : (data.text || '');
+    const followUps = Array.isArray(data.followUps) ? data.followUps.slice(0, 3) : [];
+    const actionId = data.action;
+    const defaultLabel = navMap[actionId] ? navMap[actionId].label : null;
+    const nav = actionId && navMap[actionId] ? { label: data.actionLabel || defaultLabel, onClick: navMap[actionId].onClick } : null;
+    const hasChips = followUps.length > 0 || nav || onEscape;
+    const chipBase = {
+      padding: '6px 14px',
+      borderRadius: 20,
+      fontSize: 12,
+      cursor: 'pointer',
+      whiteSpace: 'nowrap',
+      fontFamily: 'inherit'
+    };
+    const followUpStyle = Object.assign({}, chipBase, {
+      background: 'rgba(99,102,241,0.1)',
+      color: 'var(--indigo)',
+      border: '1px solid rgba(99,102,241,0.3)',
+      fontWeight: 500
+    });
+    const navStyle = Object.assign({}, chipBase, {
+      padding: '7px 16px',
+      background: 'rgba(6,182,212,0.15)',
+      color: 'var(--cyan)',
+      border: '1px solid rgba(6,182,212,0.4)',
+      fontWeight: 700
+    });
+    const escapeStyle = Object.assign({}, chipBase, {
+      background: 'transparent',
+      color: 'var(--slate)',
+      border: '1px dashed var(--bdr)',
+      fontWeight: 500
+    });
+    return React.createElement('div', { className: 'bubble', style: { flex: 1 } },
+      React.createElement('div', {
+        style: {
+          background: 'var(--card)',
+          border: '1px solid var(--bdr)',
+          borderRadius: 10,
+          padding: '16px 18px',
+          boxShadow: 'var(--shadow)'
+        }
+      },
+        React.createElement('div', {
+          style: { fontSize: 15, color: 'var(--text)', lineHeight: 1.7, marginBottom: hasChips ? 14 : 0 }
+        }, text),
+        hasChips && React.createElement('div', {
+          style: { display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }
+        },
+          nav && React.createElement('button', {
+            key: 'nav',
+            onClick: nav.onClick,
+            style: navStyle
+          }, nav.label + ' \u2192'),
+          followUps.map(function(q, i) {
+            return React.createElement('button', {
+              key: 'fu-' + i,
+              onClick: function() { if (onFollowUp) onFollowUp(q); },
+              style: followUpStyle
+            }, q);
+          }),
+          onEscape && React.createElement('button', {
+            key: 'esc',
+            onClick: onEscape,
+            style: escapeStyle
+          }, 'Something else\u2026')
+        )
+      )
+    );
+  };
+}
 
 function Chatbot({
   systemPrompt,
@@ -14002,6 +14113,21 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
   const [campaignFilter, setCampaignFilter] = useState('');
   const [editingBid, setEditingBid] = useState(null);
 
+  // Partner chat wiring — sendRef lets followUp pills inject messages back into the chat.
+  // partnersNavMap is hard-scoped to Partner tabs. AI cannot return a value that jumps sections.
+  const cmnHomeSendRef = useRef(null);
+  const cmnStartSendRef = useRef(null);
+  const cmnBuildSendRef = useRef(null);
+  const partnersNavMap = {
+    build_audience:   { label: 'Build this audience',     onClick: () => { setCmnHub(false); setCmnTab('audiences'); window.scrollTo(0,0); } },
+    campaign_builder: { label: 'Open campaign builder',   onClick: () => { setCmnHub(false); setCmnTab('build');     window.scrollTo(0,0); } },
+    manage:           { label: 'Manage campaigns',        onClick: () => { setCmnHub(false); setCmnTab('manage');    window.scrollTo(0,0); } },
+    results:          { label: 'View results',            onClick: () => { setCmnHub(false); setCmnTab('results');   window.scrollTo(0,0); } },
+    creatives:        { label: 'Browse creatives',        onClick: () => { setCmnHub(false); setCmnTab('creatives'); window.scrollTo(0,0); } }
+  };
+  const cmnOnFollowUp = (ref) => (q) => { if (ref.current) ref.current(q); };
+  const cmnOnEscape   = () => { const el = document.querySelector('.screen.active .chat-input'); if (el) el.focus(); };
+
   // ═══════════════════════════════════════════════════════════════════
   // MERCHANT PANEL DATA — Phase 17+ · Supabase-ready plumbing
   // ═══════════════════════════════════════════════════════════════════
@@ -14457,37 +14583,12 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     exploreLabel: "Partner Portal",
     exploreScreen: () => { setCmnHub(false); window.scrollTo(0,0); },
     placeholder: "Ask about targeting strategy or audience discovery\u2026",
-    resultRenderer: d => /*#__PURE__*/React.createElement("div", {
-      className: "bubble",
-      style: {
-        color: 'var(--text)',
-        fontSize: 14,
-        lineHeight: 1.7
-      }
-    }, d.text || JSON.stringify(d)),
-    actionBar: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 12,
-        color: 'var(--slate)',
-        marginRight: 4,
-        alignSelf: 'center'
-      }
-    }, "With this insight:"), /*#__PURE__*/React.createElement("button", {
-      className: "btn btn-primary",
-      style: {
-        fontSize: 12
-      },
-      onClick: () => {
-        setCmnHub(false); window.scrollTo(0,0);
-        setCmnTab('build');
-      }
-    }, "Apply to Campaign \u2192"), /*#__PURE__*/React.createElement("button", {
-      className: "btn btn-secondary",
-      style: {
-        fontSize: 12
-      },
-      onClick: () => { setCmnHub(false); window.scrollTo(0,0); }
-    }, "Explore Platform"))
+    sendRef: cmnHomeSendRef,
+    resultRenderer: buildActionRenderer({
+      navMap: partnersNavMap,
+      onFollowUp: cmnOnFollowUp(cmnHomeSendRef),
+      onEscape: cmnOnEscape
+    })
   })), false && /*#__PURE__*/React.createElement("button", {
     onClick: () => { setCmnHub(false); window.scrollTo(0,0); },
     style: {
@@ -14836,37 +14937,12 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     systemPrompt: CMN_CHATBOT_SYS,
     samples: CMN_CHATBOT_SAMPLES,
     placeholder: "Ask about targeting strategy or audience discovery\u2026",
-    resultRenderer: d => /*#__PURE__*/React.createElement("div", {
-      className: "bubble",
-      style: {
-        color: 'var(--text)',
-        fontSize: 15,
-        lineHeight: 1.7
-      }
-    }, d.text || JSON.stringify(d)),
-    actionBar: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 12,
-        color: 'var(--slate)',
-        alignSelf: 'center',
-        marginRight: 4
-      }
-    }, "With this insight:"), /*#__PURE__*/React.createElement("button", {
-      className: "btn btn-primary",
-      style: {
-        fontSize: 12
-      },
-      onClick: () => {
-        setCmnHub(false); window.scrollTo(0,0);
-        setCmnTab('build');
-      }
-    }, "Build Campaign \u2192"), /*#__PURE__*/React.createElement("button", {
-      className: "btn btn-secondary",
-      style: {
-        fontSize: 12
-      },
-      onClick: () => { setCmnHub(false); window.scrollTo(0,0); }
-    }, "Discover More"))
+    sendRef: cmnStartSendRef,
+    resultRenderer: buildActionRenderer({
+      navMap: partnersNavMap,
+      onFollowUp: cmnOnFollowUp(cmnStartSendRef),
+      onEscape: cmnOnEscape
+    })
   }))), /*#__PURE__*/React.createElement("div", {
     className: "camp-hub-right"
   }, /*#__PURE__*/React.createElement("div", {
@@ -15113,38 +15189,12 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     systemPrompt: CMN_CHATBOT_SYS,
     samples: CMN_CHATBOT_SAMPLES,
     placeholder: "Ask about targeting strategy or audience discovery\u2026",
-    resultRenderer: d => /*#__PURE__*/React.createElement("div", {
-      className: "bubble",
-      style: {
-        color: 'var(--text)',
-        fontSize: 14,
-        lineHeight: 1.7
-      }
-    }, d.text || JSON.stringify(d)),
-    actionBar: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 12,
-        color: 'var(--slate)',
-        alignSelf: 'center',
-        marginRight: 4
-      }
-    }, "With this insight:"), /*#__PURE__*/React.createElement("button", {
-      className: "btn btn-primary",
-      style: {
-        fontSize: 12
-      },
-      onClick: () => setCmnTab('build')
-    }, "Apply to Campaign \u2192"), /*#__PURE__*/React.createElement("button", {
-      className: "btn btn-secondary",
-      style: {
-        fontSize: 12
-      }
-    }, "Save Insight"), /*#__PURE__*/React.createElement("button", {
-      className: "btn btn-secondary",
-      style: {
-        fontSize: 12
-      }
-    }, "Share"))
+    sendRef: cmnBuildSendRef,
+    resultRenderer: buildActionRenderer({
+      navMap: partnersNavMap,
+      onFollowUp: cmnOnFollowUp(cmnBuildSendRef),
+      onEscape: cmnOnEscape
+    })
   }))), /*#__PURE__*/React.createElement("div", {
     className: "panel",
     style: {
