@@ -555,21 +555,24 @@ body.v11-sidebar-open .v11-sidebar { transform: translateX(0); }
 /* ── CHATBOT ── */
 .chat-wrap { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 
-/* EMPTY STATE — input centered with pills below (input visually above pills) */
+/* EMPTY STATE — input above pills, action bar at bottom of card */
 .chat-wrap-empty { justify-content: center; }
 .chat-wrap-empty .chat-messages { display: none; }
 .chat-wrap-empty .chat-input { order: 1; }
 .chat-wrap-empty .sample-chips { order: 2; }
+.chat-wrap-empty .chat-footer { order: 3; }
 
-/* ACTIVE STATE — header at top, messages scroll, input pinned at bottom */
+/* ACTIVE STATE — header top, messages scroll, input above bottom, action bar at bottom */
 .chat-wrap-active .chat-header { order: 1; flex-shrink: 0; }
 .chat-wrap-active .chat-messages { order: 2; flex: 1 1 auto; overflow-y: auto; min-height: 0; }
+.chat-wrap-active .sample-chips { display: none; }
 .chat-wrap-active .chat-input {
   order: 3; margin: 0; flex-shrink: 0;
   border-top: 1px solid rgba(99,102,241,.2);
   border-radius: 0; border-left: none; border-right: none; border-bottom: none;
   min-height: 64px; max-height: 120px;
 }
+.chat-wrap-active .chat-footer { order: 4; flex-shrink: 0; }
 
 .chat-messages {
   flex: 1 1 auto; overflow-y: auto; padding: 14px 20px;
