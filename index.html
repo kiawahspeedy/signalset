@@ -410,7 +410,7 @@ body.v11-sidebar-open .v11-sidebar { transform: translateX(0); }
 
 /* ── V11 HOME SCREEN — chatbot-first ── */
 .v11-home {
-  min-height: calc(100vh - 56px);
+  height: calc(100vh - 56px);
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   padding: 40px 20px 60px;
@@ -451,7 +451,7 @@ body.v11-sidebar-open .v11-sidebar { transform: translateX(0); }
 }
 /* Override Chatbot interior styling for the v11 home context */
 .v11-home-chat-wrap .home-chat-wrap {
-  height: auto; max-height: 520px;
+  height: auto; max-height: calc(100vh - 240px);
   border: 1px solid rgba(99,102,241,.28);
   border-radius: 14px;
   background: rgba(14,14,34,.65);
@@ -554,6 +554,23 @@ body.v11-sidebar-open .v11-sidebar { transform: translateX(0); }
 
 /* ── CHATBOT ── */
 .chat-wrap { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+
+/* EMPTY STATE — input centered with pills below (input visually above pills) */
+.chat-wrap-empty { justify-content: center; }
+.chat-wrap-empty .chat-messages { display: none; }
+.chat-wrap-empty .chat-input { order: 1; }
+.chat-wrap-empty .sample-chips { order: 2; }
+
+/* ACTIVE STATE — header at top, messages scroll, input pinned at bottom */
+.chat-wrap-active .chat-header { order: 1; flex-shrink: 0; }
+.chat-wrap-active .chat-messages { order: 2; flex: 1 1 auto; overflow-y: auto; min-height: 0; }
+.chat-wrap-active .chat-input {
+  order: 3; margin: 0; flex-shrink: 0;
+  border-top: 1px solid rgba(99,102,241,.2);
+  border-radius: 0; border-left: none; border-right: none; border-bottom: none;
+  min-height: 64px; max-height: 120px;
+}
+
 .chat-messages {
   flex: 1 1 auto; overflow-y: auto; padding: 14px 20px;
   display: flex; flex-direction: column; gap: 16px;
@@ -564,7 +581,11 @@ body.v11-sidebar-open .v11-sidebar { transform: translateX(0); }
 .chat-empty .hint { font-size: 13px; color: var(--text-sec); margin-top: 10px; display: block; }
 .chat-empty .hint-cyan { font-size: 13px; color: var(--cyan-dim); font-weight: 500; margin-top: 8px; display: block; }
 
-.msg { display: flex; gap: 12px; margin-bottom: 6px; }
+.msg { display: flex; gap: 12px; margin-bottom: 6px; animation: msg-fade-in .28s cubic-bezier(.4,0,.2,1) both; }
+@keyframes msg-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 .msg.user { justify-content: flex-end; }
 .msg.user .bubble {
   background: var(--cyan); border: none;
@@ -1639,7 +1660,7 @@ div:has(> .ig-layout) > .hero { display: none; }
 .feat-tile:hover .feat-tile-arrow { color: var(--cyan); transform: translateX(2px); }
 .home-agent-intro { padding: 16px 18px; background: linear-gradient(135deg, rgba(0,180,230,.06), rgba(5,150,105,.04)); border: 1px solid rgba(0,180,230,.2); border-radius: 10px; margin-bottom: 18px; }
 .home-chat-wrap { height: auto; display: flex; flex-direction: column; border: 1px solid rgba(99,102,241,.28); border-radius: 10px; overflow: hidden; background: var(--card); box-shadow: 0 0 0 1px rgba(99,102,241,.08), 0 8px 32px rgba(0,0,0,.4); }
-.mz-intro-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: calc(100vh - 56px); padding: 20px 32px 32px; }
+.mz-intro-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; height: calc(100vh - 56px); overflow: hidden; padding: 20px 32px 32px; }
 .mz-intro-left { padding: 0; display: flex; flex-direction: column; width: 100%; max-width: 760px; border-right: none; }
 .mz-intro-right { display: none; }
 .mz-jump-card { background: var(--card); border: 1px solid var(--bdr); border-radius: 10px; padding: 14px 16px; cursor: pointer; transition: all .18s; box-shadow: var(--shadow); }
@@ -1647,9 +1668,9 @@ div:has(> .ig-layout) > .hero { display: none; }
 .mz-jump-card-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
 .mz-jump-card-desc { font-size: 12px; color: var(--slate); }
 .mz-jump-card-badge { margin-top: 8px; display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: var(--cyan-dim); }
-.camp-hub-wrap { display: flex; flex-direction: column; min-height: calc(100vh - 62px); background: var(--bg); }
+.camp-hub-wrap { display: flex; flex-direction: column; height: calc(100vh - 62px); overflow: hidden; background: var(--bg); }
 .camp-hub-hero { padding: 36px 40px 32px; background: linear-gradient(135deg, var(--navy) 0%, #162D4F 100%); color: #fff; border-bottom: 3px solid rgba(0,180,230,0.2); }
-.camp-hub-body { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: calc(100vh - 56px - 40px); padding: 20px 32px 32px; }
+.camp-hub-body { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; min-height: 0; padding: 20px 32px 32px; }
 .camp-hub-left { padding: 0; display: flex; flex-direction: column; width: 100%; max-width: 760px; border-right: none; }
 .camp-hub-right { display: none; }
 .camp-tool-card { background: var(--card); border: 1.5px solid var(--bdr); border-radius: 10px; padding: 14px 16px; cursor: pointer; transition: all .18s; box-shadow: var(--shadow); }
@@ -3770,7 +3791,7 @@ const JOURNEY_SYS = `You are the Auto-Journey Builder inside The Marketing Desk 
 }
 Rules: 4-6 channels + convert node; owned-first; realistic CC KPIs; return ONLY JSON.`;
 const MZ_CHATBOT_SYS = `You are the Measurement Intelligence assistant inside The Marketing Desk for a major US financial institution. Analyze cohort performance and attribution data with these specifics: 5 behavioral segments — Explorers (LTV $4,200, CAC $48, 48.2K customers, 82% propensity), Revelers (LTV $5,100, CAC $72, 31K), Luxuriates (LTV $6,800, CAC $94, 22K), Bask & Chill (LTV $2,400, CAC $31, 58K), Deal Seekers (LTV $1,800, CAC $22, 62K). Attribution channels: Email/SMS/Push (248K impressions, 3,210 conversions, 100% confidence, deterministic hashed email), Open Web TTD/Yahoo (1.2M impressions, 890 conversions, 94% confidence, UID2), Paid Search Google (44K impressions, 1,840 conversions, 98% confidence), Meta/TikTok/YouTube (3.4M impressions, 4,200 conversions, +18% lift, clean room modeled). Always reference specific segment names, LTV/CAC ratios, and channel attribution data. Keep responses 2-4 sentences, actionable, plain text.`;
-const CMN_CHATBOT_SYS = `You are the audience assistant inside the Signalset Partner Portal for Meridian Air, a premium travel rewards brand. Meridian Air reaches high-intent travelers among FI cardholders via privacy-safe audience matching — no raw PII and no cardholder-level financials ever leave the FI. You have two audience sources: (1) FI-matched custom audiences — High-Intent Travelers (48.2K reach, 94% match) and VIP Loyalty Lookalike (124K reach, 87% match), built from behavioral signals like airline transactions 3×/90d, hotel co-occurrence, and lookalike modeling on Meridian's top-tier base; (2) IAB syndicated segments — Premium Travel Achievers (2.1M reach), Business Card Active (1.9M reach), Affluent Dining Enthusiasts (1.6M reach), Luxury Goods Buyers (890K reach). Geographic reach: top 15 US DMAs with neighborhood-level concentration. CRITICAL: never cite LTV, CAC, SHAP values, or cardholder-specific revenue figures — those are FI-internal metrics Meridian Air cannot see. Never use the phrase "clean room" in responses — describe matching as "privacy-safe match" or just describe the behavior. Speak in audience size, match rate, behavioral signals, geography, and expected reach or lift. Keep responses 3-5 sentences, plain text. Always close with a concrete next step, e.g. "Build this audience," "Open the campaign builder," or "See match details."`;
+const CMN_CHATBOT_SYS = `You are the Audience Discovery assistant inside the Partner Campaign Portal for Meridian Air, a premium travel rewards brand. You help Meridian Air build targeting strategies using Signalset FI cardholder transaction data via LiveRamp clean room (zero PII exposure). Key segments available: Explorers (48.2K frequent travelers, LTV $4,200, 82% propensity, travel spend ≥$800/mo), Revelers (31K lifestyle spenders, LTV $5,100, premium experiences), Luxuriates (22K high-net-worth, LTV $6,800, ≥$5K monthly spend). Geo reach: top 15 US DMAs with DMA-level LTV/CAC intelligence down to neighborhood. Expected 94% deterministic identity match rate, 4.2x CPM premium over generic programmatic, closed-loop ROAS attribution via cardholder transactions. Always cite specific segment sizes, match rates, and expected performance metrics. Keep responses 3-5 sentences, plain text.`;
 
 // ═══════════════════════════════════════════════════════════════
 // DEMO MOCK RESPONSES (fallback when API unreachable)
@@ -3935,7 +3956,7 @@ const JOURNEY_MOCKS = [{
   }]
 }];
 const MZ_TEXT_MOCKS = ['Explorers represent your highest-ROI acquisition target: LTV/CAC ratio of 87.5× versus the segment average of 68×. With only 18% current penetration, there is significant headroom — prioritize this segment for the travel rewards campaign.', 'Revelers justify their $72 CAC through superior brand engagement: 4.1× higher share-of-wallet growth vs. control groups in clean room analysis. Attribution data shows CTV as the highest-lift paid channel for this segment (+38% vs. email-only path).', 'The walled garden Meta/TikTok campaign contributed an estimated 4,200 conversions based on clean room cohort lift analysis (+18% vs. holdout). However, individual-level attribution is modeled — confidence is lower than the 98% on identity-resolved channels. Recommend supplementing with incrementality testing.', 'Luxuriates have the highest absolute LTV at $6,800 but require careful channel selection — they over-index on print and premium CTV and under-index on social. Standard programmatic buys underperform by 22% on this cohort; direct publisher deals outperform by 41%.'];
-const CMN_TEXT_MOCKS = ['For Meridian Air targeting top business travel DMAs, concentrating reach in Chicago, New York, San Francisco, and Dallas captures roughly 68% of the addressable high-intent traveler audience. Expected privacy-safe match: ~64% of the target base, yielding approximately 1.28M reachable users at a projected 4.2× CPM premium over generic programmatic. Next step: open the campaign builder to lock in DMA weighting.', 'Your strongest matches for a Meridian Air travel-rewards push are High-Intent Travelers (48.2K reach, 94% match — airline 3×/90d plus hotel co-occurrence) and VIP Loyalty Lookalike (124K reach, 87% match — modeled on your existing top-tier base). Combined that is ~170K high-confidence matches with strong airline-category spend concentration. Next step: build a combined audience and preview DMA-level reach.', 'Shopping behavior signals that indicate premium air travel intent include airline transactions ≥3× in 90 days, hotel or car-rental co-occurrence within the same booking window, corporate card usage patterns, and lounge access redemption. These signals identify approximately 44,100 in-market users in the Meridian Air target geography with 91% confidence of active purchase consideration. Next step: build an audience from these signals or refine by DMA.'];
+const CMN_TEXT_MOCKS = ['For Meridian Air targeting top business travel DMAs, I recommend concentrating spend in Chicago, New York, San Francisco, and Dallas — these four markets represent 68% of your addressable FI cardholder audience with active business travel signals. Expected match rate: 64% of your target base, yielding approximately 1.28M reachable users at a projected 4.2× premium CPM over generic audience buying.', 'The strongest FI cardholder segments for Meridian Air’s business traveler profile are Explorers (48.2K, 82% propensity, $4,200 LTV) and Revelers (31.4K, 76% propensity, $5,100 LTV). Combined, these segments represent 79,600 high-confidence matches with average spend in airline categories of $1,840/year — well above the $580 category average.', 'Shopping behavior signals indicating premium air travel intent include: airline transaction ≥3× in 90 days, hotel/car rental co-occurrence within same booking window, corporate card usage patterns, and lounge access redemption. These signals identify approximately 44,100 in-market users in the Meridian Air target geography with 91% confidence of active purchase consideration.'];
 function getMockResponse(systemPrompt, userMessage) {
   const isAudience = systemPrompt.includes('audienceName');
   const isJourney = systemPrompt.includes('journeyName');
@@ -4057,8 +4078,9 @@ function Chatbot({
   // Expose send externally (used by followUp pills)
   React.useEffect(() => { if (sendRef) sendRef.current = send; }, [send, sendRef]);
   return /*#__PURE__*/React.createElement("div", {
-    className: "chat-wrap"
+    className: `chat-wrap ${msgs.length === 0 ? 'chat-wrap-empty' : 'chat-wrap-active'}`
   }, msgs.length > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "chat-header",
     style: {
       padding: '8px 20px',
       borderBottom: '1px solid var(--bdr)',
@@ -16703,7 +16725,212 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
         spend: row.spend
       });
     }
-  }, "Optimize"))))))), selectedDMA && (() => {
+  }, "Optimize"))))))), /*#__PURE__*/React.createElement("div", {
+    className: `cmn-pane ${cmnTab === 'audiences' ? 'active' : ''}`
+  }, /*#__PURE__*/React.createElement("div", {
+    style: { padding: '40px 28px', color: 'var(--text)' }
+  }, /*#__PURE__*/React.createElement("h2", { style: { fontSize: 20, marginBottom: 12 } }, "Audiences \u2014 diagnostic"), /*#__PURE__*/React.createElement("p", null, "If you can read this, the pane render is working. ", merchantAudiences.length, " audiences in state."), /*#__PURE__*/React.createElement("p", null, "audChatHistory entries: ", audChatHistory.length))), /*#__PURE__*/React.createElement("div", {
+    className: `cmn-pane ${cmnTab === 'creatives' ? 'active' : ''}`
+  }, /*#__PURE__*/React.createElement("div", {
+    style: { padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 14 }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }
+  }, /*#__PURE__*/React.createElement("div", null,
+    /*#__PURE__*/React.createElement("div", { style: { fontSize: 18, fontWeight: 700 } }, "Creative Library"),
+    /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2 } }, merchantCreatives.length, " assets \u00b7 ", merchantCreatives.filter(c => c.source === 'upload').length, " uploaded \u00b7 ", merchantCreatives.filter(c => c.source === 'ai').length, " AI-generated")
+  ), /*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 6 } },
+    /*#__PURE__*/React.createElement("button", {
+      className: "btn btn-secondary",
+      style: { fontSize: 12, color: 'var(--text)' },
+      onClick: () => setCrvUploadModal(true)
+    }, "Upload"),
+    /*#__PURE__*/React.createElement("button", {
+      className: "btn btn-secondary",
+      style: { fontSize: 12, color: 'var(--text)', background: 'rgba(167,139,250,.1)', borderColor: 'rgba(167,139,250,.3)' },
+      onClick: () => setCrvAiModal(true)
+    }, "\u2728 AI Generate")
+  )), /*#__PURE__*/React.createElement("div", {
+    style: { display: 'flex', gap: 4, borderBottom: '1px solid var(--bdr-soft)', paddingBottom: 0 }
+  }, ['all', 'Email', 'Display', 'Push', 'CTV'].map(f => /*#__PURE__*/React.createElement("button", {
+    key: f,
+    onClick: () => setCrvFormatFilter(f),
+    style: { background: 'none', border: 'none', color: crvFormatFilter === f ? 'var(--cyan-pale)' : 'var(--slate)', padding: '8px 14px', fontSize: 12, fontWeight: crvFormatFilter === f ? 700 : 500, borderBottom: crvFormatFilter === f ? '2px solid var(--cyan)' : '2px solid transparent', cursor: 'pointer' }
+  }, f === 'all' ? 'All' : f))), /*#__PURE__*/React.createElement("div", {
+    style: { display: 'grid', gridTemplateColumns: '1fr 360px', gap: 14, minHeight: 500 }
+  },
+    /*#__PURE__*/React.createElement("div", {
+      style: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, alignContent: 'start', overflowY: 'auto', maxHeight: 620, paddingRight: 4 }
+    }, merchantCreatives.filter(c => crvFormatFilter === 'all' || c.format === crvFormatFilter).map(c => /*#__PURE__*/React.createElement("div", {
+      key: c.id,
+      style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 9, overflow: 'hidden', cursor: 'pointer' }
+    },
+      /*#__PURE__*/React.createElement("div", {
+        style: { height: 100, background: c.grad, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: 'rgba(255,255,255,.85)', fontFamily: 'IBM Plex Mono, monospace', letterSpacing: '.08em', textTransform: 'uppercase', position: 'relative' }
+      }, c.format,
+        c.aiGenerated && /*#__PURE__*/React.createElement("span", {
+          style: { position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,.4)', color: '#fff', padding: '2px 6px', fontSize: 9, borderRadius: 3, fontFamily: 'IBM Plex Mono, monospace' }
+        }, "\u2728 AI")
+      ),
+      /*#__PURE__*/React.createElement("div", { style: { padding: 10 } },
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, fontWeight: 700, marginBottom: 4 } }, c.name),
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', display: 'flex', justifyContent: 'space-between' } },
+          /*#__PURE__*/React.createElement("span", null, c.id, " \u00b7 ", c.format),
+          c.ctr !== null
+            ? /*#__PURE__*/React.createElement("span", { style: { color: 'var(--green)', fontWeight: 700 } }, c.ctr, "% CTR")
+            : /*#__PURE__*/React.createElement("span", { style: { color: 'var(--purple)' } }, "AI draft")
+        )
+      )
+    ))),
+    /*#__PURE__*/React.createElement("div", {
+      style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 9, display: 'flex', flexDirection: 'column', overflow: 'hidden', maxHeight: 620 }
+    },
+      /*#__PURE__*/React.createElement("div", {
+        style: { padding: '10px 14px', borderBottom: '1px solid var(--bdr-soft)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }
+      },
+        /*#__PURE__*/React.createElement("span", { style: { fontSize: 10, fontWeight: 700, color: 'var(--cyan-pale)', letterSpacing: '.08em', textTransform: 'uppercase', fontFamily: 'IBM Plex Mono, monospace' } }, "Creative Partner"),
+        /*#__PURE__*/React.createElement("span", { style: { fontSize: 10, color: 'var(--slate)' } }, "AI \u00b7 variants")
+      ),
+      /*#__PURE__*/React.createElement("div", {
+        style: { flex: 1, padding: 12, display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto', minHeight: 280 }
+      }, crvChatHistory.map((m, i) => /*#__PURE__*/React.createElement("div", {
+        key: i,
+        style: {
+          background: m.role === 'user' ? 'rgba(99,102,241,.15)' : m.role === 'sys' ? 'rgba(167,139,250,.08)' : 'var(--card-alt)',
+          border: '1px solid ' + (m.role === 'user' ? 'var(--bdr)' : m.role === 'sys' ? 'rgba(167,139,250,.25)' : 'var(--bdr-soft)'),
+          borderRadius: m.role === 'user' ? '9px 9px 3px 9px' : '9px 9px 9px 3px',
+          padding: '8px 11px',
+          fontSize: 12,
+          lineHeight: 1.5,
+          color: m.role === 'sys' ? 'var(--purple)' : m.role === 'user' ? 'var(--text)' : 'var(--slate)',
+          maxWidth: m.role === 'user' ? '82%' : '92%',
+          marginLeft: m.role === 'user' ? 'auto' : 0,
+          fontStyle: m.role === 'sys' ? 'italic' : 'normal',
+          whiteSpace: 'pre-wrap'
+        }
+      }, m.text, m.actions && /*#__PURE__*/React.createElement("div", {
+        style: { marginTop: 8, display: 'flex', gap: 6, flexWrap: 'wrap' }
+      }, m.actions.map((act, ai) => /*#__PURE__*/React.createElement("button", {
+        key: ai,
+        onClick: async () => {
+          if (act.kind === 'createVariants' && act.variants) {
+            const grads = ['linear-gradient(135deg,#818CF8,#4F46E5)', 'linear-gradient(135deg,#A78BFA,#7C3AED)', 'linear-gradient(135deg,#F472B6,#DB2777)', 'linear-gradient(135deg,#38BDF8,#0284C7)'];
+            for (let i = 0; i < act.variants.length; i++) {
+              await merchantPlumbing.saveCreative({ format: act.format || 'Push', source: 'ai', name: act.variants[i], ctr: null, status: 'draft', grad: grads[i % grads.length], aiGenerated: true });
+            }
+            setCrvChatHistory(prev => [...prev, { role: 'sys', text: 'Created ' + act.variants.length + ' AI variants \u00b7 saved to library as drafts' }]);
+          }
+        },
+        style: { background: 'var(--cyan)', color: '#fff', border: 'none', borderRadius: 5, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }
+      }, act.label))))) ),
+      crvChatBusy && /*#__PURE__*/React.createElement("div", {
+        style: { padding: '6px 14px', fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', borderTop: '1px solid var(--bdr-soft)' }
+      }, "Generating variants\u2026"),
+      /*#__PURE__*/React.createElement("div", {
+        style: { padding: 10, borderTop: '1px solid var(--bdr-soft)', display: 'flex', gap: 6 }
+      },
+        /*#__PURE__*/React.createElement("input", {
+          type: "text",
+          value: crvChatInput,
+          onChange: e => setCrvChatInput(e.target.value),
+          onKeyDown: e => {
+            if (e.key === 'Enter' && crvChatInput.trim() && !crvChatBusy) {
+              const q = crvChatInput.trim();
+              setCrvChatInput('');
+              setCrvChatHistory(prev => [...prev, { role: 'user', text: q }]);
+              setCrvChatBusy(true);
+              setTimeout(() => {
+                const ql = q.toLowerCase();
+                let resp;
+                if (ql.includes('push')) {
+                  resp = { role: 'assistant', text: 'Here are 3 push variations (80-char limit):\n\u2460 "5\u00d7 miles just landed."\n\u2461 "Your next trip, 5\u00d7 closer."\n\u2462 "Earn 5\u00d7 on your next flight."\n\nWant me to create these as push creatives?', actions: [{ kind: 'createVariants', label: 'Generate all three', format: 'Push', variants: ['5\u00d7 miles just landed.', 'Your next trip, 5\u00d7 closer.', 'Earn 5\u00d7 on your next flight.'] }] };
+                } else if (ql.includes('punchier') || ql.includes('shorter') || ql.includes('urgent')) {
+                  resp = { role: 'assistant', text: 'Three punchier variants:\n\u2460 "Book now. Miles triple."\n\u2461 "Last call \u2014 5\u00d7 rewards."\n\u2462 "48 hours. 5\u00d7 miles. Go."\n\nGenerate?', actions: [{ kind: 'createVariants', label: 'Generate all three', format: 'Email', variants: ['Book now. Miles triple.', 'Last call \u2014 5\u00d7 rewards.', '48 hours. 5\u00d7 miles. Go.'] }] };
+                } else if (ql.includes('color') || ql.includes('variant')) {
+                  resp = { role: 'assistant', text: 'Two new color variants generated in brand-safe palette:\n\u2022 Warm coral \u2014 higher energy, young-skewed\n\u2022 Deep emerald \u2014 premium, high-earner appeal\n\nSaved both as drafts with AI badge.', actions: [{ kind: 'createVariants', label: 'Save both variants', format: 'Display', variants: ['Warm coral variant', 'Deep emerald variant'] }] };
+                } else if (ql.includes('ctr') || ql.includes('performance') || ql.includes('best')) {
+                  resp = { role: 'assistant', text: 'Your highest-CTR creative is CRV-03 (Business upgrade banner) at 6.8%. The pattern: short headline + dollar value in first 3 words + clear CTA. Email format outperforms Display by 1.2\u00d7 on this audience. Want me to generate new variants using this pattern?' };
+                } else if (ql.includes('email') || ql.includes('rewrite')) {
+                  resp = { role: 'assistant', text: 'Three rewrites of your top email headline:\n\u2460 "Unlock 5\u00d7 miles \u2014 exclusive for you"\n\u2461 "Your next flight, at 5\u00d7 the value"\n\u2462 "Miles multiplied. Today only."\n\nCreate all three?', actions: [{ kind: 'createVariants', label: 'Generate all three', format: 'Email', variants: ['Unlock 5\u00d7 miles \u2014 exclusive for you', 'Your next flight, at 5\u00d7 the value', 'Miles multiplied. Today only.'] }] };
+                } else {
+                  resp = { role: 'assistant', text: 'I can help with: copy rewrites, format adaptation (email \u2192 push \u2192 display), color variants from a seed, variant generation for A/B testing, or performance analysis of your existing creatives. What do you want to try?' };
+                }
+                setCrvChatHistory(prev => [...prev, resp]);
+                setCrvChatBusy(false);
+              }, 900);
+            }
+          },
+          placeholder: "Describe a change or ask for variants\u2026",
+          style: { flex: 1, background: 'var(--card-alt2)', border: '1px solid var(--bdr-soft)', borderRadius: 6, padding: '8px 11px', fontSize: 12, color: 'var(--text)', outline: 'none', fontFamily: 'inherit' }
+        })
+      )
+    )
+  ), crvUploadModal && /*#__PURE__*/React.createElement("div", {
+    onClick: () => setCrvUploadModal(false),
+    style: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,.6)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }
+  }, /*#__PURE__*/React.createElement("div", {
+    onClick: e => e.stopPropagation(),
+    style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 12, padding: 24, maxWidth: 500, width: '90%' }
+  },
+    /*#__PURE__*/React.createElement("div", { style: { fontSize: 16, fontWeight: 700, marginBottom: 10 } }, "Upload Creative"),
+    /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: 'var(--slate)', marginBottom: 16, lineHeight: 1.5 } }, "Upload an existing approved creative asset. Supported formats: static images (JPG/PNG), video (MP4), HTML5 banners (ZIP), or JSON template for push notifications."),
+    /*#__PURE__*/React.createElement("input", { type: "file", accept: "image/*,video/*,.zip,.json", style: { marginBottom: 16, color: 'var(--slate)', fontSize: 12 } }),
+    /*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 8, justifyContent: 'flex-end' } },
+      /*#__PURE__*/React.createElement("button", { className: "btn btn-secondary", style: { fontSize: 12 }, onClick: () => setCrvUploadModal(false) }, "Cancel"),
+      /*#__PURE__*/React.createElement("button", {
+        className: "btn btn-primary",
+        style: { fontSize: 12, background: 'var(--cyan)', color: '#fff', border: 'none', borderRadius: 6, padding: '7px 14px', cursor: 'pointer', fontWeight: 700 },
+        onClick: async () => {
+          setCrvUploadModal(false);
+          const grads = ['linear-gradient(135deg,#38BDF8,#0284C7)', 'linear-gradient(135deg,#FB923C,#EA580C)', 'linear-gradient(135deg,#4ADE80,#16A34A)'];
+          const saved = await merchantPlumbing.saveCreative({ format: 'Display', source: 'upload', name: 'Uploaded creative \u2014 ' + new Date().toLocaleTimeString().slice(0,5), ctr: null, status: 'live', grad: grads[Math.floor(Math.random() * grads.length)], aiGenerated: false });
+          setCrvChatHistory(prev => [...prev, { role: 'sys', text: 'Uploaded and saved as ' + saved.id }]);
+        }
+      }, "Save to Library")
+    )
+  )), crvAiModal && /*#__PURE__*/React.createElement("div", {
+    onClick: () => setCrvAiModal(false),
+    style: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,.6)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }
+  }, /*#__PURE__*/React.createElement("div", {
+    onClick: e => e.stopPropagation(),
+    style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 12, padding: 24, maxWidth: 520, width: '90%' }
+  },
+    /*#__PURE__*/React.createElement("div", { style: { fontSize: 16, fontWeight: 700, marginBottom: 10 } }, "\u2728 AI-Generate Creative"),
+    /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: 'var(--slate)', marginBottom: 16, lineHeight: 1.5 } }, "Describe what you want. Our creative partner generates copy variants and image adaptations. For iterative refinement, use the chat panel on the right."),
+    /*#__PURE__*/React.createElement("textarea", {
+      placeholder: "e.g. \"3 push variants emphasizing urgency for Meridian Air 5\u00d7 miles offer\"",
+      style: { width: '100%', minHeight: 80, background: 'var(--card-alt2)', border: '1px solid var(--bdr-soft)', borderRadius: 6, padding: 10, fontSize: 12, color: 'var(--text)', marginBottom: 16, resize: 'vertical', fontFamily: 'inherit' }
+    }),
+    /*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 8, justifyContent: 'flex-end' } },
+      /*#__PURE__*/React.createElement("button", { className: "btn btn-secondary", style: { fontSize: 12 }, onClick: () => setCrvAiModal(false) }, "Cancel"),
+      /*#__PURE__*/React.createElement("button", {
+        className: "btn btn-primary",
+        style: { fontSize: 12, background: 'var(--purple)', color: '#fff', border: 'none', borderRadius: 6, padding: '7px 14px', cursor: 'pointer', fontWeight: 700 },
+        onClick: async () => {
+          setCrvAiModal(false);
+          setCrvChatHistory(prev => [...prev, { role: 'sys', text: 'Generating 3 AI variants\u2026' }]);
+          setTimeout(async () => {
+            const grads = ['linear-gradient(135deg,#A78BFA,#7C3AED)', 'linear-gradient(135deg,#F472B6,#DB2777)', 'linear-gradient(135deg,#FB7185,#E11D48)'];
+            for (let i = 0; i < 3; i++) {
+              await merchantPlumbing.saveCreative({ format: 'Push', source: 'ai', name: 'AI variant ' + (i+1), ctr: null, status: 'draft', grad: grads[i], aiGenerated: true });
+            }
+            setCrvChatHistory(prev => [...prev, { role: 'assistant', text: 'Generated 3 AI variants. Review in the library and promote to live when ready.' }]);
+          }, 1200);
+        }
+      }, "\u2728 Generate")
+    )
+  )))), /*#__PURE__*/React.createElement("div", {
+    className: `cmn-pane ${cmnTab === 'cleanroom' ? 'active' : ''}`
+  }, /*#__PURE__*/React.createElement("div", {
+    style: { padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 16 }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: { fontSize: 18, fontWeight: 700 }
+  }, "Clean Room Workbench"), /*#__PURE__*/React.createElement("div", {
+    style: { fontSize: 11, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2 }
+  }, "Privacy-safe audience matching \u00b7 incrementality testing \u00b7 ", cleanRoomRuns.filter(r => r.status === 'running').length, " running in TEE"))), /*#__PURE__*/React.createElement("div", {
+    style: { padding: 48, textAlign: 'center', background: 'var(--card)', border: '1px dashed var(--bdr)', borderRadius: 10, color: 'var(--slate)', fontSize: 13 }
+  }, /*#__PURE__*/React.createElement("div", { style: { fontSize: 40, marginBottom: 12, opacity: .5 } }, "\u25C8"), /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, marginBottom: 6, color: 'var(--text)' } }, "Clean Room Workbench \u2014 Phase 22"), /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, maxWidth: 520, margin: '0 auto' } }, "Chat-essential interface. ", cleanRoomRuns.length, " runs in history. Operations dispatch to GCP Confidential Space TEE via Worker endpoint \u2014 client never touches BQ directly for clean room ops.")))), selectedDMA && (() => {
     const cities = getCMNDMAInsights(selectedDMA.dma);
     const segments = [{
       seg: 'Explorers',
@@ -17117,212 +17344,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     }, "Closed-loop verified."), " All attribution for ", selectedDMA.dma, " flows back through the clean room \u2014 linking ad exposure to confirmed cardholder transactions. Zero PII exposed."))));
   })(), /*#__PURE__*/React.createElement("div", {
     className: "perf-note"
-  }, /*#__PURE__*/React.createElement("strong", null, "Closed-loop verified."), " Every Meridian Air booking made by an FI cardholder in this audience flows back through the clean room \u2014 linking ad exposure to confirmed purchase. Premium CPM is now auditable, not assumed. ROAS of ", /*#__PURE__*/React.createElement("strong", null, estROAS, "\xD7"), " is attributed, not modeled."))), /*#__PURE__*/React.createElement("div", {
-    className: `cmn-pane ${cmnTab === 'audiences' ? 'active' : ''}`
-  }, /*#__PURE__*/React.createElement("div", {
-    style: { padding: '40px 28px', color: 'var(--text)' }
-  }, /*#__PURE__*/React.createElement("h2", { style: { fontSize: 20, marginBottom: 12 } }, "Audiences \u2014 diagnostic"), /*#__PURE__*/React.createElement("p", null, "If you can read this, the pane render is working. ", merchantAudiences.length, " audiences in state."), /*#__PURE__*/React.createElement("p", null, "audChatHistory entries: ", audChatHistory.length))), /*#__PURE__*/React.createElement("div", {
-    className: `cmn-pane ${cmnTab === 'creatives' ? 'active' : ''}`
-  }, /*#__PURE__*/React.createElement("div", {
-    style: { padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 14 }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }
-  }, /*#__PURE__*/React.createElement("div", null,
-    /*#__PURE__*/React.createElement("div", { style: { fontSize: 18, fontWeight: 700 } }, "Creative Library"),
-    /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2 } }, merchantCreatives.length, " assets \u00b7 ", merchantCreatives.filter(c => c.source === 'upload').length, " uploaded \u00b7 ", merchantCreatives.filter(c => c.source === 'ai').length, " AI-generated")
-  ), /*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 6 } },
-    /*#__PURE__*/React.createElement("button", {
-      className: "btn btn-secondary",
-      style: { fontSize: 12, color: 'var(--text)' },
-      onClick: () => setCrvUploadModal(true)
-    }, "Upload"),
-    /*#__PURE__*/React.createElement("button", {
-      className: "btn btn-secondary",
-      style: { fontSize: 12, color: 'var(--text)', background: 'rgba(167,139,250,.1)', borderColor: 'rgba(167,139,250,.3)' },
-      onClick: () => setCrvAiModal(true)
-    }, "\u2728 AI Generate")
-  )), /*#__PURE__*/React.createElement("div", {
-    style: { display: 'flex', gap: 4, borderBottom: '1px solid var(--bdr-soft)', paddingBottom: 0 }
-  }, ['all', 'Email', 'Display', 'Push', 'CTV'].map(f => /*#__PURE__*/React.createElement("button", {
-    key: f,
-    onClick: () => setCrvFormatFilter(f),
-    style: { background: 'none', border: 'none', color: crvFormatFilter === f ? 'var(--cyan-pale)' : 'var(--slate)', padding: '8px 14px', fontSize: 12, fontWeight: crvFormatFilter === f ? 700 : 500, borderBottom: crvFormatFilter === f ? '2px solid var(--cyan)' : '2px solid transparent', cursor: 'pointer' }
-  }, f === 'all' ? 'All' : f))), /*#__PURE__*/React.createElement("div", {
-    style: { display: 'grid', gridTemplateColumns: '1fr 360px', gap: 14, minHeight: 500 }
-  },
-    /*#__PURE__*/React.createElement("div", {
-      style: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, alignContent: 'start', overflowY: 'auto', maxHeight: 620, paddingRight: 4 }
-    }, merchantCreatives.filter(c => crvFormatFilter === 'all' || c.format === crvFormatFilter).map(c => /*#__PURE__*/React.createElement("div", {
-      key: c.id,
-      style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 9, overflow: 'hidden', cursor: 'pointer' }
-    },
-      /*#__PURE__*/React.createElement("div", {
-        style: { height: 100, background: c.grad, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: 'rgba(255,255,255,.85)', fontFamily: 'IBM Plex Mono, monospace', letterSpacing: '.08em', textTransform: 'uppercase', position: 'relative' }
-      }, c.format,
-        c.aiGenerated && /*#__PURE__*/React.createElement("span", {
-          style: { position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,.4)', color: '#fff', padding: '2px 6px', fontSize: 9, borderRadius: 3, fontFamily: 'IBM Plex Mono, monospace' }
-        }, "\u2728 AI")
-      ),
-      /*#__PURE__*/React.createElement("div", { style: { padding: 10 } },
-        /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, fontWeight: 700, marginBottom: 4 } }, c.name),
-        /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', display: 'flex', justifyContent: 'space-between' } },
-          /*#__PURE__*/React.createElement("span", null, c.id, " \u00b7 ", c.format),
-          c.ctr !== null
-            ? /*#__PURE__*/React.createElement("span", { style: { color: 'var(--green)', fontWeight: 700 } }, c.ctr, "% CTR")
-            : /*#__PURE__*/React.createElement("span", { style: { color: 'var(--purple)' } }, "AI draft")
-        )
-      )
-    ))),
-    /*#__PURE__*/React.createElement("div", {
-      style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 9, display: 'flex', flexDirection: 'column', overflow: 'hidden', maxHeight: 620 }
-    },
-      /*#__PURE__*/React.createElement("div", {
-        style: { padding: '10px 14px', borderBottom: '1px solid var(--bdr-soft)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }
-      },
-        /*#__PURE__*/React.createElement("span", { style: { fontSize: 10, fontWeight: 700, color: 'var(--cyan-pale)', letterSpacing: '.08em', textTransform: 'uppercase', fontFamily: 'IBM Plex Mono, monospace' } }, "Creative Partner"),
-        /*#__PURE__*/React.createElement("span", { style: { fontSize: 10, color: 'var(--slate)' } }, "AI \u00b7 variants")
-      ),
-      /*#__PURE__*/React.createElement("div", {
-        style: { flex: 1, padding: 12, display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto', minHeight: 280 }
-      }, crvChatHistory.map((m, i) => /*#__PURE__*/React.createElement("div", {
-        key: i,
-        style: {
-          background: m.role === 'user' ? 'rgba(99,102,241,.15)' : m.role === 'sys' ? 'rgba(167,139,250,.08)' : 'var(--card-alt)',
-          border: '1px solid ' + (m.role === 'user' ? 'var(--bdr)' : m.role === 'sys' ? 'rgba(167,139,250,.25)' : 'var(--bdr-soft)'),
-          borderRadius: m.role === 'user' ? '9px 9px 3px 9px' : '9px 9px 9px 3px',
-          padding: '8px 11px',
-          fontSize: 12,
-          lineHeight: 1.5,
-          color: m.role === 'sys' ? 'var(--purple)' : m.role === 'user' ? 'var(--text)' : 'var(--slate)',
-          maxWidth: m.role === 'user' ? '82%' : '92%',
-          marginLeft: m.role === 'user' ? 'auto' : 0,
-          fontStyle: m.role === 'sys' ? 'italic' : 'normal',
-          whiteSpace: 'pre-wrap'
-        }
-      }, m.text, m.actions && /*#__PURE__*/React.createElement("div", {
-        style: { marginTop: 8, display: 'flex', gap: 6, flexWrap: 'wrap' }
-      }, m.actions.map((act, ai) => /*#__PURE__*/React.createElement("button", {
-        key: ai,
-        onClick: async () => {
-          if (act.kind === 'createVariants' && act.variants) {
-            const grads = ['linear-gradient(135deg,#818CF8,#4F46E5)', 'linear-gradient(135deg,#A78BFA,#7C3AED)', 'linear-gradient(135deg,#F472B6,#DB2777)', 'linear-gradient(135deg,#38BDF8,#0284C7)'];
-            for (let i = 0; i < act.variants.length; i++) {
-              await merchantPlumbing.saveCreative({ format: act.format || 'Push', source: 'ai', name: act.variants[i], ctr: null, status: 'draft', grad: grads[i % grads.length], aiGenerated: true });
-            }
-            setCrvChatHistory(prev => [...prev, { role: 'sys', text: 'Created ' + act.variants.length + ' AI variants \u00b7 saved to library as drafts' }]);
-          }
-        },
-        style: { background: 'var(--cyan)', color: '#fff', border: 'none', borderRadius: 5, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }
-      }, act.label))))) ),
-      crvChatBusy && /*#__PURE__*/React.createElement("div", {
-        style: { padding: '6px 14px', fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', borderTop: '1px solid var(--bdr-soft)' }
-      }, "Generating variants\u2026"),
-      /*#__PURE__*/React.createElement("div", {
-        style: { padding: 10, borderTop: '1px solid var(--bdr-soft)', display: 'flex', gap: 6 }
-      },
-        /*#__PURE__*/React.createElement("input", {
-          type: "text",
-          value: crvChatInput,
-          onChange: e => setCrvChatInput(e.target.value),
-          onKeyDown: e => {
-            if (e.key === 'Enter' && crvChatInput.trim() && !crvChatBusy) {
-              const q = crvChatInput.trim();
-              setCrvChatInput('');
-              setCrvChatHistory(prev => [...prev, { role: 'user', text: q }]);
-              setCrvChatBusy(true);
-              setTimeout(() => {
-                const ql = q.toLowerCase();
-                let resp;
-                if (ql.includes('push')) {
-                  resp = { role: 'assistant', text: 'Here are 3 push variations (80-char limit):\n\u2460 "5\u00d7 miles just landed."\n\u2461 "Your next trip, 5\u00d7 closer."\n\u2462 "Earn 5\u00d7 on your next flight."\n\nWant me to create these as push creatives?', actions: [{ kind: 'createVariants', label: 'Generate all three', format: 'Push', variants: ['5\u00d7 miles just landed.', 'Your next trip, 5\u00d7 closer.', 'Earn 5\u00d7 on your next flight.'] }] };
-                } else if (ql.includes('punchier') || ql.includes('shorter') || ql.includes('urgent')) {
-                  resp = { role: 'assistant', text: 'Three punchier variants:\n\u2460 "Book now. Miles triple."\n\u2461 "Last call \u2014 5\u00d7 rewards."\n\u2462 "48 hours. 5\u00d7 miles. Go."\n\nGenerate?', actions: [{ kind: 'createVariants', label: 'Generate all three', format: 'Email', variants: ['Book now. Miles triple.', 'Last call \u2014 5\u00d7 rewards.', '48 hours. 5\u00d7 miles. Go.'] }] };
-                } else if (ql.includes('color') || ql.includes('variant')) {
-                  resp = { role: 'assistant', text: 'Two new color variants generated in brand-safe palette:\n\u2022 Warm coral \u2014 higher energy, young-skewed\n\u2022 Deep emerald \u2014 premium, high-earner appeal\n\nSaved both as drafts with AI badge.', actions: [{ kind: 'createVariants', label: 'Save both variants', format: 'Display', variants: ['Warm coral variant', 'Deep emerald variant'] }] };
-                } else if (ql.includes('ctr') || ql.includes('performance') || ql.includes('best')) {
-                  resp = { role: 'assistant', text: 'Your highest-CTR creative is CRV-03 (Business upgrade banner) at 6.8%. The pattern: short headline + dollar value in first 3 words + clear CTA. Email format outperforms Display by 1.2\u00d7 on this audience. Want me to generate new variants using this pattern?' };
-                } else if (ql.includes('email') || ql.includes('rewrite')) {
-                  resp = { role: 'assistant', text: 'Three rewrites of your top email headline:\n\u2460 "Unlock 5\u00d7 miles \u2014 exclusive for you"\n\u2461 "Your next flight, at 5\u00d7 the value"\n\u2462 "Miles multiplied. Today only."\n\nCreate all three?', actions: [{ kind: 'createVariants', label: 'Generate all three', format: 'Email', variants: ['Unlock 5\u00d7 miles \u2014 exclusive for you', 'Your next flight, at 5\u00d7 the value', 'Miles multiplied. Today only.'] }] };
-                } else {
-                  resp = { role: 'assistant', text: 'I can help with: copy rewrites, format adaptation (email \u2192 push \u2192 display), color variants from a seed, variant generation for A/B testing, or performance analysis of your existing creatives. What do you want to try?' };
-                }
-                setCrvChatHistory(prev => [...prev, resp]);
-                setCrvChatBusy(false);
-              }, 900);
-            }
-          },
-          placeholder: "Describe a change or ask for variants\u2026",
-          style: { flex: 1, background: 'var(--card-alt2)', border: '1px solid var(--bdr-soft)', borderRadius: 6, padding: '8px 11px', fontSize: 12, color: 'var(--text)', outline: 'none', fontFamily: 'inherit' }
-        })
-      )
-    )
-  ), crvUploadModal && /*#__PURE__*/React.createElement("div", {
-    onClick: () => setCrvUploadModal(false),
-    style: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,.6)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }
-  }, /*#__PURE__*/React.createElement("div", {
-    onClick: e => e.stopPropagation(),
-    style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 12, padding: 24, maxWidth: 500, width: '90%' }
-  },
-    /*#__PURE__*/React.createElement("div", { style: { fontSize: 16, fontWeight: 700, marginBottom: 10 } }, "Upload Creative"),
-    /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: 'var(--slate)', marginBottom: 16, lineHeight: 1.5 } }, "Upload an existing approved creative asset. Supported formats: static images (JPG/PNG), video (MP4), HTML5 banners (ZIP), or JSON template for push notifications."),
-    /*#__PURE__*/React.createElement("input", { type: "file", accept: "image/*,video/*,.zip,.json", style: { marginBottom: 16, color: 'var(--slate)', fontSize: 12 } }),
-    /*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 8, justifyContent: 'flex-end' } },
-      /*#__PURE__*/React.createElement("button", { className: "btn btn-secondary", style: { fontSize: 12 }, onClick: () => setCrvUploadModal(false) }, "Cancel"),
-      /*#__PURE__*/React.createElement("button", {
-        className: "btn btn-primary",
-        style: { fontSize: 12, background: 'var(--cyan)', color: '#fff', border: 'none', borderRadius: 6, padding: '7px 14px', cursor: 'pointer', fontWeight: 700 },
-        onClick: async () => {
-          setCrvUploadModal(false);
-          const grads = ['linear-gradient(135deg,#38BDF8,#0284C7)', 'linear-gradient(135deg,#FB923C,#EA580C)', 'linear-gradient(135deg,#4ADE80,#16A34A)'];
-          const saved = await merchantPlumbing.saveCreative({ format: 'Display', source: 'upload', name: 'Uploaded creative \u2014 ' + new Date().toLocaleTimeString().slice(0,5), ctr: null, status: 'live', grad: grads[Math.floor(Math.random() * grads.length)], aiGenerated: false });
-          setCrvChatHistory(prev => [...prev, { role: 'sys', text: 'Uploaded and saved as ' + saved.id }]);
-        }
-      }, "Save to Library")
-    )
-  )), crvAiModal && /*#__PURE__*/React.createElement("div", {
-    onClick: () => setCrvAiModal(false),
-    style: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,.6)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }
-  }, /*#__PURE__*/React.createElement("div", {
-    onClick: e => e.stopPropagation(),
-    style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 12, padding: 24, maxWidth: 520, width: '90%' }
-  },
-    /*#__PURE__*/React.createElement("div", { style: { fontSize: 16, fontWeight: 700, marginBottom: 10 } }, "\u2728 AI-Generate Creative"),
-    /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: 'var(--slate)', marginBottom: 16, lineHeight: 1.5 } }, "Describe what you want. Our creative partner generates copy variants and image adaptations. For iterative refinement, use the chat panel on the right."),
-    /*#__PURE__*/React.createElement("textarea", {
-      placeholder: "e.g. \"3 push variants emphasizing urgency for Meridian Air 5\u00d7 miles offer\"",
-      style: { width: '100%', minHeight: 80, background: 'var(--card-alt2)', border: '1px solid var(--bdr-soft)', borderRadius: 6, padding: 10, fontSize: 12, color: 'var(--text)', marginBottom: 16, resize: 'vertical', fontFamily: 'inherit' }
-    }),
-    /*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 8, justifyContent: 'flex-end' } },
-      /*#__PURE__*/React.createElement("button", { className: "btn btn-secondary", style: { fontSize: 12 }, onClick: () => setCrvAiModal(false) }, "Cancel"),
-      /*#__PURE__*/React.createElement("button", {
-        className: "btn btn-primary",
-        style: { fontSize: 12, background: 'var(--purple)', color: '#fff', border: 'none', borderRadius: 6, padding: '7px 14px', cursor: 'pointer', fontWeight: 700 },
-        onClick: async () => {
-          setCrvAiModal(false);
-          setCrvChatHistory(prev => [...prev, { role: 'sys', text: 'Generating 3 AI variants\u2026' }]);
-          setTimeout(async () => {
-            const grads = ['linear-gradient(135deg,#A78BFA,#7C3AED)', 'linear-gradient(135deg,#F472B6,#DB2777)', 'linear-gradient(135deg,#FB7185,#E11D48)'];
-            for (let i = 0; i < 3; i++) {
-              await merchantPlumbing.saveCreative({ format: 'Push', source: 'ai', name: 'AI variant ' + (i+1), ctr: null, status: 'draft', grad: grads[i], aiGenerated: true });
-            }
-            setCrvChatHistory(prev => [...prev, { role: 'assistant', text: 'Generated 3 AI variants. Review in the library and promote to live when ready.' }]);
-          }, 1200);
-        }
-      }, "\u2728 Generate")
-    )
-  )))), /*#__PURE__*/React.createElement("div", {
-    className: `cmn-pane ${cmnTab === 'cleanroom' ? 'active' : ''}`
-  }, /*#__PURE__*/React.createElement("div", {
-    style: { padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 16 }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: { fontSize: 18, fontWeight: 700 }
-  }, "Clean Room Workbench"), /*#__PURE__*/React.createElement("div", {
-    style: { fontSize: 11, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2 }
-  }, "Privacy-safe audience matching \u00b7 incrementality testing \u00b7 ", cleanRoomRuns.filter(r => r.status === 'running').length, " running in TEE"))), /*#__PURE__*/React.createElement("div", {
-    style: { padding: 48, textAlign: 'center', background: 'var(--card)', border: '1px dashed var(--bdr)', borderRadius: 10, color: 'var(--slate)', fontSize: 13 }
-  }, /*#__PURE__*/React.createElement("div", { style: { fontSize: 40, marginBottom: 12, opacity: .5 } }, "\u25C8"), /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, marginBottom: 6, color: 'var(--text)' } }, "Clean Room Workbench \u2014 Phase 22"), /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, maxWidth: 520, margin: '0 auto' } }, "Chat-essential interface. ", cleanRoomRuns.length, " runs in history. Operations dispatch to GCP Confidential Space TEE via Worker endpoint \u2014 client never touches BQ directly for clean room ops.")))));
+  }, /*#__PURE__*/React.createElement("strong", null, "Closed-loop verified."), " Every Meridian Air booking made by an FI cardholder in this audience flows back through the clean room \u2014 linking ad exposure to confirmed purchase. Premium CPM is now auditable, not assumed. ROAS of ", /*#__PURE__*/React.createElement("strong", null, estROAS, "\xD7"), " is attributed, not modeled."))));
 }
 
 // ═══════════════════════════════════════════════════════════════
