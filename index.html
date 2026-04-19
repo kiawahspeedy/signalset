@@ -563,6 +563,7 @@ body.v11-sidebar-open .v11-sidebar { transform: translateX(0); }
 .chat-wrap-empty .chat-footer { order: 3; }
 
 /* ACTIVE STATE — header top, messages scroll, input above bottom, action bar at bottom */
+.chat-wrap-active { max-height: calc(100vh - 200px); overflow: hidden; }
 .chat-wrap-active .chat-header { order: 1; flex-shrink: 0; }
 .chat-wrap-active .chat-messages { order: 2; flex: 1 1 auto; overflow-y: auto; min-height: 0; }
 .chat-wrap-active .sample-chips { display: none; }
