@@ -464,6 +464,7 @@ body.v11-sidebar-open .v11-sidebar { transform: translateX(0); }
 .v11-home-pills {
   display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
   width: min(720px, calc(100% - 40px));
+  margin: 0 auto;
   position: relative; z-index: 1;
 }
 .v11-home-pill {
@@ -520,8 +521,11 @@ body.v11-sidebar-open .v11-sidebar { transform: translateX(0); }
    Plain .hero-eyebrow (static section label on landing pages) hidden — the rail icon
    and chat placeholder already convey section context. */
 .hero-eyebrow:not(.hero-eyebrow-nav) { display: none; }
-/* Collapse the now-empty .hero wrapper so it doesn't leave vertical space */
-.hero:not(:has(.hero-eyebrow-nav)) { padding: 0 !important; min-height: 0 !important; border: none !important; }
+/* v11.4 Apr 18 PM — kill in-tab breadcrumbs too. Production pattern: role-gated users
+   never leave their section, so back-nav is redundant. Rail icon = you-are-here indicator. */
+.hero-eyebrow-nav { display: none; }
+/* Collapse the now-empty .hero wrapper — all internal content (eyebrow, h1, p) is hidden. */
+.hero { padding: 0 !important; min-height: 0 !important; border: none !important; }
 
 /* ── CARDS & PANELS ── */
 .panel {
@@ -14206,6 +14210,24 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
   const [optimizeAction, setOptimizeAction] = useState(null);
   const [reportSent, setReportSent] = useState(false);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
+
+  // Phase 19/20 — Audiences & Creatives chat + modal state
+  const [audChatHistory, setAudChatHistory] = useState([
+    { role: 'assistant', text: "I can build audiences from FI bank data (IAB segments) or match your first-party lists in the clean room. Just describe what you need." }
+  ]);
+  const [audChatInput, setAudChatInput] = useState('');
+  const [audChatBusy, setAudChatBusy] = useState(false);
+  const [audUploadModal, setAudUploadModal] = useState(false);
+  const [audNewAudModal, setAudNewAudModal] = useState(false);
+
+  const [crvChatHistory, setCrvChatHistory] = useState([
+    { role: 'assistant', text: "Upload a reference creative or describe a variant you want, and I'll generate it. I can rewrite copy, adapt formats (email → push), or produce color variants." }
+  ]);
+  const [crvChatInput, setCrvChatInput] = useState('');
+  const [crvChatBusy, setCrvChatBusy] = useState(false);
+  const [crvUploadModal, setCrvUploadModal] = useState(false);
+  const [crvAiModal, setCrvAiModal] = useState(false);
+  const [crvFormatFilter, setCrvFormatFilter] = useState('all');
   const dmaRef = useRef(null);
   const [campName, setCampName] = useState('Meridian Air — Premium Travel Rewards Q2');
   const [campHeadline, setCampHeadline] = useState('Earn 5× miles on your next Meridian Air booking');
@@ -14458,7 +14480,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     name: "store",
     size: 14,
     color: "white"
-  }), " Explore Partner Portal \u2192"), /*#__PURE__*/React.createElement("div", { className: "v11-home-pills", style: { marginTop: 18, justifyContent: "center" } }, /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('build'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'lightning', size: 13, color: 'currentColor' })), 'Build'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('manage'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'layers', size: 13, color: 'currentColor' })), 'Manage'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('results'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'chart', size: 13, color: 'currentColor' })), 'Results'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('audiences'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'target', size: 13, color: 'currentColor' })), 'Audiences'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('creatives'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'palette', size: 13, color: 'currentColor' })), 'Creatives'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('cleanroom'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'lock', size: 13, color: 'currentColor' })), 'Clean Room'))), /*#__PURE__*/React.createElement("div", {
+  }), " Explore Partner Portal \u2192"), /*#__PURE__*/React.createElement("div", { className: "v11-home-pills", style: { marginTop: 18, justifyContent: "center" } }, /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('audiences'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'target', size: 13, color: 'currentColor' })), 'Audiences'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('creatives'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'palette', size: 13, color: 'currentColor' })), 'Creatives'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('build'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'lightning', size: 13, color: 'currentColor' })), 'Build'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('manage'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'layers', size: 13, color: 'currentColor' })), 'Manage'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('results'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'chart', size: 13, color: 'currentColor' })), 'Results'))), /*#__PURE__*/React.createElement("div", {
     className: "camp-hub-right"
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -14917,7 +14939,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     title: "Back to Partner Portal"
   }, "Partners"), /*#__PURE__*/React.createElement("h1", null, "Self-Service ", /*#__PURE__*/React.createElement("span", null, "Partner Portal"))), /*#__PURE__*/React.createElement("div", {
     className: "cmn-inner-tabs"
-  }, [['build', 'Build'], ['manage', 'Manage'], ['results', 'Results'], ['audiences', 'Audiences'], ['creatives', 'Creatives'], ['cleanroom', 'Clean Room']].map(([id, label]) => /*#__PURE__*/React.createElement("div", {
+  }, [['audiences', 'Audiences'], ['creatives', 'Creatives'], ['build', 'Build'], ['manage', 'Manage'], ['results', 'Results']].map(([id, label]) => /*#__PURE__*/React.createElement("div", {
     key: id,
     className: `cmn-tab ${cmnTab === id ? 'active' : ''}`,
     onClick: () => setCmnTab(id)
@@ -16681,32 +16703,393 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
   }, "Optimize"))))))), /*#__PURE__*/React.createElement("div", {
     className: `cmn-pane ${cmnTab === 'audiences' ? 'active' : ''}`
   }, /*#__PURE__*/React.createElement("div", {
-    style: { padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 16 }
+    style: { padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 14 }
   }, /*#__PURE__*/React.createElement("div", {
     style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: { fontSize: 18, fontWeight: 700 }
-  }, "Audiences"), /*#__PURE__*/React.createElement("div", {
-    style: { fontSize: 11, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2 }
-  }, merchantAudiences.length, " saved \u00b7 ", merchantAudiences.filter(a => a.source === 'iab').length, " IAB \u00b7 ", merchantAudiences.filter(a => a.source === 'custom').length, " custom clean-room")), /*#__PURE__*/React.createElement("div", {
-    style: { display: 'flex', gap: 6 }
-  }, /*#__PURE__*/React.createElement("button", { className: "btn btn-secondary", style: { fontSize: 12 } }, "+ New Audience"), /*#__PURE__*/React.createElement("button", { className: "btn btn-secondary", style: { fontSize: 12 } }, "Import List"))), /*#__PURE__*/React.createElement("div", {
-    style: { padding: 48, textAlign: 'center', background: 'var(--card)', border: '1px dashed var(--bdr)', borderRadius: 10, color: 'var(--slate)', fontSize: 13 }
-  }, /*#__PURE__*/React.createElement("div", { style: { fontSize: 40, marginBottom: 12, opacity: .5 } }, "\u25CE"), /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, marginBottom: 6, color: 'var(--text)' } }, "Audiences capability \u2014 Phase 19"), /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, maxWidth: 480, margin: '0 auto' } }, "Chat-forward audience builder. IAB-structured off FI bank data + Custom via clean room match. Currently ", merchantAudiences.length, " seeded audiences ready for Build Campaign integration.")))), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", null,
+    /*#__PURE__*/React.createElement("div", { style: { fontSize: 18, fontWeight: 700 } }, "Audiences"),
+    /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2 } }, merchantAudiences.length, " saved \u00b7 ", merchantAudiences.filter(a => a.source === 'iab').length, " IAB \u00b7 ", merchantAudiences.filter(a => a.source === 'custom').length, " custom \u00b7 ", merchantAudiences.reduce((s, a) => s + a.universe, 0).toLocaleString(), " total records")
+  ), /*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 6 } },
+    /*#__PURE__*/React.createElement("button", {
+      className: "btn btn-secondary",
+      style: { fontSize: 12, color: 'var(--text)' },
+      onClick: () => setAudNewAudModal(true)
+    }, "+ New Audience"),
+    /*#__PURE__*/React.createElement("button", {
+      className: "btn btn-secondary",
+      style: { fontSize: 12, color: 'var(--text)' },
+      onClick: () => setAudUploadModal(true)
+    }, "Import List")
+  )), /*#__PURE__*/React.createElement("div", {
+    style: { display: 'grid', gridTemplateColumns: '1fr 360px', gap: 14, minHeight: 560 }
+  },
+    /*#__PURE__*/React.createElement("div", {
+      style: { display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'auto', maxHeight: 620, paddingRight: 4 }
+    },
+      /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 2, paddingBottom: 6, borderBottom: '1px dashed rgba(99,102,241,.2)' } }, "\u25C8 Custom \u00b7 privacy-safe match"),
+      /*#__PURE__*/React.createElement("div", {
+        style: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }
+      }, merchantAudiences.filter(a => a.source === 'custom').map(aud => /*#__PURE__*/React.createElement("div", {
+        key: aud.id,
+        style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 9, padding: 12, display: 'flex', flexDirection: 'column', gap: 6 }
+      },
+        /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 } },
+          /*#__PURE__*/React.createElement("div", { style: { flex: 1, minWidth: 0 } },
+            /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: 'var(--text)' } }, aud.name),
+            /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2 } }, aud.id, " \u00b7 ", aud.meta)
+          ),
+          /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: 'var(--cyan-pale)', fontFamily: 'IBM Plex Mono, monospace', fontWeight: 700, whiteSpace: 'nowrap' } }, aud.universe >= 1000000 ? (aud.universe / 1000000).toFixed(1) + 'M' : (aud.universe / 1000).toFixed(1) + 'K')
+        ),
+        /*#__PURE__*/React.createElement("div", { style: { display: 'flex', flexWrap: 'wrap', gap: 4 } },
+          aud.chips.map(chip => /*#__PURE__*/React.createElement("span", {
+            key: chip,
+            style: { fontSize: 9, padding: '2px 7px', background: 'rgba(99,102,241,.1)', color: 'var(--cyan-pale)', borderRadius: 9, fontFamily: 'IBM Plex Mono, monospace', letterSpacing: '.04em' }
+          }, chip))
+        ),
+        /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 10, color: 'var(--slate)', marginTop: 2 } },
+          /*#__PURE__*/React.createElement("span", null, aud.matchRate, "% match"),
+          /*#__PURE__*/React.createElement("button", {
+            style: { background: 'none', border: '1px solid var(--bdr-soft)', borderRadius: 5, padding: '3px 8px', fontSize: 10, color: 'var(--slate)', cursor: 'pointer', fontFamily: 'IBM Plex Mono, monospace' },
+            onClick: () => {
+              if (confirm('Delete ' + aud.name + '?')) merchantPlumbing.deleteAudience(aud.id);
+            }
+          }, "Remove")
+        )
+      ))),
+      /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', letterSpacing: '.08em', textTransform: 'uppercase', marginTop: 10, paddingBottom: 6, borderBottom: '1px dashed rgba(99,102,241,.2)' } }, "\u25CE IAB-structured \u00b7 off FI bank data"),
+      /*#__PURE__*/React.createElement("div", {
+        style: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }
+      }, merchantAudiences.filter(a => a.source === 'iab').map(aud => /*#__PURE__*/React.createElement("div", {
+        key: aud.id,
+        style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 9, padding: 12, display: 'flex', flexDirection: 'column', gap: 6 }
+      },
+        /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 } },
+          /*#__PURE__*/React.createElement("div", { style: { flex: 1, minWidth: 0 } },
+            /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: 'var(--text)' } }, aud.name),
+            /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2 } }, aud.id, " \u00b7 ", aud.meta)
+          ),
+          /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: 'var(--cyan-pale)', fontFamily: 'IBM Plex Mono, monospace', fontWeight: 700, whiteSpace: 'nowrap' } }, aud.universe >= 1000000 ? (aud.universe / 1000000).toFixed(1) + 'M' : (aud.universe / 1000).toFixed(1) + 'K')
+        ),
+        /*#__PURE__*/React.createElement("div", { style: { display: 'flex', flexWrap: 'wrap', gap: 4 } },
+          aud.chips.map(chip => /*#__PURE__*/React.createElement("span", {
+            key: chip,
+            style: { fontSize: 9, padding: '2px 7px', background: 'rgba(99,102,241,.1)', color: 'var(--cyan-pale)', borderRadius: 9, fontFamily: 'IBM Plex Mono, monospace', letterSpacing: '.04em' }
+          }, chip))
+        )
+      )))
+    ),
+    /*#__PURE__*/React.createElement("div", {
+      style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 9, display: 'flex', flexDirection: 'column', overflow: 'hidden', maxHeight: 620 }
+    },
+      /*#__PURE__*/React.createElement("div", {
+        style: { padding: '10px 14px', borderBottom: '1px solid var(--bdr-soft)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }
+      },
+        /*#__PURE__*/React.createElement("span", { style: { fontSize: 10, fontWeight: 700, color: 'var(--cyan-pale)', letterSpacing: '.08em', textTransform: 'uppercase', fontFamily: 'IBM Plex Mono, monospace' } }, "Audience Builder"),
+        /*#__PURE__*/React.createElement("span", { style: { fontSize: 10, color: 'var(--slate)' } }, "chat-forward")
+      ),
+      /*#__PURE__*/React.createElement("div", {
+        style: { flex: 1, padding: 12, display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto', minHeight: 280 }
+      }, audChatHistory.map((m, i) => /*#__PURE__*/React.createElement("div", {
+        key: i,
+        style: {
+          background: m.role === 'user' ? 'rgba(99,102,241,.15)' : m.role === 'sys' ? 'rgba(167,139,250,.08)' : 'var(--card-alt)',
+          border: '1px solid ' + (m.role === 'user' ? 'var(--bdr)' : m.role === 'sys' ? 'rgba(167,139,250,.25)' : 'var(--bdr-soft)'),
+          borderRadius: m.role === 'user' ? '9px 9px 3px 9px' : '9px 9px 9px 3px',
+          padding: '8px 11px',
+          fontSize: 12,
+          lineHeight: 1.5,
+          color: m.role === 'sys' ? 'var(--purple)' : m.role === 'user' ? 'var(--text)' : 'var(--slate)',
+          maxWidth: m.role === 'user' ? '82%' : '92%',
+          marginLeft: m.role === 'user' ? 'auto' : 0,
+          fontStyle: m.role === 'sys' ? 'italic' : 'normal'
+        }
+      }, m.text, m.actions && /*#__PURE__*/React.createElement("div", {
+        style: { marginTop: 8, display: 'flex', gap: 6, flexWrap: 'wrap' }
+      }, m.actions.map((act, ai) => /*#__PURE__*/React.createElement("button", {
+        key: ai,
+        onClick: async () => {
+          if (act.kind === 'save' && act.audience) {
+            const saved = await merchantPlumbing.saveAudience(act.audience);
+            setAudChatHistory(prev => [...prev, { role: 'sys', text: 'Saved as ' + saved.id + ' \u00b7 available in Build Campaign' }]);
+          }
+        },
+        style: { background: 'var(--cyan)', color: '#fff', border: 'none', borderRadius: 5, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }
+      }, act.label))))) ),
+      audChatBusy && /*#__PURE__*/React.createElement("div", {
+        style: { padding: '6px 14px', fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', borderTop: '1px solid var(--bdr-soft)' }
+      }, "Computing against FI bank data\u2026"),
+      /*#__PURE__*/React.createElement("div", {
+        style: { padding: 10, borderTop: '1px solid var(--bdr-soft)', display: 'flex', gap: 6 }
+      },
+        /*#__PURE__*/React.createElement("input", {
+          type: "text",
+          value: audChatInput,
+          onChange: e => setAudChatInput(e.target.value),
+          onKeyDown: e => {
+            if (e.key === 'Enter' && audChatInput.trim() && !audChatBusy) {
+              const q = audChatInput.trim();
+              setAudChatInput('');
+              setAudChatHistory(prev => [...prev, { role: 'user', text: q }]);
+              setAudChatBusy(true);
+              setTimeout(() => {
+                const ql = q.toLowerCase();
+                let resp;
+                if (ql.includes('lookalike') || ql.includes('lal')) {
+                  const size = Math.floor(80 + Math.random() * 200) * 1000;
+                  resp = { role: 'assistant', text: 'Built a lookalike off your seed. Estimated universe: ' + (size/1000).toFixed(0) + 'K FI cardholders. 87% cosine-similarity match. Top dimensions: high travel spend, premium card holders, multi-metro.', actions: [{ kind: 'save', label: 'Save audience', audience: { source: 'custom', name: 'Lookalike \u2014 ' + new Date().toLocaleTimeString().slice(0,5), universe: size, matchRate: 87, chips: ['Seed-derived', 'Propensity model', 'Multi-metro'], meta: 'CR-matched \u00b7 cosine similarity \u00b7 ' + new Date().toLocaleDateString() } }] };
+                } else if (ql.includes('match') || ql.includes('upload') || ql.includes('csv') || ql.includes('loyalty')) {
+                  resp = { role: 'assistant', text: 'Sure \u2014 I can match your list against FI cardholders in the TEE. Upload your CSV (hashed emails) and I will run the match privately. Click Import List, or type the size of your list and I will estimate overlap.' };
+                } else if (ql.includes('combine') || ql.includes('overlap') || ql.includes('exclude')) {
+                  const size = Math.floor(30 + Math.random() * 60) * 1000;
+                  resp = { role: 'assistant', text: 'Combined audience ready. Estimated size: ' + (size/1000).toFixed(0) + 'K cardholders after overlap + exclusion logic. Overlap between the two seed audiences = 42%.', actions: [{ kind: 'save', label: 'Save audience', audience: { source: 'custom', name: 'Combined \u2014 ' + new Date().toLocaleTimeString().slice(0,5), universe: size, matchRate: 92, chips: ['Combined', 'Excluded subset', 'Custom logic'], meta: 'Composite audience \u00b7 ' + new Date().toLocaleDateString() } }] };
+                } else {
+                  const size = Math.floor(40 + Math.random() * 100) * 1000;
+                  resp = { role: 'assistant', text: 'Found ' + size.toLocaleString() + ' FI cardholders matching your criteria. Top DMAs: NYC (18%), LA (12%), Chicago (9%). SHAP-driven propensity: 76%. Want to save this?', actions: [{ kind: 'save', label: 'Save audience', audience: { source: 'iab', name: 'Custom query \u2014 ' + new Date().toLocaleTimeString().slice(0,5), universe: size, matchRate: 100, chips: ['Query-derived', '76% propensity', 'Top metros'], meta: 'IAB-structured \u00b7 query-based \u00b7 ' + new Date().toLocaleDateString() } }] };
+                }
+                setAudChatHistory(prev => [...prev, resp]);
+                setAudChatBusy(false);
+              }, 900);
+            }
+          },
+          placeholder: "Describe the audience you want\u2026",
+          style: { flex: 1, background: 'var(--card-alt2)', border: '1px solid var(--bdr-soft)', borderRadius: 6, padding: '8px 11px', fontSize: 12, color: 'var(--text)', outline: 'none', fontFamily: 'inherit' }
+        })
+      )
+    )
+  ), audUploadModal && /*#__PURE__*/React.createElement("div", {
+    onClick: () => setAudUploadModal(false),
+    style: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,.6)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }
+  }, /*#__PURE__*/React.createElement("div", {
+    onClick: e => e.stopPropagation(),
+    style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 12, padding: 24, maxWidth: 500, width: '90%' }
+  },
+    /*#__PURE__*/React.createElement("div", { style: { fontSize: 16, fontWeight: 700, marginBottom: 10 } }, "Import Custom Audience"),
+    /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: 'var(--slate)', marginBottom: 16, lineHeight: 1.5 } }, "Upload a CSV of hashed emails. We match against FI cardholder data in a secure TEE \u2014 only the overlap count returns. No row-level PII is exposed."),
+    /*#__PURE__*/React.createElement("input", { type: "file", accept: ".csv", style: { marginBottom: 16, color: 'var(--slate)', fontSize: 12 } }),
+    /*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 8, justifyContent: 'flex-end' } },
+      /*#__PURE__*/React.createElement("button", { className: "btn btn-secondary", style: { fontSize: 12 }, onClick: () => setAudUploadModal(false) }, "Cancel"),
+      /*#__PURE__*/React.createElement("button", {
+        className: "btn btn-primary",
+        style: { fontSize: 12, background: 'var(--cyan)', color: '#fff', border: 'none', borderRadius: 6, padding: '7px 14px', cursor: 'pointer', fontWeight: 700 },
+        onClick: async () => {
+          setAudUploadModal(false);
+          setAudChatHistory(prev => [...prev, { role: 'user', text: 'Uploaded VIP loyalty CSV \u2014 matching in TEE...' }, { role: 'sys', text: 'Running in Confidential Space TEE \u00b7 ETA ~4min' }]);
+          const run = await merchantPlumbing.runCleanRoom('match', { name: 'Uploaded list match', sourceRows: 32400 });
+          setTimeout(async () => {
+            const saved = await merchantPlumbing.saveAudience({ source: 'custom', name: 'Uploaded list \u2014 ' + new Date().toLocaleDateString(), universe: 19800, matchRate: 61, chips: ['Uploaded CSV', 'TEE-matched', 'k>50 enforced'], meta: 'CR-matched \u00b7 TEE job ' + run.teeJobId });
+            setAudChatHistory(prev => [...prev, { role: 'assistant', text: 'Match complete: 19,800 of your 32,400 loyalty members are also FI cardholders (61% match). Saved as ' + saved.id + '. TEE job ' + run.teeJobId + ' completed. 0 PII exposed.' }]);
+          }, 1800);
+        }
+      }, "Match in TEE")
+    )
+  )), audNewAudModal && /*#__PURE__*/React.createElement("div", {
+    onClick: () => setAudNewAudModal(false),
+    style: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,.6)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }
+  }, /*#__PURE__*/React.createElement("div", {
+    onClick: e => e.stopPropagation(),
+    style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 12, padding: 24, maxWidth: 500, width: '90%' }
+  },
+    /*#__PURE__*/React.createElement("div", { style: { fontSize: 16, fontWeight: 700, marginBottom: 10 } }, "New Audience"),
+    /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: 'var(--slate)', marginBottom: 16, lineHeight: 1.5 } }, "Use the chat panel on the right to describe what you want in plain English. Examples:"),
+    /*#__PURE__*/React.createElement("ul", { style: { fontSize: 12, color: 'var(--slate)', lineHeight: 1.8, marginLeft: 18, marginBottom: 16 } },
+      /*#__PURE__*/React.createElement("li", null, "\"Find travelers who spent over $500 on airlines in 90 days\""),
+      /*#__PURE__*/React.createElement("li", null, "\"Build a lookalike of my VIP loyalty base\""),
+      /*#__PURE__*/React.createElement("li", null, "\"Combine Explorers and Revelers, exclude under 25\""),
+      /*#__PURE__*/React.createElement("li", null, "\"Match my CRM list\" \u2192 triggers TEE upload")
+    ),
+    /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'flex-end' } },
+      /*#__PURE__*/React.createElement("button", { className: "btn btn-primary", style: { fontSize: 12, background: 'var(--cyan)', color: '#fff', border: 'none', borderRadius: 6, padding: '7px 14px', cursor: 'pointer', fontWeight: 700 }, onClick: () => setAudNewAudModal(false) }, "Got it")
+    )
+  )))), /*#__PURE__*/React.createElement("div", {
     className: `cmn-pane ${cmnTab === 'creatives' ? 'active' : ''}`
   }, /*#__PURE__*/React.createElement("div", {
-    style: { padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 16 }
+    style: { padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 14 }
   }, /*#__PURE__*/React.createElement("div", {
     style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: { fontSize: 18, fontWeight: 700 }
-  }, "Creative Library"), /*#__PURE__*/React.createElement("div", {
-    style: { fontSize: 11, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2 }
-  }, merchantCreatives.length, " assets \u00b7 ", merchantCreatives.filter(c => c.source === 'upload').length, " uploaded \u00b7 ", merchantCreatives.filter(c => c.source === 'ai').length, " AI-generated")), /*#__PURE__*/React.createElement("div", {
-    style: { display: 'flex', gap: 6 }
-  }, /*#__PURE__*/React.createElement("button", { className: "btn btn-secondary", style: { fontSize: 12 } }, "Upload"), /*#__PURE__*/React.createElement("button", { className: "btn btn-secondary", style: { fontSize: 12 } }, "\u2728 AI Generate"))), /*#__PURE__*/React.createElement("div", {
-    style: { padding: 48, textAlign: 'center', background: 'var(--card)', border: '1px dashed var(--bdr)', borderRadius: 10, color: 'var(--slate)', fontSize: 13 }
-  }, /*#__PURE__*/React.createElement("div", { style: { fontSize: 40, marginBottom: 12, opacity: .5 } }, "\u25A3"), /*#__PURE__*/React.createElement("div", { style: { fontWeight: 700, marginBottom: 6, color: 'var(--text)' } }, "Creatives capability \u2014 Phase 20"), /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, maxWidth: 480, margin: '0 auto' } }, "Upload + AI generation hybrid. Chat-forward creative partner. Currently ", merchantCreatives.length, " seeded creatives ready for Build Campaign integration.")))), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", null,
+    /*#__PURE__*/React.createElement("div", { style: { fontSize: 18, fontWeight: 700 } }, "Creative Library"),
+    /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2 } }, merchantCreatives.length, " assets \u00b7 ", merchantCreatives.filter(c => c.source === 'upload').length, " uploaded \u00b7 ", merchantCreatives.filter(c => c.source === 'ai').length, " AI-generated")
+  ), /*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 6 } },
+    /*#__PURE__*/React.createElement("button", {
+      className: "btn btn-secondary",
+      style: { fontSize: 12, color: 'var(--text)' },
+      onClick: () => setCrvUploadModal(true)
+    }, "Upload"),
+    /*#__PURE__*/React.createElement("button", {
+      className: "btn btn-secondary",
+      style: { fontSize: 12, color: 'var(--text)', background: 'rgba(167,139,250,.1)', borderColor: 'rgba(167,139,250,.3)' },
+      onClick: () => setCrvAiModal(true)
+    }, "\u2728 AI Generate")
+  )), /*#__PURE__*/React.createElement("div", {
+    style: { display: 'flex', gap: 4, borderBottom: '1px solid var(--bdr-soft)', paddingBottom: 0 }
+  }, ['all', 'Email', 'Display', 'Push', 'CTV'].map(f => /*#__PURE__*/React.createElement("button", {
+    key: f,
+    onClick: () => setCrvFormatFilter(f),
+    style: { background: 'none', border: 'none', color: crvFormatFilter === f ? 'var(--cyan-pale)' : 'var(--slate)', padding: '8px 14px', fontSize: 12, fontWeight: crvFormatFilter === f ? 700 : 500, borderBottom: crvFormatFilter === f ? '2px solid var(--cyan)' : '2px solid transparent', cursor: 'pointer' }
+  }, f === 'all' ? 'All' : f))), /*#__PURE__*/React.createElement("div", {
+    style: { display: 'grid', gridTemplateColumns: '1fr 360px', gap: 14, minHeight: 500 }
+  },
+    /*#__PURE__*/React.createElement("div", {
+      style: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, alignContent: 'start', overflowY: 'auto', maxHeight: 620, paddingRight: 4 }
+    }, merchantCreatives.filter(c => crvFormatFilter === 'all' || c.format === crvFormatFilter).map(c => /*#__PURE__*/React.createElement("div", {
+      key: c.id,
+      style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 9, overflow: 'hidden', cursor: 'pointer' }
+    },
+      /*#__PURE__*/React.createElement("div", {
+        style: { height: 100, background: c.grad, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: 'rgba(255,255,255,.85)', fontFamily: 'IBM Plex Mono, monospace', letterSpacing: '.08em', textTransform: 'uppercase', position: 'relative' }
+      }, c.format,
+        c.aiGenerated && /*#__PURE__*/React.createElement("span", {
+          style: { position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,.4)', color: '#fff', padding: '2px 6px', fontSize: 9, borderRadius: 3, fontFamily: 'IBM Plex Mono, monospace' }
+        }, "\u2728 AI")
+      ),
+      /*#__PURE__*/React.createElement("div", { style: { padding: 10 } },
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, fontWeight: 700, marginBottom: 4 } }, c.name),
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', display: 'flex', justifyContent: 'space-between' } },
+          /*#__PURE__*/React.createElement("span", null, c.id, " \u00b7 ", c.format),
+          c.ctr !== null
+            ? /*#__PURE__*/React.createElement("span", { style: { color: 'var(--green)', fontWeight: 700 } }, c.ctr, "% CTR")
+            : /*#__PURE__*/React.createElement("span", { style: { color: 'var(--purple)' } }, "AI draft")
+        )
+      )
+    ))),
+    /*#__PURE__*/React.createElement("div", {
+      style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 9, display: 'flex', flexDirection: 'column', overflow: 'hidden', maxHeight: 620 }
+    },
+      /*#__PURE__*/React.createElement("div", {
+        style: { padding: '10px 14px', borderBottom: '1px solid var(--bdr-soft)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }
+      },
+        /*#__PURE__*/React.createElement("span", { style: { fontSize: 10, fontWeight: 700, color: 'var(--cyan-pale)', letterSpacing: '.08em', textTransform: 'uppercase', fontFamily: 'IBM Plex Mono, monospace' } }, "Creative Partner"),
+        /*#__PURE__*/React.createElement("span", { style: { fontSize: 10, color: 'var(--slate)' } }, "AI \u00b7 variants")
+      ),
+      /*#__PURE__*/React.createElement("div", {
+        style: { flex: 1, padding: 12, display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto', minHeight: 280 }
+      }, crvChatHistory.map((m, i) => /*#__PURE__*/React.createElement("div", {
+        key: i,
+        style: {
+          background: m.role === 'user' ? 'rgba(99,102,241,.15)' : m.role === 'sys' ? 'rgba(167,139,250,.08)' : 'var(--card-alt)',
+          border: '1px solid ' + (m.role === 'user' ? 'var(--bdr)' : m.role === 'sys' ? 'rgba(167,139,250,.25)' : 'var(--bdr-soft)'),
+          borderRadius: m.role === 'user' ? '9px 9px 3px 9px' : '9px 9px 9px 3px',
+          padding: '8px 11px',
+          fontSize: 12,
+          lineHeight: 1.5,
+          color: m.role === 'sys' ? 'var(--purple)' : m.role === 'user' ? 'var(--text)' : 'var(--slate)',
+          maxWidth: m.role === 'user' ? '82%' : '92%',
+          marginLeft: m.role === 'user' ? 'auto' : 0,
+          fontStyle: m.role === 'sys' ? 'italic' : 'normal',
+          whiteSpace: 'pre-wrap'
+        }
+      }, m.text, m.actions && /*#__PURE__*/React.createElement("div", {
+        style: { marginTop: 8, display: 'flex', gap: 6, flexWrap: 'wrap' }
+      }, m.actions.map((act, ai) => /*#__PURE__*/React.createElement("button", {
+        key: ai,
+        onClick: async () => {
+          if (act.kind === 'createVariants' && act.variants) {
+            const grads = ['linear-gradient(135deg,#818CF8,#4F46E5)', 'linear-gradient(135deg,#A78BFA,#7C3AED)', 'linear-gradient(135deg,#F472B6,#DB2777)', 'linear-gradient(135deg,#38BDF8,#0284C7)'];
+            for (let i = 0; i < act.variants.length; i++) {
+              await merchantPlumbing.saveCreative({ format: act.format || 'Push', source: 'ai', name: act.variants[i], ctr: null, status: 'draft', grad: grads[i % grads.length], aiGenerated: true });
+            }
+            setCrvChatHistory(prev => [...prev, { role: 'sys', text: 'Created ' + act.variants.length + ' AI variants \u00b7 saved to library as drafts' }]);
+          }
+        },
+        style: { background: 'var(--cyan)', color: '#fff', border: 'none', borderRadius: 5, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }
+      }, act.label))))) ),
+      crvChatBusy && /*#__PURE__*/React.createElement("div", {
+        style: { padding: '6px 14px', fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', borderTop: '1px solid var(--bdr-soft)' }
+      }, "Generating variants\u2026"),
+      /*#__PURE__*/React.createElement("div", {
+        style: { padding: 10, borderTop: '1px solid var(--bdr-soft)', display: 'flex', gap: 6 }
+      },
+        /*#__PURE__*/React.createElement("input", {
+          type: "text",
+          value: crvChatInput,
+          onChange: e => setCrvChatInput(e.target.value),
+          onKeyDown: e => {
+            if (e.key === 'Enter' && crvChatInput.trim() && !crvChatBusy) {
+              const q = crvChatInput.trim();
+              setCrvChatInput('');
+              setCrvChatHistory(prev => [...prev, { role: 'user', text: q }]);
+              setCrvChatBusy(true);
+              setTimeout(() => {
+                const ql = q.toLowerCase();
+                let resp;
+                if (ql.includes('push')) {
+                  resp = { role: 'assistant', text: 'Here are 3 push variations (80-char limit):\n\u2460 "5\u00d7 miles just landed."\n\u2461 "Your next trip, 5\u00d7 closer."\n\u2462 "Earn 5\u00d7 on your next flight."\n\nWant me to create these as push creatives?', actions: [{ kind: 'createVariants', label: 'Generate all three', format: 'Push', variants: ['5\u00d7 miles just landed.', 'Your next trip, 5\u00d7 closer.', 'Earn 5\u00d7 on your next flight.'] }] };
+                } else if (ql.includes('punchier') || ql.includes('shorter') || ql.includes('urgent')) {
+                  resp = { role: 'assistant', text: 'Three punchier variants:\n\u2460 "Book now. Miles triple."\n\u2461 "Last call \u2014 5\u00d7 rewards."\n\u2462 "48 hours. 5\u00d7 miles. Go."\n\nGenerate?', actions: [{ kind: 'createVariants', label: 'Generate all three', format: 'Email', variants: ['Book now. Miles triple.', 'Last call \u2014 5\u00d7 rewards.', '48 hours. 5\u00d7 miles. Go.'] }] };
+                } else if (ql.includes('color') || ql.includes('variant')) {
+                  resp = { role: 'assistant', text: 'Two new color variants generated in brand-safe palette:\n\u2022 Warm coral \u2014 higher energy, young-skewed\n\u2022 Deep emerald \u2014 premium, high-earner appeal\n\nSaved both as drafts with AI badge.', actions: [{ kind: 'createVariants', label: 'Save both variants', format: 'Display', variants: ['Warm coral variant', 'Deep emerald variant'] }] };
+                } else if (ql.includes('ctr') || ql.includes('performance') || ql.includes('best')) {
+                  resp = { role: 'assistant', text: 'Your highest-CTR creative is CRV-03 (Business upgrade banner) at 6.8%. The pattern: short headline + dollar value in first 3 words + clear CTA. Email format outperforms Display by 1.2\u00d7 on this audience. Want me to generate new variants using this pattern?' };
+                } else if (ql.includes('email') || ql.includes('rewrite')) {
+                  resp = { role: 'assistant', text: 'Three rewrites of your top email headline:\n\u2460 "Unlock 5\u00d7 miles \u2014 exclusive for you"\n\u2461 "Your next flight, at 5\u00d7 the value"\n\u2462 "Miles multiplied. Today only."\n\nCreate all three?', actions: [{ kind: 'createVariants', label: 'Generate all three', format: 'Email', variants: ['Unlock 5\u00d7 miles \u2014 exclusive for you', 'Your next flight, at 5\u00d7 the value', 'Miles multiplied. Today only.'] }] };
+                } else {
+                  resp = { role: 'assistant', text: 'I can help with: copy rewrites, format adaptation (email \u2192 push \u2192 display), color variants from a seed, variant generation for A/B testing, or performance analysis of your existing creatives. What do you want to try?' };
+                }
+                setCrvChatHistory(prev => [...prev, resp]);
+                setCrvChatBusy(false);
+              }, 900);
+            }
+          },
+          placeholder: "Describe a change or ask for variants\u2026",
+          style: { flex: 1, background: 'var(--card-alt2)', border: '1px solid var(--bdr-soft)', borderRadius: 6, padding: '8px 11px', fontSize: 12, color: 'var(--text)', outline: 'none', fontFamily: 'inherit' }
+        })
+      )
+    )
+  ), crvUploadModal && /*#__PURE__*/React.createElement("div", {
+    onClick: () => setCrvUploadModal(false),
+    style: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,.6)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }
+  }, /*#__PURE__*/React.createElement("div", {
+    onClick: e => e.stopPropagation(),
+    style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 12, padding: 24, maxWidth: 500, width: '90%' }
+  },
+    /*#__PURE__*/React.createElement("div", { style: { fontSize: 16, fontWeight: 700, marginBottom: 10 } }, "Upload Creative"),
+    /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: 'var(--slate)', marginBottom: 16, lineHeight: 1.5 } }, "Upload an existing approved creative asset. Supported formats: static images (JPG/PNG), video (MP4), HTML5 banners (ZIP), or JSON template for push notifications."),
+    /*#__PURE__*/React.createElement("input", { type: "file", accept: "image/*,video/*,.zip,.json", style: { marginBottom: 16, color: 'var(--slate)', fontSize: 12 } }),
+    /*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 8, justifyContent: 'flex-end' } },
+      /*#__PURE__*/React.createElement("button", { className: "btn btn-secondary", style: { fontSize: 12 }, onClick: () => setCrvUploadModal(false) }, "Cancel"),
+      /*#__PURE__*/React.createElement("button", {
+        className: "btn btn-primary",
+        style: { fontSize: 12, background: 'var(--cyan)', color: '#fff', border: 'none', borderRadius: 6, padding: '7px 14px', cursor: 'pointer', fontWeight: 700 },
+        onClick: async () => {
+          setCrvUploadModal(false);
+          const grads = ['linear-gradient(135deg,#38BDF8,#0284C7)', 'linear-gradient(135deg,#FB923C,#EA580C)', 'linear-gradient(135deg,#4ADE80,#16A34A)'];
+          const saved = await merchantPlumbing.saveCreative({ format: 'Display', source: 'upload', name: 'Uploaded creative \u2014 ' + new Date().toLocaleTimeString().slice(0,5), ctr: null, status: 'live', grad: grads[Math.floor(Math.random() * grads.length)], aiGenerated: false });
+          setCrvChatHistory(prev => [...prev, { role: 'sys', text: 'Uploaded and saved as ' + saved.id }]);
+        }
+      }, "Save to Library")
+    )
+  )), crvAiModal && /*#__PURE__*/React.createElement("div", {
+    onClick: () => setCrvAiModal(false),
+    style: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,.6)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }
+  }, /*#__PURE__*/React.createElement("div", {
+    onClick: e => e.stopPropagation(),
+    style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 12, padding: 24, maxWidth: 520, width: '90%' }
+  },
+    /*#__PURE__*/React.createElement("div", { style: { fontSize: 16, fontWeight: 700, marginBottom: 10 } }, "\u2728 AI-Generate Creative"),
+    /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: 'var(--slate)', marginBottom: 16, lineHeight: 1.5 } }, "Describe what you want. Our creative partner generates copy variants and image adaptations. For iterative refinement, use the chat panel on the right."),
+    /*#__PURE__*/React.createElement("textarea", {
+      placeholder: "e.g. \"3 push variants emphasizing urgency for Meridian Air 5\u00d7 miles offer\"",
+      style: { width: '100%', minHeight: 80, background: 'var(--card-alt2)', border: '1px solid var(--bdr-soft)', borderRadius: 6, padding: 10, fontSize: 12, color: 'var(--text)', marginBottom: 16, resize: 'vertical', fontFamily: 'inherit' }
+    }),
+    /*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 8, justifyContent: 'flex-end' } },
+      /*#__PURE__*/React.createElement("button", { className: "btn btn-secondary", style: { fontSize: 12 }, onClick: () => setCrvAiModal(false) }, "Cancel"),
+      /*#__PURE__*/React.createElement("button", {
+        className: "btn btn-primary",
+        style: { fontSize: 12, background: 'var(--purple)', color: '#fff', border: 'none', borderRadius: 6, padding: '7px 14px', cursor: 'pointer', fontWeight: 700 },
+        onClick: async () => {
+          setCrvAiModal(false);
+          setCrvChatHistory(prev => [...prev, { role: 'sys', text: 'Generating 3 AI variants\u2026' }]);
+          setTimeout(async () => {
+            const grads = ['linear-gradient(135deg,#A78BFA,#7C3AED)', 'linear-gradient(135deg,#F472B6,#DB2777)', 'linear-gradient(135deg,#FB7185,#E11D48)'];
+            for (let i = 0; i < 3; i++) {
+              await merchantPlumbing.saveCreative({ format: 'Push', source: 'ai', name: 'AI variant ' + (i+1), ctr: null, status: 'draft', grad: grads[i], aiGenerated: true });
+            }
+            setCrvChatHistory(prev => [...prev, { role: 'assistant', text: 'Generated 3 AI variants. Review in the library and promote to live when ready.' }]);
+          }, 1200);
+        }
+      }, "\u2728 Generate")
+    )
+  )))), /*#__PURE__*/React.createElement("div", {
     className: `cmn-pane ${cmnTab === 'cleanroom' ? 'active' : ''}`
   }, /*#__PURE__*/React.createElement("div", {
     style: { padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 16 }
