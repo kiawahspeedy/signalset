@@ -8718,7 +8718,7 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
     exploreLabel: "Campaign Platform",
     exploreScreen: () => { setDeskHub(false); window.scrollTo(0,0); },
     placeholder: "Describe the audience for your credit card campaign\u2026",
-    resultRenderer: d => /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(AudienceResult, {
+    resultRenderer: d => /*#__PURE__*/React.createElement("div", { style: { flex: 1 } }, /*#__PURE__*/React.createElement(AudienceResult, {
       data: d
     }), /*#__PURE__*/React.createElement("div", {
       style: {
