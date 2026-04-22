@@ -14477,6 +14477,10 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
   const [crvUploadModal, setCrvUploadModal] = useState(false);
   const [crvAiModal, setCrvAiModal] = useState(false);
   const [crvFormatFilter, setCrvFormatFilter] = useState('all');
+  // Creatives split-canvas state — active loaded creative + variant strip index.
+  // Click a library card to load it; variant swatches cycle hue preview locally.
+  const [activeCanvasId, setActiveCanvasId] = useState(null);
+  const [activeVariantIdx, setActiveVariantIdx] = useState(0);
   const dmaRef = useRef(null);
   const [campName, setCampName] = useState('Meridian Air — Premium Travel Rewards Q2');
   const [campHeadline, setCampHeadline] = useState('Earn 5× miles on your next Meridian Air booking');
@@ -17553,43 +17557,29 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     key: f,
     onClick: () => setCrvFormatFilter(f),
     style: { background: 'none', border: 'none', color: crvFormatFilter === f ? 'var(--cyan-pale)' : 'var(--slate)', padding: '8px 14px', fontSize: 12, fontWeight: crvFormatFilter === f ? 700 : 500, borderBottom: crvFormatFilter === f ? '2px solid var(--cyan)' : '2px solid transparent', cursor: 'pointer' }
-  }, f === 'all' ? 'All' : f))), /*#__PURE__*/React.createElement("div", {
-    style: { display: 'grid', gridTemplateColumns: '1fr 360px', gap: 14, minHeight: 500 }
-  },
-    /*#__PURE__*/React.createElement("div", {
-      style: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, alignContent: 'start', overflowY: 'auto', maxHeight: 620, paddingRight: 4 }
-    }, merchantCreatives.filter(c => crvFormatFilter === 'all' || c.format === crvFormatFilter).map(c => /*#__PURE__*/React.createElement("div", {
-      key: c.id,
-      style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 9, overflow: 'hidden', cursor: 'pointer' }
+  }, f === 'all' ? 'All' : f))), /*#__PURE__*/((() => {
+    // Split-canvas layout: chat left, active canvas right, library below
+    const _crvFiltered = merchantCreatives.filter(c => crvFormatFilter === 'all' || c.format === crvFormatFilter);
+    const _activeCreative = merchantCreatives.find(c => c.id === activeCanvasId) || null;
+    // Variant palette for the swatch strip — three hue shifts off the source gradient
+    const _variantGrads = _activeCreative ? [
+      _activeCreative.grad,
+      'linear-gradient(135deg,#F472B6,#DB2777)',
+      'linear-gradient(135deg,#4ADE80,#16A34A)'
+    ] : [];
+    const _previewGrad = _activeCreative ? (_variantGrads[activeVariantIdx] || _activeCreative.grad) : null;
+
+    const _chatColumn = /*#__PURE__*/React.createElement("div", {
+      style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 9, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 460 }
     },
       /*#__PURE__*/React.createElement("div", {
-        style: { height: 100, background: c.grad, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: 'rgba(255,255,255,.85)', fontFamily: 'IBM Plex Mono, monospace', letterSpacing: '.08em', textTransform: 'uppercase', position: 'relative' }
-      }, c.format,
-        c.aiGenerated && /*#__PURE__*/React.createElement("span", {
-          style: { position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,.4)', color: '#fff', padding: '2px 6px', fontSize: 9, borderRadius: 3, fontFamily: 'IBM Plex Mono, monospace' }
-        }, "\u2728 AI")
-      ),
-      /*#__PURE__*/React.createElement("div", { style: { padding: 10 } },
-        /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, fontWeight: 700, marginBottom: 4 } }, c.name),
-        /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', display: 'flex', justifyContent: 'space-between' } },
-          /*#__PURE__*/React.createElement("span", null, c.id, " \u00b7 ", c.format),
-          c.ctr !== null
-            ? /*#__PURE__*/React.createElement("span", { style: { color: 'var(--green)', fontWeight: 700 } }, c.ctr, "% CTR")
-            : /*#__PURE__*/React.createElement("span", { style: { color: 'var(--purple)' } }, "AI draft")
-        )
-      )
-    ))),
-    /*#__PURE__*/React.createElement("div", {
-      style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 9, display: 'flex', flexDirection: 'column', overflow: 'hidden', maxHeight: 620 }
-    },
-      /*#__PURE__*/React.createElement("div", {
-        style: { padding: '10px 14px', borderBottom: '1px solid var(--bdr-soft)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }
+        style: { padding: '10px 14px', borderBottom: '1px solid var(--bdr-soft)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--card-alt)' }
       },
         /*#__PURE__*/React.createElement("span", { style: { fontSize: 10, fontWeight: 700, color: 'var(--cyan-pale)', letterSpacing: '.08em', textTransform: 'uppercase', fontFamily: 'IBM Plex Mono, monospace' } }, "Creative Partner"),
-        /*#__PURE__*/React.createElement("span", { style: { fontSize: 10, color: 'var(--slate)' } }, "AI \u00b7 variants")
+        /*#__PURE__*/React.createElement("span", { style: { fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace' } }, "Sonnet 4 \u00b7 AI")
       ),
       /*#__PURE__*/React.createElement("div", {
-        style: { flex: 1, padding: 12, display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto', minHeight: 280 }
+        style: { flex: 1, padding: 12, display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto', minHeight: 280, maxHeight: 400 }
       }, crvChatHistory.map((m, i) => /*#__PURE__*/React.createElement("div", {
         key: i,
         style: {
@@ -17657,12 +17647,140 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
               }, 900);
             }
           },
-          placeholder: "Describe a change or ask for variants\u2026",
+          placeholder: _activeCreative ? ("Describe a change to " + _activeCreative.name + "\u2026") : "Describe a creative, or click a library card to load one\u2026",
           style: { flex: 1, background: 'var(--card-alt2)', border: '1px solid var(--bdr-soft)', borderRadius: 6, padding: '8px 11px', fontSize: 12, color: 'var(--text)', outline: 'none', fontFamily: 'inherit' }
         })
       )
-    )
-  ), crvUploadModal && /*#__PURE__*/React.createElement("div", {
+    );
+
+    const _canvasColumn = /*#__PURE__*/React.createElement("div", {
+      style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 9, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 460 }
+    },
+      /*#__PURE__*/React.createElement("div", {
+        style: { padding: '10px 14px', borderBottom: '1px solid var(--bdr-soft)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--card-alt)' }
+      },
+        /*#__PURE__*/React.createElement("span", { style: { fontSize: 10, fontWeight: 700, color: 'var(--cyan-pale)', letterSpacing: '.08em', textTransform: 'uppercase', fontFamily: 'IBM Plex Mono, monospace' } },
+          _activeCreative ? ("Active Canvas \u00b7 " + _activeCreative.id) : "Active Canvas"),
+        /*#__PURE__*/React.createElement("span", { style: { fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace' } },
+          _activeCreative ? (_activeCreative.format + " \u00b7 variant " + (activeVariantIdx + 1)) : "Empty")
+      ),
+      _activeCreative
+        ? /*#__PURE__*/React.createElement("div", { style: { flex: 1, padding: 16, display: 'flex', flexDirection: 'column', gap: 12 } },
+            // Large preview render
+            /*#__PURE__*/React.createElement("div", {
+              style: { flex: 1, minHeight: 220, borderRadius: 8, background: _previewGrad, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', padding: 24 }
+            },
+              /*#__PURE__*/React.createElement("div", {
+                style: { color: '#fff', textAlign: 'center' }
+              },
+                /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 10, opacity: .8 } }, _activeCreative.format),
+                /*#__PURE__*/React.createElement("div", { style: { fontSize: 20, fontWeight: 800, lineHeight: 1.2, marginBottom: 6 } }, _activeCreative.name),
+                /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, opacity: .75, fontFamily: 'IBM Plex Mono, monospace' } }, "Preview \u00b7 variant ", activeVariantIdx + 1, " of 3")
+              )
+            ),
+            // Variant strip
+            /*#__PURE__*/React.createElement("div", null,
+              /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6, fontWeight: 700 } }, "Variants"),
+              /*#__PURE__*/React.createElement("div", { style: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 } },
+                _variantGrads.map((g, i) => /*#__PURE__*/React.createElement("div", {
+                  key: i,
+                  onClick: () => setActiveVariantIdx(i),
+                  style: { aspectRatio: '5 / 2', borderRadius: 6, background: g, cursor: 'pointer', border: i === activeVariantIdx ? '2px solid var(--cyan-pale)' : '1px solid var(--bdr-soft)', position: 'relative' }
+                },
+                  /*#__PURE__*/React.createElement("span", {
+                    style: { position: 'absolute', top: 3, left: 6, fontSize: 9, fontFamily: 'IBM Plex Mono, monospace', color: 'rgba(255,255,255,.8)', fontWeight: 700 }
+                  }, i + 1)
+                ))
+              )
+            ),
+            // Actions
+            /*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 6, paddingTop: 8, borderTop: '1px solid var(--bdr-soft)' } },
+              /*#__PURE__*/React.createElement("button", {
+                style: { flex: 1, background: 'var(--cyan)', color: '#fff', border: 'none', borderRadius: 6, padding: '7px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' },
+                onClick: async () => {
+                  const newName = _activeCreative.name + ' \u00b7 variant ' + (activeVariantIdx + 1);
+                  await merchantPlumbing.saveCreative({
+                    format: _activeCreative.format,
+                    source: 'ai',
+                    name: newName,
+                    ctr: null,
+                    status: 'draft',
+                    grad: _previewGrad,
+                    aiGenerated: true
+                  });
+                  setCrvChatHistory(prev => [...prev, { role: 'sys', text: 'Saved as new variant \u00b7 ' + newName }]);
+                }
+              }, "Save as new"),
+              /*#__PURE__*/React.createElement("button", {
+                style: { flex: 1, background: 'var(--card-alt)', color: 'var(--text)', border: '1px solid var(--bdr)', borderRadius: 6, padding: '7px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' },
+                onClick: () => {
+                  setMerchantCreatives(prev => prev.map(c => c.id === _activeCreative.id ? { ...c, grad: _previewGrad, name: c.name } : c));
+                  setCrvChatHistory(prev => [...prev, { role: 'sys', text: 'Replaced ' + _activeCreative.id + ' with variant ' + (activeVariantIdx + 1) }]);
+                }
+              }, "Replace"),
+              /*#__PURE__*/React.createElement("button", {
+                style: { background: 'transparent', color: 'var(--slate)', border: '1px solid var(--bdr-soft)', borderRadius: 6, padding: '7px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer' },
+                onClick: () => { setActiveCanvasId(null); setActiveVariantIdx(0); }
+              }, "Discard")
+            )
+          )
+        : /*#__PURE__*/React.createElement("div", {
+            style: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, gap: 10 }
+          },
+            /*#__PURE__*/React.createElement("div", {
+              style: { width: 44, height: 44, borderRadius: 22, background: 'rgba(167,139,250,.1)', border: '1px dashed rgba(167,139,250,.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--purple)' }
+            }, /*#__PURE__*/React.createElement("span", { style: { fontSize: 18 } }, "\u2728")),
+            /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: 'var(--text)' } }, "Nothing loaded yet"),
+            /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', textAlign: 'center', maxWidth: 280, lineHeight: 1.5 } }, "Send a prompt on the left, or click a library card below to load it as a starting point.")
+          )
+    );
+
+    const _libraryGrid = /*#__PURE__*/React.createElement("div", null,
+      /*#__PURE__*/React.createElement("div", {
+        style: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }
+      },
+        /*#__PURE__*/React.createElement("span", { style: { fontSize: 11, fontWeight: 700, color: 'var(--slate)', letterSpacing: '.08em', textTransform: 'uppercase', fontFamily: 'IBM Plex Mono, monospace' } }, "Your library"),
+        /*#__PURE__*/React.createElement("span", { style: { fontSize: 11, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace' } }, _crvFiltered.length, " assets \u00b7 click to load into canvas")
+      ),
+      /*#__PURE__*/React.createElement("div", {
+        style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10 }
+      }, _crvFiltered.map(c => {
+        const isActive = c.id === activeCanvasId;
+        return /*#__PURE__*/React.createElement("div", {
+          key: c.id,
+          onClick: () => { setActiveCanvasId(c.id); setActiveVariantIdx(0); },
+          style: { background: 'var(--card)', border: isActive ? '2px solid var(--cyan-pale)' : '1px solid var(--bdr)', borderRadius: 9, overflow: 'hidden', cursor: 'pointer', transition: 'transform .12s' }
+        },
+          /*#__PURE__*/React.createElement("div", {
+            style: { height: 82, background: c.grad, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: 'rgba(255,255,255,.85)', fontFamily: 'IBM Plex Mono, monospace', letterSpacing: '.08em', textTransform: 'uppercase', position: 'relative' }
+          }, c.format,
+            isActive && /*#__PURE__*/React.createElement("span", {
+              style: { position: 'absolute', top: 6, left: 6, background: 'var(--cyan-pale)', color: 'var(--navy)', padding: '2px 7px', fontSize: 9, borderRadius: 3, fontFamily: 'IBM Plex Mono, monospace', fontWeight: 700, letterSpacing: '.06em' }
+            }, "ACTIVE"),
+            c.aiGenerated && /*#__PURE__*/React.createElement("span", {
+              style: { position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,.4)', color: '#fff', padding: '2px 6px', fontSize: 9, borderRadius: 3, fontFamily: 'IBM Plex Mono, monospace' }
+            }, "\u2728 AI")
+          ),
+          /*#__PURE__*/React.createElement("div", { style: { padding: 10 } },
+            /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, fontWeight: 700, marginBottom: 4 } }, c.name),
+            /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', display: 'flex', justifyContent: 'space-between' } },
+              /*#__PURE__*/React.createElement("span", null, c.id, " \u00b7 ", c.format),
+              c.ctr !== null
+                ? /*#__PURE__*/React.createElement("span", { style: { color: 'var(--green)', fontWeight: 700 } }, c.ctr, "% CTR")
+                : /*#__PURE__*/React.createElement("span", { style: { color: 'var(--purple)' } }, "AI draft")
+            )
+          )
+        );
+      }))
+    );
+
+    return /*#__PURE__*/React.createElement(React.Fragment, null,
+      /*#__PURE__*/React.createElement("div", {
+        style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }
+      }, _chatColumn, _canvasColumn),
+      _libraryGrid
+    );
+  })()), crvUploadModal && /*#__PURE__*/React.createElement("div", {
     onClick: () => setCrvUploadModal(false),
     style: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,.6)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }
   }, /*#__PURE__*/React.createElement("div", {
