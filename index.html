@@ -14473,7 +14473,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
   const [crvChatInput, setCrvChatInput] = useState('');
   const [crvChatBusy, setCrvChatBusy] = useState(false);
   const [crvUploadModal, setCrvUploadModal] = useState(false);
-  const [crvAiModal, setCrvAiModal] = useState(false);
+  // crvAiModal removed 2026-04-22 — AI generation consolidated into chat.
   const [crvFormatFilter, setCrvFormatFilter] = useState('all');
   // Creatives split-canvas state — active loaded creative + variant strip index.
   // Click a library card to load it; variant swatches cycle hue preview locally.
@@ -17487,7 +17487,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
       const _belowCards = _audFiltered.slice(2);
       return /*#__PURE__*/React.createElement(React.Fragment, null,
         /*#__PURE__*/React.createElement("div", {
-          style: { display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 16, alignItems: 'stretch' }
+          style: { display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 10, alignItems: 'stretch' }
         },
           /*#__PURE__*/React.createElement("div", {
             style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 10, overflow: 'hidden' }
@@ -17525,7 +17525,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
           }, _rightCol.map(_renderAudCard))
         ),
         _belowCards.length > 0 && /*#__PURE__*/React.createElement("div", {
-          style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 10, marginTop: 14 }
+          style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 10, marginTop: 10 }
         }, _belowCards.map(_renderAudCard))
       );
     })())
@@ -17533,23 +17533,10 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     className: `cmn-pane ${cmnTab === 'creatives' ? 'active' : ''}`
   }, /*#__PURE__*/React.createElement("div", {
     style: { padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 14 }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }
   }, /*#__PURE__*/React.createElement("div", null,
     /*#__PURE__*/React.createElement("div", { style: { fontSize: 18, fontWeight: 700 } }, "Creative Library"),
     /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2 } }, merchantCreatives.length, " assets \u00b7 ", merchantCreatives.filter(c => c.source === 'upload').length, " uploaded \u00b7 ", merchantCreatives.filter(c => c.source === 'ai').length, " AI-generated")
-  ), /*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 6 } },
-    /*#__PURE__*/React.createElement("button", {
-      className: "btn btn-secondary",
-      style: { fontSize: 12, color: 'var(--text)' },
-      onClick: () => setCrvUploadModal(true)
-    }, "Upload"),
-    /*#__PURE__*/React.createElement("button", {
-      className: "btn btn-secondary",
-      style: { fontSize: 12, color: 'var(--text)', background: 'rgba(167,139,250,.1)', borderColor: 'rgba(167,139,250,.3)' },
-      onClick: () => setCrvAiModal(true)
-    }, "\u2728 AI Generate")
-  )), /*#__PURE__*/React.createElement("div", {
+  ), /*#__PURE__*/React.createElement("div", {
     style: { display: 'flex', gap: 4, borderBottom: '1px solid var(--bdr-soft)', paddingBottom: 0 }
   }, ['all', 'Email', 'Display', 'Push', 'CTV'].map(f => /*#__PURE__*/React.createElement("button", {
     key: f,
@@ -17611,7 +17598,9 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
           /*#__PURE__*/React.createElement("span", { style: { fontSize: 10, fontWeight: 700, color: 'var(--cyan-pale)', letterSpacing: '.08em', textTransform: 'uppercase', fontFamily: 'IBM Plex Mono, monospace' } }, "Creative Partner"),
           /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: 'var(--slate)', marginTop: 2 } }, "Rewrite copy, adapt formats, generate variants")
         ),
-        /*#__PURE__*/React.createElement("span", { style: { fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace' } }, "Sonnet 4 \u00b7 AI")
+        /*#__PURE__*/React.createElement("span", {
+          style: { fontSize: 10, fontFamily: 'IBM Plex Mono, monospace', fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', padding: '3px 8px', borderRadius: 4, color: 'var(--purple)', background: 'rgba(167,139,250,.1)', border: '1px solid rgba(167,139,250,.35)' }
+        }, "Design with AI")
       ),
       /*#__PURE__*/React.createElement("div", {
         style: { flex: 1, padding: 12, display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto', minHeight: 280, maxHeight: 400 }
@@ -17665,8 +17654,41 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
         style: { padding: 12, borderTop: '1px solid var(--bdr-soft)', background: 'var(--card-alt)' }
       },
         /*#__PURE__*/React.createElement("div", {
-          style: { display: 'flex', alignItems: 'center', gap: 8, background: 'var(--card-alt2)', border: '1px solid var(--bdr)', borderRadius: 10, padding: '4px 4px 4px 12px', transition: 'border-color .15s' }
+          style: { display: 'flex', alignItems: 'center', gap: 6, background: 'var(--card-alt2)', border: '1px solid var(--bdr)', borderRadius: 10, padding: '4px 4px 4px 6px', transition: 'border-color .15s' }
         },
+          /*#__PURE__*/React.createElement("button", {
+            onClick: () => setCrvUploadModal(true),
+            "aria-label": "Upload file",
+            title: "Upload file",
+            style: { width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', borderRadius: 6, color: 'var(--slate)', cursor: 'pointer', flexShrink: 0, padding: 0 },
+            onMouseEnter: e => { e.currentTarget.style.background = 'rgba(99,102,241,.12)'; e.currentTarget.style.color = 'var(--cyan-pale)'; },
+            onMouseLeave: e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--slate)'; }
+          },
+            /*#__PURE__*/React.createElement("svg", {
+              width: 14, height: 14, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round"
+            },
+              /*#__PURE__*/React.createElement("path", { d: "M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" })
+            )
+          ),
+          /*#__PURE__*/React.createElement("button", {
+            onClick: () => alert('Drive integration coming in Phase 11'),
+            "aria-label": "Attach from Drive",
+            title: "Attach from Drive",
+            style: { width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', borderRadius: 6, color: 'var(--slate)', cursor: 'pointer', flexShrink: 0, padding: 0 },
+            onMouseEnter: e => { e.currentTarget.style.background = 'rgba(99,102,241,.12)'; e.currentTarget.style.color = 'var(--cyan-pale)'; },
+            onMouseLeave: e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--slate)'; }
+          },
+            /*#__PURE__*/React.createElement("svg", {
+              width: 14, height: 14, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round"
+            },
+              /*#__PURE__*/React.createElement("polygon", { points: "12 2 22 20 2 20" }),
+              /*#__PURE__*/React.createElement("line", { x1: 12, y1: 2, x2: 2, y2: 20 }),
+              /*#__PURE__*/React.createElement("line", { x1: 12, y1: 2, x2: 22, y2: 20 })
+            )
+          ),
+          /*#__PURE__*/React.createElement("span", {
+            style: { width: 1, height: 16, background: 'var(--bdr)', margin: '0 4px 0 2px', flexShrink: 0 }
+          }),
           /*#__PURE__*/React.createElement("input", {
             type: "text",
             value: crvChatInput,
@@ -17850,37 +17872,6 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
           setCrvChatHistory(prev => [...prev, { role: 'sys', text: 'Uploaded and saved as ' + saved.id }]);
         }
       }, "Save to Library")
-    )
-  )), crvAiModal && /*#__PURE__*/React.createElement("div", {
-    onClick: () => setCrvAiModal(false),
-    style: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,.6)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }
-  }, /*#__PURE__*/React.createElement("div", {
-    onClick: e => e.stopPropagation(),
-    style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 12, padding: 24, maxWidth: 520, width: '90%' }
-  },
-    /*#__PURE__*/React.createElement("div", { style: { fontSize: 16, fontWeight: 700, marginBottom: 10 } }, "\u2728 AI-Generate Creative"),
-    /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: 'var(--slate)', marginBottom: 16, lineHeight: 1.5 } }, "Describe what you want. Our creative partner generates copy variants and image adaptations. For iterative refinement, use the chat panel on the right."),
-    /*#__PURE__*/React.createElement("textarea", {
-      placeholder: "e.g. \"3 push variants emphasizing urgency for Meridian Air 5\u00d7 miles offer\"",
-      style: { width: '100%', minHeight: 80, background: 'var(--card-alt2)', border: '1px solid var(--bdr-soft)', borderRadius: 6, padding: 10, fontSize: 12, color: 'var(--text)', marginBottom: 16, resize: 'vertical', fontFamily: 'inherit' }
-    }),
-    /*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 8, justifyContent: 'flex-end' } },
-      /*#__PURE__*/React.createElement("button", { className: "btn btn-secondary", style: { fontSize: 12 }, onClick: () => setCrvAiModal(false) }, "Cancel"),
-      /*#__PURE__*/React.createElement("button", {
-        className: "btn btn-primary",
-        style: { fontSize: 12, background: 'var(--purple)', color: '#fff', border: 'none', borderRadius: 6, padding: '7px 14px', cursor: 'pointer', fontWeight: 700 },
-        onClick: async () => {
-          setCrvAiModal(false);
-          setCrvChatHistory(prev => [...prev, { role: 'sys', text: 'Generating 3 AI variants\u2026' }]);
-          setTimeout(async () => {
-            const grads = ['linear-gradient(135deg,#A78BFA,#7C3AED)', 'linear-gradient(135deg,#F472B6,#DB2777)', 'linear-gradient(135deg,#FB7185,#E11D48)'];
-            for (let i = 0; i < 3; i++) {
-              await merchantPlumbing.saveCreative({ format: 'Push', source: 'ai', name: 'AI variant ' + (i+1), ctr: null, status: 'draft', grad: grads[i], aiGenerated: true });
-            }
-            setCrvChatHistory(prev => [...prev, { role: 'assistant', text: 'Generated 3 AI variants. Review in the library and promote to live when ready.' }]);
-          }, 1200);
-        }
-      }, "\u2728 Generate")
     )
   )))));
 }
