@@ -3830,6 +3830,39 @@ DISAMBIGUATION — when in doubt between build_audience and campaign_builder:
 The "followUps" must be exactly 3 short, specific questions Meridian Air would naturally ask next. Not generic prompts. Reference specific audiences or DMAs from your answer.`;
 
 // ═══════════════════════════════════════════════════════════════
+// PHASE 23 — MERCHANT LANDING CHAT · NARROW-INTENT ROUTER
+// ═══════════════════════════════════════════════════════════════
+// Purpose-limited classifier for the Merchant landing chat only.
+// Every input is routed to ONE of five capabilities. Deeper chat
+// lives INSIDE each capability tab — landing chat does not answer
+// substantive questions, it only disambiguates intent and routes.
+// ═══════════════════════════════════════════════════════════════
+const CMN_ROUTER_SYS = `You are the entry-point router inside the Signalset Partner Portal. You are NOT a general assistant. Your ONLY job is to classify what the user wants to do and route them to the right capability. Deeper conversation happens inside each capability — not here.
+
+SUPPORTED INTENTS — these are the ONLY four destinations you can route to:
+1. campaign_builder — "launch a campaign," "start a new campaign," "set up a flight," "activate targeting," "spin up a new push" → opens Campaign Builder (sub-state of Campaigns tab).
+2. build_audience — "build an audience," "find customers," "who are the high-intent travelers," "create a new segment," "target people who…," "match my list against FI data," "run an overlap analysis" → opens Audiences. Note: clean-room match operations (privacy-safe list matching, overlap analysis) now live inside Audiences as a source option, not as a separate tab.
+3. creatives — "create ad creative," "generate variants," "make a banner," "write headline copy," "test creative versions" → opens Creatives.
+4. results — "show me results," "how did X perform," "campaign report," "attribution," "what's the ROAS," "delivered vs. booked," "test incrementality," "measure lift" → opens Campaign Results. Note: incrementality/lift testing now lives inside Results as a measurement mode, not as a separate tab.
+
+CLASSIFICATION RULES
+- Pick the SINGLE best-fit intent. Do not combine. Do not ask clarifying questions unless the input is genuinely ambiguous between two intents.
+- If the user's message clearly matches one intent, return that intent with a ONE-SENTENCE confirmation ("Opening Campaign Builder.") plus the action.
+- If the input is off-topic, conversational, or outside the four intents (weather, feature questions, pricing, "hi," "what can you do"), respond with exactly this text and action: null.
+  Fallback text: "I can help you start a campaign, build an audience, create creative, or analyze results — what are you trying to do?"
+- Do NOT give substantive answers about audiences, targeting, creative copy, or measurement on the landing page. That happens inside each tab.
+
+RESPONSE FORMAT — return ONLY valid JSON, no markdown, no preamble:
+{
+  "text": "One short sentence. Confirm the route, or the fallback prompt above.",
+  "followUps": [],
+  "action": "campaign_builder" | "build_audience" | "creatives" | "results" | null,
+  "actionLabel": "Open Campaign Builder" | "Open Audiences" | "Open Creatives" | "View Results"
+}
+
+"followUps" is always an empty array at the landing layer — the user gets full conversation inside each capability, not here.`;
+
+// ═══════════════════════════════════════════════════════════════
 // DEMO MOCK RESPONSES (fallback when API unreachable)
 // ═══════════════════════════════════════════════════════════════
 
@@ -14144,6 +14177,8 @@ const CMN_INTENT = ['In-market flight search (7d)', 'Premium card application in
 function CommerceMedia({ jumpTab, onTabConsumed }) {
   const [cmnTab, setCmnTab] = useState('start');
   const [cmnHub, setCmnHub] = useState(true);
+  // Campaigns sub-state: false = list view (campaigns table), true = builder form
+  const [campaignBuilderOpen, setCampaignBuilderOpen] = useState(false);
   const [audSourceFilter, setAudSourceFilter] = useState('all');
   const [crRunKind, setCrRunKind] = useState('match');
   const [liveSegContribs, setLiveSegContribs] = useState(SEGMENT_CONTRIBUTIONS);
@@ -14179,8 +14214,8 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
   const cmnCleanRoomSendRef = useRef(null);
   const partnersNavMap = {
     build_audience:   { label: 'Build this audience',     onClick: () => { setCmnHub(false); setCmnTab('audiences'); window.scrollTo(0,0); } },
-    campaign_builder: { label: 'Open campaign builder',   onClick: () => { setCmnHub(false); setCmnTab('build');     window.scrollTo(0,0); } },
-    manage:           { label: 'Manage campaigns',        onClick: () => { setCmnHub(false); setCmnTab('manage');    window.scrollTo(0,0); } },
+    campaign_builder: { label: 'Open Campaign Builder',   onClick: () => { setCmnHub(false); setCmnTab('manage'); setCampaignBuilderOpen(true); window.scrollTo(0,0); } },
+    manage:           { label: 'View campaigns',          onClick: () => { setCmnHub(false); setCmnTab('manage'); setCampaignBuilderOpen(false); window.scrollTo(0,0); } },
     results:          { label: 'View results',            onClick: () => { setCmnHub(false); setCmnTab('results');   window.scrollTo(0,0); } },
     creatives:        { label: 'Browse creatives',        onClick: () => { setCmnHub(false); setCmnTab('creatives'); window.scrollTo(0,0); } }
   };
@@ -14451,6 +14486,12 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
   const [campPacing, setCampPacing] = useState('even');
   const [campFreqCap, setCampFreqCap] = useState(3);
   const [campObjective, setCampObjective] = useState('conversions');
+  // Phase 21 — Build Campaign reads from merchantAudiences library.
+  // Selection state is array of audience IDs; "Use in campaign →" CTA toggles.
+  const [selectedBuildAudienceIds, setSelectedBuildAudienceIds] = useState([]);
+  const toggleBuildAudience = (id) => {
+    setSelectedBuildAudienceIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
   const [showOptimizeModal, setShowOptimizeModal] = useState(null);
   const [optimizeApplied, setOptimizeApplied] = useState(null);
   const toggleTargeting = id => {
@@ -14637,11 +14678,13 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
       overflow: 'hidden'
     }
   }, /*#__PURE__*/React.createElement(Chatbot, {
-    systemPrompt: CMN_CHATBOT_SYS,
-    samples: CMN_CHATBOT_SAMPLES,
+    // Phase 23 — landing chatbot uses narrow-intent router only.
+    // Tab-level chatbots (Build, Audiences, Clean Room) keep CMN_CHATBOT_SYS for substantive answers.
+    systemPrompt: CMN_ROUTER_SYS,
+    samples: ["Launch a new campaign", "Build an audience of high-intent travelers", "Show me last week's results"],
     exploreLabel: "Partner Portal",
     exploreScreen: () => { setCmnHub(false); window.scrollTo(0,0); },
-    placeholder: "Ask about targeting strategy or audience discovery\u2026",
+    placeholder: "What do you want to do? (start a campaign, build an audience, analyze results\u2026)",
     sendRef: cmnHomeSendRef,
     resultRenderer: buildActionRenderer({
       navMap: partnersNavMap,
@@ -14669,7 +14712,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     name: "store",
     size: 14,
     color: "white"
-  }), " Explore Partner Portal \u2192"), /*#__PURE__*/React.createElement("div", { className: "v11-home-pills", style: { marginTop: 18, justifyContent: "center" } }, /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('audiences'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'target', size: 13, color: 'currentColor' })), 'Audiences'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('creatives'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'palette', size: 13, color: 'currentColor' })), 'Creatives'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('build'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'lightning', size: 13, color: 'currentColor' })), 'Build'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('manage'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'layers', size: 13, color: 'currentColor' })), 'Manage'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('results'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'chart', size: 13, color: 'currentColor' })), 'Results'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('cleanroom'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0, style: { borderColor: 'rgba(6,182,212,0.4)' } }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'shield', size: 13, color: 'currentColor' })), 'Clean Room'))), /*#__PURE__*/React.createElement("div", {
+  }), " Explore Partner Portal \u2192"), /*#__PURE__*/React.createElement("div", { className: "v11-home-pills", style: { marginTop: 18, justifyContent: "center" } }, /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('manage'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'layers', size: 13, color: 'currentColor' })), 'Campaigns'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('audiences'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'target', size: 13, color: 'currentColor' })), 'Audiences'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('creatives'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'palette', size: 13, color: 'currentColor' })), 'Creatives'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('results'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'chart', size: 13, color: 'currentColor' })), 'Results'))), /*#__PURE__*/React.createElement("div", {
     className: "camp-hub-right"
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -14903,7 +14946,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     onClick: () => {
       setSelectedCreative(previewCreative);
       setPreviewCreative(null);
-      setCmnTab('build');
+      setCmnTab('manage'); setCampaignBuilderOpen(true);
     }
   }, "Select This Creative"), /*#__PURE__*/React.createElement("button", {
     className: "btn btn-secondary",
@@ -15103,7 +15146,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     title: "Back to Partner Portal"
   }, "Partners"), /*#__PURE__*/React.createElement("h1", null, "Self-Service ", /*#__PURE__*/React.createElement("span", null, "Partner Portal"))), /*#__PURE__*/React.createElement("div", {
     className: "cmn-inner-tabs"
-  }, [['audiences', 'Audiences'], ['creatives', 'Creatives'], ['build', 'Build'], ['manage', 'Manage'], ['results', 'Results'], ['cleanroom', 'Clean Room']].map(([id, label]) => /*#__PURE__*/React.createElement("div", {
+  }, [['manage', 'Campaigns'], ['audiences', 'Audiences'], ['creatives', 'Creatives'], ['results', 'Results']].map(([id, label]) => /*#__PURE__*/React.createElement("div", {
     key: id,
     className: `cmn-tab ${cmnTab === id ? 'active' : ''}`,
     onClick: () => setCmnTab(id)
@@ -15177,7 +15220,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
       fontSize: 12,
       flex: 1
     },
-    onClick: () => setCmnTab('build')
+    onClick: () => { setCmnTab('manage'); setCampaignBuilderOpen(true); }
   }, "Build Campaign \u2192"), /*#__PURE__*/React.createElement("button", {
     className: "btn btn-secondary",
     style: {
@@ -15367,11 +15410,30 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     },
     onClick: () => {
       setSelectedCreative(i);
-      setCmnTab('build');
+      setCmnTab('manage'); setCampaignBuilderOpen(true);
     }
   }, "Select \u2192")))))))), /*#__PURE__*/React.createElement("div", {
-    className: `cmn-pane ${cmnTab === 'build' ? 'active' : ''}`
+    className: `cmn-pane ${cmnTab === 'manage' && campaignBuilderOpen ? 'active' : ''}`
   }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '12px 24px',
+      borderBottom: '1px solid var(--bdr)',
+      background: 'var(--card-alt)'
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => { setCampaignBuilderOpen(false); window.scrollTo(0,0); },
+    style: {
+      background: 'transparent',
+      border: 'none',
+      color: 'var(--cyan-dim)',
+      fontSize: 12,
+      fontWeight: 600,
+      cursor: 'pointer',
+      padding: '4px 8px',
+      marginLeft: -8,
+      borderRadius: 6
+    }
+  }, "\u2190 Back to campaigns")), /*#__PURE__*/React.createElement("div", {
     style: {
       borderBottom: '1px solid var(--bdr)',
       background: 'var(--card)',
@@ -15507,7 +15569,80 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
       flexDirection: 'column',
       gap: 14
     }
+  },
+  // ═══════════════════════════════════════════════════════════════
+  // PHASE 21 — SAVED AUDIENCES PICKER (Build Campaign integration)
+  // Reads from merchantAudiences (Phase 19). "Use in campaign →" CTA
+  // toggles the audience ID into selectedBuildAudienceIds. The
+  // Targeting Dimensions panel below remains for ad-hoc filters that
+  // layer on top of the selected saved audience(s).
+  // ═══════════════════════════════════════════════════════════════
+  /*#__PURE__*/React.createElement("div", {
+    className: "panel",
+    style: { overflow: 'hidden' }
   }, /*#__PURE__*/React.createElement("div", {
+    className: "panel-hdr",
+    style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' }
+  }, /*#__PURE__*/React.createElement("div", null,
+    /*#__PURE__*/React.createElement("span", { className: "panel-title" }, "Saved Audiences"),
+    /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: 'var(--slate)', marginTop: 2, fontWeight: 400 } }, "Select one or more audiences from your library \u2014 or create a new one in the Audiences tab")
+  ), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      padding: '3px 10px',
+      borderRadius: 6,
+      background: selectedBuildAudienceIds.length > 0 ? 'rgba(0,180,230,.1)' : 'rgba(148,163,184,.08)',
+      border: '1px solid ' + (selectedBuildAudienceIds.length > 0 ? 'rgba(0,180,230,.3)' : 'var(--bdr)'),
+      color: selectedBuildAudienceIds.length > 0 ? 'var(--cyan)' : 'var(--slate)',
+      fontWeight: 700
+    }
+  }, selectedBuildAudienceIds.length, " selected")),
+  /*#__PURE__*/React.createElement("div", {
+    style: { maxHeight: 260, overflowY: 'auto', padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 8 }
+  }, merchantAudiences.map(a => {
+    const isSelected = selectedBuildAudienceIds.includes(a.id);
+    return /*#__PURE__*/React.createElement("div", {
+      key: a.id,
+      style: {
+        padding: '10px 12px',
+        background: isSelected ? 'rgba(0,180,230,.05)' : 'var(--bg)',
+        border: '1px solid ' + (isSelected ? 'var(--cyan)' : 'var(--bdr)'),
+        borderRadius: 8,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        gap: 12,
+        transition: 'all .15s'
+      }
+    },
+      /*#__PURE__*/React.createElement("div", { style: { flex: 1, minWidth: 0 } },
+        /*#__PURE__*/React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 } },
+          /*#__PURE__*/React.createElement("span", { style: { fontSize: 13, fontWeight: 700, color: 'var(--text)' } }, a.name),
+          /*#__PURE__*/React.createElement("span", {
+            style: {
+              fontSize: 10,
+              padding: '1px 6px',
+              borderRadius: 4,
+              background: a.source === 'custom' ? 'rgba(167,139,250,.1)' : 'rgba(148,163,184,.1)',
+              color: a.source === 'custom' ? '#A78BFA' : 'var(--slate)',
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '.04em'
+            }
+          }, a.source === 'custom' ? 'Clean Room' : 'IAB')
+        ),
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: 'var(--slate)' } },
+          (a.universe / 1000).toFixed(0), "K reach \xB7 ", a.matchRate, "% match \xB7 ", a.id
+        )
+      ),
+      /*#__PURE__*/React.createElement("button", {
+        className: "btn " + (isSelected ? "btn-secondary" : "btn-primary"),
+        style: { fontSize: 12, padding: '6px 12px', whiteSpace: 'nowrap' },
+        onClick: () => toggleBuildAudience(a.id)
+      }, isSelected ? "\u2713 Added" : "Use in campaign \u2192")
+    );
+  }))),
+  /*#__PURE__*/React.createElement("div", {
     className: "targeting-panel"
   }, /*#__PURE__*/React.createElement("div", {
     className: "targeting-hdr",
@@ -15975,8 +16110,29 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     },
     disabled: selectedTargeting.length === 0 || selectedCreative === null
   }, selectedTargeting.length === 0 || selectedCreative === null ? '← Complete targeting + creative to activate' : 'Activate Campaign →')))))), /*#__PURE__*/React.createElement("div", {
-    className: `cmn-pane ${cmnTab === 'manage' ? 'active' : ''}`
+    className: `cmn-pane ${cmnTab === 'manage' && !campaignBuilderOpen ? 'active' : ''}`
   }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '16px 28px 0',
+      display: 'flex',
+      justifyContent: 'flex-end'
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => { setCampaignBuilderOpen(true); window.scrollTo(0,0); },
+    style: {
+      padding: '8px 16px',
+      background: 'var(--cyan)',
+      color: '#fff',
+      border: 'none',
+      borderRadius: 8,
+      fontSize: 13,
+      fontWeight: 700,
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 6
+    }
+  }, "+ New Campaign")), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '20px 28px',
       display: 'flex',
@@ -16011,7 +16167,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     style: {
       fontSize: 13
     },
-    onClick: () => setCmnTab('build')
+    onClick: () => { setCmnTab('manage'); setCampaignBuilderOpen(true); }
   }, "+ New Campaign"), /*#__PURE__*/React.createElement("button", {
     className: "btn btn-secondary",
     style: {
@@ -16205,8 +16361,13 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
   }, /*#__PURE__*/React.createElement("div", {
     style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', paddingBottom: 4 }
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: { display: 'flex', alignItems: 'center', gap: 10 }
+  }, /*#__PURE__*/React.createElement("div", {
     style: { fontSize: 18, fontWeight: 700 }
-  }, "Results & Attribution"), /*#__PURE__*/React.createElement("div", {
+  }, "Results & Attribution"), /*#__PURE__*/React.createElement("span", {
+    style: { fontSize: 10, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', padding: '3px 8px', borderRadius: 5, background: 'rgba(74,222,128,.08)', color: 'var(--green)', border: '1px solid rgba(74,222,128,.25)', fontFamily: 'IBM Plex Mono, monospace' },
+    title: "Measured in GCP Confidential Space TEE · k≥50 threshold · 0 PII exposed"
+  }, "TEE \u00b7 Attested")), /*#__PURE__*/React.createElement("div", {
     style: { fontSize: 11, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2 }
   }, campaignData[selectedCampaignIdx] ? campaignData[selectedCampaignIdx].name : 'All campaigns', " \u00b7 ", campaignData.length, " campaigns \u00b7 clean room verified \u00b7 0 PII exposed")), /*#__PURE__*/React.createElement("div", {
     style: { position: 'relative', display: 'flex', gap: 6 }
@@ -16217,9 +16378,9 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
   }, "Export ", /*#__PURE__*/React.createElement("span", { style: { fontSize: 9 } }, exportMenuOpen ? '\u25B4' : '\u25BE')), exportMenuOpen && /*#__PURE__*/React.createElement("div", {
     style: { position: 'absolute', top: 'calc(100% + 4px)', right: 0, background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 8, minWidth: 220, zIndex: 20, boxShadow: '0 6px 24px rgba(0,0,0,.4)', overflow: 'hidden' }
   }, [
-    { label: 'Export as PDF (visual report)', kind: 'pdf', sub: 'Charts + KPIs · current view' },
-    { label: 'Export as CSV (raw data)', kind: 'csv', sub: 'Attribution rows · DMA · segments' },
-    { label: 'Email this report', kind: 'email', sub: 'Send to stakeholders' }
+    { label: 'Export as PDF', kind: 'pdf' },
+    { label: 'Export as CSV', kind: 'csv' },
+    { label: 'Email this report', kind: 'email' }
   ].map(opt => /*#__PURE__*/React.createElement("div", {
     key: opt.kind,
     onClick: async () => {
@@ -16279,9 +16440,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     onMouseLeave: e => e.currentTarget.style.background = 'transparent'
   }, /*#__PURE__*/React.createElement("div", {
     style: { fontSize: 12, fontWeight: 700, color: 'var(--text)' }
-  }, opt.label), /*#__PURE__*/React.createElement("div", {
-    style: { fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2 }
-  }, opt.sub)))))), campaignData.length === 0 && /*#__PURE__*/React.createElement("div", {
+  }, opt.label)))))), campaignData.length === 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       padding: 18,
       background: 'rgba(217,119,6,.06)',
@@ -16302,7 +16461,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
       cursor: 'pointer',
       fontSize: 14
     },
-    onClick: () => setCmnTab('build')
+    onClick: () => { setCmnTab('manage'); setCampaignBuilderOpen(true); }
   }, "Go to Build \u2192"))), optimizeAction && /*#__PURE__*/React.createElement("div", {
     style: {
       padding: 14,
@@ -17284,42 +17443,9 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
         }, lbl))
       )
     ),
-    /*#__PURE__*/React.createElement("div", {
-      style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 10, overflow: 'hidden' }
-    },
-      /*#__PURE__*/React.createElement("div", {
-        style: { padding: '12px 16px', borderBottom: '1px solid var(--bdr)', display: 'flex', alignItems: 'center', gap: 10, background: 'var(--card-alt)' }
-      },
-        /*#__PURE__*/React.createElement(Ico, { name: 'sparkles', size: 14, color: 'var(--cyan)' }),
-        /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, fontWeight: 600, color: 'var(--text)' } }, "Describe the audience you want"),
-        /*#__PURE__*/React.createElement("div", { style: { marginLeft: 'auto', fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace' } }, "Natural language \u00b7 AI-resolved \u00b7 clean-room gated")
-      ),
-      /*#__PURE__*/React.createElement("div", { style: { padding: 14 } },
-        /*#__PURE__*/React.createElement(Chatbot, {
-          systemPrompt: CMN_CHATBOT_SYS,
-          samples: [
-            'Show me travelers who spent more than $500 on airlines in 90 days',
-            'Build a lookalike of my VIP base',
-            'Find high-intent cardholders in NYC, SF, and DC',
-            'Who overlaps between Premium Travelers and Luxury Goods Buyers?'
-          ],
-          exploreLabel: "Partner Portal",
-          exploreScreen: () => { setCmnHub(false); setCmnTab('start'); window.scrollTo(0, 0); },
-          placeholder: "Describe the audience \u2014 behaviors, geography, overlaps\u2026",
-          resultRenderer: buildActionRenderer({
-            navMap: partnersNavMap,
-            onFollowUp: cmnOnFollowUp(cmnAudienceSendRef),
-            onEscape: cmnOnEscape
-          }),
-          sendRef: cmnAudienceSendRef
-        })
-      )
-    ),
-    /*#__PURE__*/React.createElement("div", {
-      style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }
-    }, merchantAudiences
-      .filter(a => audSourceFilter === 'all' || a.source === audSourceFilter)
-      .map(a => /*#__PURE__*/React.createElement("div", {
+    /*#__PURE__*/((() => {
+      const _audFiltered = merchantAudiences.filter(a => audSourceFilter === 'all' || a.source === audSourceFilter);
+      const _renderAudCard = (a) => /*#__PURE__*/React.createElement("div", {
         key: a.id,
         style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 10, padding: 14, display: 'flex', flexDirection: 'column', gap: 8 }
       },
@@ -17345,7 +17471,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
           /*#__PURE__*/React.createElement("button", {
             className: "btn btn-secondary",
             style: { fontSize: 11, fontWeight: 600, padding: '5px 10px', flex: 1, background: 'rgba(6,182,212,0.12)', color: 'var(--cyan)', border: '1px solid rgba(6,182,212,0.3)' },
-            onClick: () => { setCmnTab('build'); window.scrollTo(0, 0); }
+            onClick: () => { setCmnTab('manage'); setCampaignBuilderOpen(true); window.scrollTo(0, 0); }
           }, "Use in campaign \u2192"),
           /*#__PURE__*/React.createElement("button", {
             className: "btn btn-secondary",
@@ -17353,7 +17479,54 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
             title: "Copy audience ID"
           }, a.id)
         )
-      )))
+      );
+      // Phase-UX-3 · wrap layout — first 2 cards stack beside chat, rest flow full-width below
+      const _rightCol = _audFiltered.slice(0, 2);
+      const _belowCards = _audFiltered.slice(2);
+      return /*#__PURE__*/React.createElement(React.Fragment, null,
+        /*#__PURE__*/React.createElement("div", {
+          style: { display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 16, alignItems: 'start' }
+        },
+          /*#__PURE__*/React.createElement("div", {
+            style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 10, overflow: 'hidden' }
+          },
+            /*#__PURE__*/React.createElement("div", {
+              style: { padding: '12px 16px', borderBottom: '1px solid var(--bdr)', display: 'flex', alignItems: 'center', gap: 10, background: 'var(--card-alt)' }
+            },
+              /*#__PURE__*/React.createElement(Ico, { name: 'sparkles', size: 14, color: 'var(--cyan)' }),
+              /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, fontWeight: 600, color: 'var(--text)' } }, "Describe the audience you want"),
+              /*#__PURE__*/React.createElement("div", { style: { marginLeft: 'auto', fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace' } }, "Natural language \u00b7 AI-resolved \u00b7 clean-room gated")
+            ),
+            /*#__PURE__*/React.createElement("div", { style: { padding: 14 } },
+              /*#__PURE__*/React.createElement(Chatbot, {
+                systemPrompt: CMN_CHATBOT_SYS,
+                samples: [
+                  'Show me travelers who spent more than $500 on airlines in 90 days',
+                  'Build a lookalike of my VIP base',
+                  'Find high-intent cardholders in NYC, SF, and DC',
+                  'Who overlaps between Premium Travelers and Luxury Goods Buyers?'
+                ],
+                exploreLabel: "Partner Portal",
+                exploreScreen: () => { setCmnHub(false); setCmnTab('start'); window.scrollTo(0, 0); },
+                placeholder: "Describe the audience \u2014 behaviors, geography, overlaps\u2026",
+                resultRenderer: buildActionRenderer({
+                  navMap: partnersNavMap,
+                  onFollowUp: cmnOnFollowUp(cmnAudienceSendRef),
+                  onEscape: cmnOnEscape
+                }),
+                sendRef: cmnAudienceSendRef
+              })
+            )
+          ),
+          /*#__PURE__*/React.createElement("div", {
+            style: { display: 'flex', flexDirection: 'column', gap: 10 }
+          }, _rightCol.map(_renderAudCard))
+        ),
+        _belowCards.length > 0 && /*#__PURE__*/React.createElement("div", {
+          style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 10, marginTop: 14 }
+        }, _belowCards.map(_renderAudCard))
+      );
+    })())
   )), /*#__PURE__*/React.createElement("div", {
     className: `cmn-pane ${cmnTab === 'creatives' ? 'active' : ''}`
   }, /*#__PURE__*/React.createElement("div", {
@@ -17543,94 +17716,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
         }
       }, "\u2728 Generate")
     )
-  )))), /*#__PURE__*/React.createElement("div", {
-    className: `cmn-pane ${cmnTab === 'cleanroom' ? 'active' : ''}`
-  }, /*#__PURE__*/React.createElement("div", {
-    style: { padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 16 }
-  },
-    /*#__PURE__*/React.createElement("div", {
-      style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', paddingBottom: 4 }
-    },
-      /*#__PURE__*/React.createElement("div", null,
-        /*#__PURE__*/React.createElement("div", { style: { fontSize: 18, fontWeight: 700 } }, "Clean Room Workbench"),
-        /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2 } },
-          "Privacy-safe matching \u00b7 incrementality testing \u00b7 data collaboration \u00b7 ",
-          cleanRoomRuns.filter(r => r.status === 'running').length, " running in TEE"
-        )
-      ),
-      /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, padding: '4px 10px', borderRadius: 4, background: 'rgba(5,150,105,0.12)', color: 'var(--green)', fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase' } }, "TEE \u00b7 Attested")
-    ),
-    /*#__PURE__*/React.createElement("div", {
-      style: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }
-    }, [
-      { kind: 'match', title: 'Custom Audience Match', desc: 'Upload first-party list. Match against FI cardholders in clean room. Output is a privacy-safe audience usable in Campaign Builder.', icon: 'target', color: 'var(--cyan)' },
-      { kind: 'incrementality', title: 'Incrementality / Lift Test', desc: 'Design holdout groups, run causal test, get statistical significance + lift estimates. Chat-driven test design.', icon: 'lightning', color: 'var(--indigo)' },
-      { kind: 'collab', title: 'Data Collaboration', desc: 'Shared dashboards between FI and merchant. Governed by clean room permissions. Neither side sees raw PII.', icon: 'layers', color: 'var(--purple)' }
-    ].map(s => /*#__PURE__*/React.createElement("div", {
-      key: s.kind,
-      onClick: () => setCrRunKind(s.kind),
-      style: { padding: 14, background: crRunKind === s.kind ? 'rgba(6,182,212,0.08)' : 'var(--card)', border: '1px solid ' + (crRunKind === s.kind ? 'rgba(6,182,212,0.4)' : 'var(--bdr)'), borderRadius: 10, cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 8 }
-    },
-      /*#__PURE__*/React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8 } },
-        /*#__PURE__*/React.createElement("div", { style: { width: 28, height: 28, borderRadius: 6, background: s.color + '22', display: 'flex', alignItems: 'center', justifyContent: 'center' } },
-          /*#__PURE__*/React.createElement(Ico, { name: s.icon, size: 15, color: s.color })
-        ),
-        /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: 'var(--text)' } }, s.title)
-      ),
-      /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: 'var(--slate)', lineHeight: 1.5 } }, s.desc)
-    ))),
-    /*#__PURE__*/React.createElement("div", {
-      style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 10, overflow: 'hidden' }
-    },
-      /*#__PURE__*/React.createElement("div", {
-        style: { padding: '12px 16px', borderBottom: '1px solid var(--bdr)', display: 'flex', alignItems: 'center', gap: 10, background: 'var(--card-alt)' }
-      },
-        /*#__PURE__*/React.createElement(Ico, { name: 'sparkles', size: 14, color: 'var(--cyan)' }),
-        /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, fontWeight: 600, color: 'var(--text)' } }, "Clean room operations \u2014 chat-driven"),
-        /*#__PURE__*/React.createElement("div", { style: { marginLeft: 'auto', fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace' } }, "Phase 22 full buildout \u00b7 stubbed for MVP")
-      ),
-      /*#__PURE__*/React.createElement("div", { style: { padding: 14 } },
-        /*#__PURE__*/React.createElement(Chatbot, {
-          systemPrompt: CMN_CHATBOT_SYS,
-          samples: [
-            'Did my last campaign actually cause sales or would those customers have bought anyway?',
-            'Match my loyalty list against FI cardholders and tell me the overlap',
-            'Design a holdout test for the Premium Rewards campaign',
-            'What does my customer overlap with the FI look like by DMA?'
-          ],
-          exploreLabel: "Partner Portal",
-          exploreScreen: () => { setCmnHub(false); setCmnTab('start'); window.scrollTo(0, 0); },
-          placeholder: crRunKind === 'match' ? "Describe the list you want matched\u2026" : crRunKind === 'incrementality' ? "Describe the test you want to run\u2026" : "Ask about shared dashboards or data collaboration\u2026",
-          resultRenderer: buildActionRenderer({
-            navMap: partnersNavMap,
-            onFollowUp: cmnOnFollowUp(cmnCleanRoomSendRef),
-            onEscape: cmnOnEscape
-          }),
-          sendRef: cmnCleanRoomSendRef
-        })
-      )
-    ),
-    /*#__PURE__*/React.createElement("div", null,
-      /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 8 } }, "Recent clean room runs"),
-      /*#__PURE__*/React.createElement("div", { style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 10, overflow: 'hidden' } },
-        cleanRoomRuns.map((r, i) => /*#__PURE__*/React.createElement("div", {
-          key: r.id,
-          style: { padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: i < cleanRoomRuns.length - 1 ? '1px solid var(--bdr)' : 'none' }
-        },
-          /*#__PURE__*/React.createElement("div", {
-            style: { fontSize: 9, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', padding: '2px 7px', borderRadius: 4, background: r.kind === 'match' ? 'rgba(6,182,212,0.12)' : 'rgba(99,102,241,0.12)', color: r.kind === 'match' ? 'var(--cyan)' : 'var(--indigo)' }
-          }, r.kind === 'match' ? 'Match' : 'Incrementality'),
-          /*#__PURE__*/React.createElement("div", { style: { flex: 1 } },
-            /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, fontWeight: 600, color: 'var(--text)' } }, r.name),
-            /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 1 } }, r.result, " \u00b7 ", r.startedAt)
-          ),
-          /*#__PURE__*/React.createElement("div", {
-            style: { fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 4, background: r.status === 'running' ? 'rgba(245,158,11,0.15)' : r.status === 'completed' ? 'rgba(5,150,105,0.15)' : 'rgba(100,116,139,0.15)', color: r.status === 'running' ? 'var(--amber)' : r.status === 'completed' ? 'var(--green)' : 'var(--slate)', textTransform: 'uppercase', letterSpacing: '.05em' }
-          }, r.status)
-        ))
-      )
-    )
-  )));
+  )))));
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -18265,13 +18351,18 @@ function V11Rail({ screen, navigate, sidebarOpen, onToggleSidebar, onNewChat, on
     /*#__PURE__*/React.createElement("div", { className: "v11-rail-spacer" }),
     /*#__PURE__*/React.createElement("div", { className: "v11-rail-divider" }),
 
-    makeUtility(SettingsIcon, 'Settings', () => alert('Settings coming soon'), false),
+    makeUtility(SettingsIcon, 'Settings', () => navigate('general'), screen === 'general'),
 
     /*#__PURE__*/React.createElement("div", {
-      className: "v11-rail-avatar",
+      className: "v11-rail-avatar" + (screen === 'admin' ? ' active' : ''),
       "data-label": "Dio Favatas",
       title: "Dio Favatas · DF",
-      onClick: () => alert('Profile coming soon')
+      onClick: () => navigate('admin'),
+      role: "button",
+      tabIndex: 0,
+      "aria-label": "Admin settings",
+      "aria-pressed": screen === 'admin' || undefined,
+      onKeyDown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate('admin'); } }
     }, "DF")
   );
 }
@@ -18414,6 +18505,331 @@ function V11TopStrip({ screen, onBrandClick, neo4jStatus }) {
   );
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+// PHASE 10D — ADMIN SETTINGS
+// FI Admin gated. Member management, platform destinations, integrations,
+// clean room config, TEE/CMEK. Role check is mocked with a local constant
+// until Phase 9 Supabase lands user roles (RLS-backed).
+// TODO Phase 9: const { role } = await supabase.auth.getUser() → profiles.role
+// ═══════════════════════════════════════════════════════════════════════
+function AdminSettings() {
+  // TODO Phase 9: replace mock with supabase profiles.role lookup
+  const role = 'fi_admin'; // one of: 'fi_admin' | 'marketer' | 'partner_limited'
+
+  const [adminTab, setAdminTab] = React.useState('members');
+
+  // Seeded members — no @capgemini.com per xlsx row 20 constraint
+  const members = [
+    { name: 'Dio Favatas',   email: 'dio@signalset.io',         role: 'FI Admin',         status: 'Active', lastActive: 'Now' },
+    { name: 'Sarah Chen',    email: 'schen@meridianbank.com',   role: 'FI Admin',         status: 'Active', lastActive: '2h ago' },
+    { name: 'Marcus Delgado', email: 'mdelgado@meridianbank.com', role: 'Marketer',        status: 'Active', lastActive: '1d ago' },
+    { name: 'Priya Patel',   email: 'ppatel@meridianbank.com',  role: 'Marketer',        status: 'Active', lastActive: '3h ago' },
+    { name: 'James Okafor',  email: 'jokafor@meridianair.com',  role: 'Partner · Limited', status: 'Active', lastActive: '5h ago' },
+    { name: 'Lena Vogel',    email: 'lvogel@meridianair.com',   role: 'Partner · Limited', status: 'Pending', lastActive: '—' }
+  ];
+
+  const destinations = [
+    { name: 'The Trade Desk',    category: 'DSP',       status: 'Connected', meta: 'UID2 · syndicated segments · activated 3/1/26' },
+    { name: 'DV360',             category: 'DSP',       status: 'Connected', meta: 'Publisher-matched IDs · floodlight pixel live' },
+    { name: 'Meta (CAPI)',       category: 'Social',    status: 'Connected', meta: 'Conversions API · SHA-256 hashed email · 94% match' },
+    { name: 'TikTok Events API', category: 'Social',    status: 'Connected', meta: 'Advanced Matching · hashed phone + email' },
+    { name: 'LiveRamp RampID',   category: 'Identity',  status: 'Connected', meta: 'Authenticated Traffic Solution · 87% coverage' },
+    { name: 'Amazon DSP',        category: 'RMN',       status: 'Pending',   meta: 'Awaiting IO · paperwork w/ AMC integrations' }
+  ];
+
+  const integrations = [
+    { name: 'Neo4j AuraDB',             detail: '916 nodes · 1,161 rels · 5 segments',         status: 'Healthy' },
+    { name: 'BigQuery — lig_master',    detail: 'channel_performance · segment_contribution',  status: 'Healthy' },
+    { name: 'BigQuery — lig_cleanroom', detail: 'cleanroom_outputs · 30d retention',           status: 'Healthy' },
+    { name: 'Cloudflare Workers API',   detail: 'signalset-lig-api · all 10 secrets loaded',   status: 'Healthy' },
+    { name: 'Anthropic Claude',         detail: 'Sonnet 4 default · $20/mo shared budget',     status: 'Healthy' },
+    { name: 'Supabase',                 detail: 'MVP not yet wired (Phase 9)',                 status: 'Pending' }
+  ];
+
+  const cleanroomCfg = [
+    { label: 'TEE Environment',       value: 'GCP Confidential Space (AMD SEV-SNP)' },
+    { label: 'Workload Image',        value: 'us-central1-docker.pkg.dev/signalset-prod/cr/match:v1.2' },
+    { label: 'Binary Authorization',  value: 'Attestor · signalset-cr-attestor · ENABLED' },
+    { label: 'Workload Identity Fed', value: 'gcp-wif-cr-pool / signalset-cr-sa' },
+    { label: 'CMEK (all 3 datasets)', value: 'projects/signalset-prod/locations/us/keyRings/lig-kms/cryptoKeys/bq-cmek' },
+    { label: 'Min match threshold',   value: 'k ≥ 50 (PII-leak prevention)' },
+    { label: 'Retention',             value: '30d raw · 365d aggregated · ENFORCED' },
+    { label: 'Audit sink',            value: 'projects/signalset-prod/logs/cleanroom-audit' }
+  ];
+
+  if (role !== 'fi_admin') {
+    return /*#__PURE__*/React.createElement("div", {
+      style: { maxWidth: 720, margin: '80px auto', padding: '40px 32px', background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 12, textAlign: 'center' }
+    },
+      /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 10 } }, "Restricted"),
+      /*#__PURE__*/React.createElement("h2", { style: { fontSize: 20, fontWeight: 800, color: 'var(--text)', marginBottom: 8 } }, "FI Admin access required"),
+      /*#__PURE__*/React.createElement("p", { style: { fontSize: 14, color: 'var(--slate)', lineHeight: 1.5 } }, "Admin Settings are limited to users with the FI Admin role. Contact your workspace administrator if you need access.")
+    );
+  }
+
+  const tabs = [
+    { id: 'members',      label: 'Members' },
+    { id: 'destinations', label: 'Destinations' },
+    { id: 'integrations', label: 'Integrations' },
+    { id: 'cleanroom',    label: 'Clean Room · TEE · CMEK' }
+  ];
+
+  const statusPill = (status) => {
+    const ok = status === 'Connected' || status === 'Healthy' || status === 'Active';
+    return /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 11,
+        padding: '2px 9px',
+        borderRadius: 6,
+        fontWeight: 700,
+        background: ok ? 'rgba(5,150,105,.08)' : 'rgba(245,158,11,.08)',
+        border: '1px solid ' + (ok ? 'rgba(5,150,105,.25)' : 'rgba(245,158,11,.25)'),
+        color: ok ? 'var(--green)' : '#D97706'
+      }
+    }, status);
+  };
+
+  return /*#__PURE__*/React.createElement("div", { style: { maxWidth: 1100, margin: '0 auto', padding: '32px 32px 64px' } },
+    /*#__PURE__*/React.createElement("div", { className: "hero-eyebrow" }, "Admin Settings"),
+    /*#__PURE__*/React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 } },
+      /*#__PURE__*/React.createElement("h1", { style: { fontSize: 28, fontWeight: 800, color: 'var(--text)', margin: 0 } }, "Workspace Admin"),
+      /*#__PURE__*/React.createElement("span", {
+        style: { fontSize: 11, padding: '3px 10px', borderRadius: 6, background: 'rgba(79,70,229,.1)', border: '1px solid rgba(79,70,229,.3)', color: '#6366F1', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em' }
+      }, "FI Admin")
+    ),
+    /*#__PURE__*/React.createElement("p", { style: { fontSize: 14, color: 'var(--slate)', marginTop: 4, marginBottom: 24 } }, "Member roles, platform destinations, integrations, and clean room governance."),
+
+    /*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 4, borderBottom: '1px solid var(--bdr)', marginBottom: 20 } },
+      tabs.map(t => /*#__PURE__*/React.createElement("button", {
+        key: t.id,
+        onClick: () => setAdminTab(t.id),
+        style: {
+          padding: '10px 16px',
+          background: 'transparent',
+          border: 'none',
+          borderBottom: '2px solid ' + (adminTab === t.id ? 'var(--cyan)' : 'transparent'),
+          color: adminTab === t.id ? 'var(--text)' : 'var(--slate)',
+          fontSize: 13,
+          fontWeight: adminTab === t.id ? 700 : 500,
+          cursor: 'pointer',
+          marginBottom: -1
+        }
+      }, t.label))
+    ),
+
+    adminTab === 'members' && /*#__PURE__*/React.createElement("div", { className: "panel" },
+      /*#__PURE__*/React.createElement("div", { className: "panel-hdr", style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+        /*#__PURE__*/React.createElement("span", { className: "panel-title" }, "Team Members"),
+        /*#__PURE__*/React.createElement("button", { className: "btn btn-primary", style: { fontSize: 12, padding: '6px 12px' }, onClick: () => alert('Invite flow — Phase 9 Supabase') }, "+ Invite member")
+      ),
+      /*#__PURE__*/React.createElement("table", { style: { width: '100%', borderCollapse: 'collapse', fontSize: 13 } },
+        /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", { style: { borderBottom: '1px solid var(--bdr)', background: 'var(--bg)' } },
+          ['Name', 'Email', 'Role', 'Status', 'Last active', ''].map((h, i) => /*#__PURE__*/React.createElement("th", { key: i, style: { padding: '10px 14px', textAlign: 'left', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--slate)' } }, h))
+        )),
+        /*#__PURE__*/React.createElement("tbody", null, members.map((m, i) => /*#__PURE__*/React.createElement("tr", { key: i, style: { borderBottom: '1px solid var(--bdr)' } },
+          /*#__PURE__*/React.createElement("td", { style: { padding: '12px 14px', fontWeight: 600, color: 'var(--text)' } }, m.name),
+          /*#__PURE__*/React.createElement("td", { style: { padding: '12px 14px', color: 'var(--slate)' } }, m.email),
+          /*#__PURE__*/React.createElement("td", { style: { padding: '12px 14px', color: 'var(--text)' } }, m.role),
+          /*#__PURE__*/React.createElement("td", { style: { padding: '12px 14px' } }, statusPill(m.status)),
+          /*#__PURE__*/React.createElement("td", { style: { padding: '12px 14px', color: 'var(--slate)', fontSize: 12 } }, m.lastActive),
+          /*#__PURE__*/React.createElement("td", { style: { padding: '12px 14px', textAlign: 'right' } },
+            /*#__PURE__*/React.createElement("button", { style: { background: 'transparent', border: '1px solid var(--bdr)', color: 'var(--slate)', padding: '4px 10px', borderRadius: 6, fontSize: 11, cursor: 'pointer' }, onClick: () => alert('Edit member — Phase 9') }, "Edit")
+          )
+        )))
+      )
+    ),
+
+    adminTab === 'destinations' && /*#__PURE__*/React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 } },
+      destinations.map((d, i) => /*#__PURE__*/React.createElement("div", { key: i, style: { padding: '16px 18px', background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 10 } },
+        /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 } },
+          /*#__PURE__*/React.createElement("div", null,
+            /*#__PURE__*/React.createElement("div", { style: { fontSize: 14, fontWeight: 700, color: 'var(--text)' } }, d.name),
+            /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '.06em', fontWeight: 600, marginTop: 2 } }, d.category)
+          ),
+          statusPill(d.status)
+        ),
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: 'var(--slate)', marginTop: 8 } }, d.meta)
+      ))
+    ),
+
+    adminTab === 'integrations' && /*#__PURE__*/React.createElement("div", { className: "panel" },
+      /*#__PURE__*/React.createElement("div", { className: "panel-hdr" }, /*#__PURE__*/React.createElement("span", { className: "panel-title" }, "Platform Integrations")),
+      /*#__PURE__*/React.createElement("div", { style: { padding: '8px 0' } },
+        integrations.map((intg, i) => /*#__PURE__*/React.createElement("div", { key: i, style: { padding: '12px 18px', borderBottom: i < integrations.length - 1 ? '1px solid var(--bdr)' : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 } },
+          /*#__PURE__*/React.createElement("div", { style: { flex: 1, minWidth: 0 } },
+            /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: 'var(--text)' } }, intg.name),
+            /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: 'var(--slate)', marginTop: 2 } }, intg.detail)
+          ),
+          statusPill(intg.status)
+        ))
+      )
+    ),
+
+    adminTab === 'cleanroom' && /*#__PURE__*/React.createElement("div", { className: "panel" },
+      /*#__PURE__*/React.createElement("div", { className: "panel-hdr" }, /*#__PURE__*/React.createElement("span", { className: "panel-title" }, "Clean Room · TEE · CMEK")),
+      /*#__PURE__*/React.createElement("div", { style: { padding: '12px 18px 18px' } },
+        /*#__PURE__*/React.createElement("div", { style: { padding: '10px 14px', background: 'rgba(5,150,105,.06)', border: '1px solid rgba(5,150,105,.2)', borderRadius: 8, marginBottom: 14, fontSize: 13, color: 'var(--green)', fontWeight: 600 } },
+          "\u2713 All 13 GCP Confidential Space TEE services configured \xB7 CMEK active on all 3 BQ datasets"
+        ),
+        /*#__PURE__*/React.createElement("table", { style: { width: '100%', borderCollapse: 'collapse', fontSize: 12 } },
+          /*#__PURE__*/React.createElement("tbody", null,
+            cleanroomCfg.map((c, i) => /*#__PURE__*/React.createElement("tr", { key: i, style: { borderBottom: '1px solid var(--bdr)' } },
+              /*#__PURE__*/React.createElement("td", { style: { padding: '10px 12px 10px 0', color: 'var(--slate)', fontWeight: 600, width: '30%', verticalAlign: 'top' } }, c.label),
+              /*#__PURE__*/React.createElement("td", { style: { padding: '10px 0', color: 'var(--text)', fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, wordBreak: 'break-all' } }, c.value)
+            ))
+          )
+        )
+      )
+    )
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// PHASE 10E — GENERAL SETTINGS
+// All roles. Profile, theme toggle, notifications, language, session.
+// Theme toggle flips a data attribute on <html> — matches wireframe v11.
+// TODO Phase 9: persist preferences to supabase.profiles
+// ═══════════════════════════════════════════════════════════════════════
+function GeneralSettings() {
+  const [theme, setTheme] = React.useState(() => {
+    if (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'light') return 'light';
+    return 'dark';
+  });
+  const [language, setLanguage] = React.useState('en-US');
+  const [notifyEmail, setNotifyEmail] = React.useState(true);
+  const [notifyBrowser, setNotifyBrowser] = React.useState(true);
+  const [notifyWeekly, setNotifyWeekly] = React.useState(false);
+  const [displayName, setDisplayName] = React.useState('Dio Favatas');
+  const [email] = React.useState('dio@signalset.io');
+
+  React.useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-theme', theme);
+    }
+  }, [theme]);
+
+  const ToggleRow = ({ label, desc, value, onChange }) => /*#__PURE__*/React.createElement("div", {
+    style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0', borderBottom: '1px solid var(--bdr)', gap: 16 }
+  },
+    /*#__PURE__*/React.createElement("div", { style: { flex: 1, minWidth: 0 } },
+      /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, fontWeight: 600, color: 'var(--text)' } }, label),
+      desc && /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: 'var(--slate)', marginTop: 2 } }, desc)
+    ),
+    /*#__PURE__*/React.createElement("button", {
+      onClick: () => onChange(!value),
+      role: 'switch',
+      'aria-checked': value,
+      style: {
+        width: 38,
+        height: 22,
+        borderRadius: 11,
+        border: 'none',
+        background: value ? 'var(--cyan)' : 'rgba(148,163,184,.35)',
+        position: 'relative',
+        cursor: 'pointer',
+        transition: 'background .15s',
+        flexShrink: 0
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        position: 'absolute',
+        top: 3,
+        left: value ? 19 : 3,
+        width: 16,
+        height: 16,
+        borderRadius: '50%',
+        background: '#fff',
+        transition: 'left .15s',
+        boxShadow: '0 1px 2px rgba(0,0,0,.2)'
+      }
+    }))
+  );
+
+  return /*#__PURE__*/React.createElement("div", { style: { maxWidth: 780, margin: '0 auto', padding: '32px 32px 64px' } },
+    /*#__PURE__*/React.createElement("div", { className: "hero-eyebrow" }, "Settings"),
+    /*#__PURE__*/React.createElement("h1", { style: { fontSize: 28, fontWeight: 800, color: 'var(--text)', margin: 0 } }, "General"),
+    /*#__PURE__*/React.createElement("p", { style: { fontSize: 14, color: 'var(--slate)', marginTop: 4, marginBottom: 28 } }, "Personal preferences \u2014 profile, appearance, notifications, language, session."),
+
+    /*#__PURE__*/React.createElement("div", { className: "panel", style: { marginBottom: 18 } },
+      /*#__PURE__*/React.createElement("div", { className: "panel-hdr" }, /*#__PURE__*/React.createElement("span", { className: "panel-title" }, "Profile")),
+      /*#__PURE__*/React.createElement("div", { style: { padding: '16px 18px' } },
+        /*#__PURE__*/React.createElement("div", { style: { marginBottom: 14 } },
+          /*#__PURE__*/React.createElement("div", { className: "cform-label" }, "Display name"),
+          /*#__PURE__*/React.createElement("input", { className: "cform-input", value: displayName, onChange: e => setDisplayName(e.target.value) })
+        ),
+        /*#__PURE__*/React.createElement("div", null,
+          /*#__PURE__*/React.createElement("div", { className: "cform-label" }, "Email"),
+          /*#__PURE__*/React.createElement("input", { className: "cform-input", value: email, disabled: true, style: { opacity: .6 } }),
+          /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: 'var(--slate)', marginTop: 6 } }, "Email is managed by your workspace admin.")
+        )
+      )
+    ),
+
+    /*#__PURE__*/React.createElement("div", { className: "panel", style: { marginBottom: 18 } },
+      /*#__PURE__*/React.createElement("div", { className: "panel-hdr" }, /*#__PURE__*/React.createElement("span", { className: "panel-title" }, "Appearance")),
+      /*#__PURE__*/React.createElement("div", { style: { padding: '4px 18px 14px' } },
+        /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0' } },
+          /*#__PURE__*/React.createElement("div", null,
+            /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, fontWeight: 600, color: 'var(--text)' } }, "Theme"),
+            /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: 'var(--slate)', marginTop: 2 } }, "Dark is the default. Light mode is WIP.")
+          ),
+          /*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 6, padding: 3, background: 'var(--bg)', border: '1px solid var(--bdr)', borderRadius: 8 } },
+            ['dark', 'light'].map(t => /*#__PURE__*/React.createElement("button", {
+              key: t,
+              onClick: () => setTheme(t),
+              style: {
+                padding: '6px 14px',
+                background: theme === t ? 'var(--card)' : 'transparent',
+                border: '1px solid ' + (theme === t ? 'var(--bdr)' : 'transparent'),
+                color: theme === t ? 'var(--text)' : 'var(--slate)',
+                fontSize: 12,
+                fontWeight: theme === t ? 700 : 500,
+                borderRadius: 6,
+                cursor: 'pointer',
+                textTransform: 'capitalize'
+              }
+            }, t))
+          )
+        )
+      )
+    ),
+
+    /*#__PURE__*/React.createElement("div", { className: "panel", style: { marginBottom: 18 } },
+      /*#__PURE__*/React.createElement("div", { className: "panel-hdr" }, /*#__PURE__*/React.createElement("span", { className: "panel-title" }, "Notifications")),
+      /*#__PURE__*/React.createElement("div", { style: { padding: '4px 18px 10px' } },
+        /*#__PURE__*/React.createElement(ToggleRow, { label: "Email alerts",    desc: "Campaign completion, clean room results, approvals", value: notifyEmail,   onChange: setNotifyEmail }),
+        /*#__PURE__*/React.createElement(ToggleRow, { label: "Browser push",    desc: "Real-time alerts for pacing breaches & anomalies",  value: notifyBrowser, onChange: setNotifyBrowser }),
+        /*#__PURE__*/React.createElement(ToggleRow, { label: "Weekly digest",   desc: "Monday AM summary of last week's performance",      value: notifyWeekly,  onChange: setNotifyWeekly })
+      )
+    ),
+
+    /*#__PURE__*/React.createElement("div", { className: "panel", style: { marginBottom: 18 } },
+      /*#__PURE__*/React.createElement("div", { className: "panel-hdr" }, /*#__PURE__*/React.createElement("span", { className: "panel-title" }, "Language & Region")),
+      /*#__PURE__*/React.createElement("div", { style: { padding: '16px 18px' } },
+        /*#__PURE__*/React.createElement("div", { className: "cform-label" }, "Language"),
+        /*#__PURE__*/React.createElement("select", { className: "cform-input", value: language, onChange: e => setLanguage(e.target.value) },
+          /*#__PURE__*/React.createElement("option", { value: "en-US" }, "English (US)"),
+          /*#__PURE__*/React.createElement("option", { value: "en-GB" }, "English (UK)"),
+          /*#__PURE__*/React.createElement("option", { value: "es-ES" }, "Espa\u00F1ol"),
+          /*#__PURE__*/React.createElement("option", { value: "fr-FR" }, "Fran\u00E7ais"),
+          /*#__PURE__*/React.createElement("option", { value: "de-DE" }, "Deutsch")
+        )
+      )
+    ),
+
+    /*#__PURE__*/React.createElement("div", { className: "panel" },
+      /*#__PURE__*/React.createElement("div", { className: "panel-hdr" }, /*#__PURE__*/React.createElement("span", { className: "panel-title" }, "Session")),
+      /*#__PURE__*/React.createElement("div", { style: { padding: '14px 18px 16px' } },
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: 'var(--slate)', marginBottom: 12 } }, "Active session \xB7 in-memory JWT \xB7 no browser storage (per Signalset rules)"),
+        /*#__PURE__*/React.createElement("button", {
+          onClick: () => { if (confirm('Sign out of Signalset?')) { window.location.reload(); } },
+          style: { padding: '8px 16px', background: 'transparent', border: '1px solid var(--bdr)', color: 'var(--text)', fontSize: 13, fontWeight: 600, borderRadius: 8, cursor: 'pointer' }
+        }, "Sign out")
+      )
+    )
+  );
+}
+
 function App() {
   const [appState, setAppState] = React.useState('splash'); // 'splash' | 'platform'
   const [screen, setScreen] = useState('home');
@@ -18524,7 +18940,11 @@ function App() {
     active: screen === 'measurement'
   })), /*#__PURE__*/React.createElement("div", {
     className: `screen ${screen === 'cmn' ? 'active' : ''}`
-  }, /*#__PURE__*/React.createElement(CommerceMedia, { jumpTab: screen === 'cmn' ? navSub : null, onTabConsumed: () => setNavSub(null) }))));
+  }, /*#__PURE__*/React.createElement(CommerceMedia, { jumpTab: screen === 'cmn' ? navSub : null, onTabConsumed: () => setNavSub(null) })), /*#__PURE__*/React.createElement("div", {
+    className: `screen ${screen === 'admin' ? 'active' : ''}`
+  }, /*#__PURE__*/React.createElement(AdminSettings, null)), /*#__PURE__*/React.createElement("div", {
+    className: `screen ${screen === 'general' ? 'active' : ''}`
+  }, /*#__PURE__*/React.createElement(GeneralSettings, null))));
 }
 ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
 </script>
