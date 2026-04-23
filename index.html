@@ -440,7 +440,7 @@ body.v11-sidebar-open .v11-sidebar { transform: translateX(0); }
   font-size: 36px; font-weight: 700; color: var(--text);
   letter-spacing: -.02em; text-align: center;
   margin-bottom: 32px;
-  max-width: 720px; line-height: 1.2;
+  max-width: 880px; line-height: 1.2;
   position: relative; z-index: 1;
 }
 .v11-home-greeting span { color: var(--indigo-lt, #818CF8); font-weight: 800; }
@@ -16399,16 +16399,17 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
       onKeyDown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCampaignBuilderOpen(true); window.scrollTo(0, 0); } },
       style: {
         padding: '14px 14px',
-        background: 'linear-gradient(135deg, rgba(167,139,250,0.14), rgba(99,102,241,0.14))',
-        borderBottom: '1px solid var(--bdr)',
+        background: 'linear-gradient(135deg, rgba(167,139,250,0.26), rgba(99,102,241,0.22))',
+        borderBottom: '1px solid rgba(167,139,250,0.28)',
+        boxShadow: 'inset 0 1px 0 rgba(167,139,250,0.22)',
         display: 'flex',
         alignItems: 'center',
         gap: 12,
         cursor: 'pointer',
-        transition: 'background .15s'
+        transition: 'background .15s, box-shadow .15s'
       },
-      onMouseEnter: e => { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(167,139,250,0.22), rgba(99,102,241,0.22))'; },
-      onMouseLeave: e => { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(167,139,250,0.14), rgba(99,102,241,0.14))'; }
+      onMouseEnter: e => { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(167,139,250,0.36), rgba(99,102,241,0.32))'; e.currentTarget.style.boxShadow = 'inset 0 1px 0 rgba(167,139,250,0.35), 0 0 0 1px rgba(167,139,250,0.2) inset'; },
+      onMouseLeave: e => { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(167,139,250,0.26), rgba(99,102,241,0.22))'; e.currentTarget.style.boxShadow = 'inset 0 1px 0 rgba(167,139,250,0.22)'; }
     },
       /*#__PURE__*/React.createElement("div", {
         style: { width: 34, height: 34, borderRadius: 9, background: 'var(--purple)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0 }
@@ -17687,12 +17688,12 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
           }, a.id)
         )
       );
-      // Phase-UX-3 · wrap layout — first 5 cards stack beside chat (filling vertical space), rest flow full-width below
-      const _rightCol = _audFiltered.slice(0, 5);
-      const _belowCards = _audFiltered.slice(5);
+      // Phase-UX-3 · wrap layout — first 2 cards stack beside chat (matching composer height), rest flow full-width below
+      const _rightCol = _audFiltered.slice(0, 2);
+      const _belowCards = _audFiltered.slice(2);
       return /*#__PURE__*/React.createElement(React.Fragment, null,
         /*#__PURE__*/React.createElement("div", {
-          style: { display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 10, alignItems: 'stretch' }
+          style: { display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 10, alignItems: 'start' }
         },
           /*#__PURE__*/React.createElement("div", {
             style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 10, overflow: 'hidden' }
@@ -17794,7 +17795,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     ];
 
     const _chatColumn = /*#__PURE__*/React.createElement("div", {
-      style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 9, display: 'flex', flexDirection: 'column', overflow: 'hidden', height: 560 }
+      style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 9, display: 'flex', flexDirection: 'column', overflow: 'hidden', height: 440 }
     },
       /*#__PURE__*/React.createElement("div", {
         style: { padding: '10px 14px', borderBottom: '1px solid var(--bdr-soft)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--card-alt)' }
@@ -17932,7 +17933,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     );
 
     const _canvasColumn = /*#__PURE__*/React.createElement("div", {
-      style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 9, display: 'flex', flexDirection: 'column', overflow: 'hidden', height: 560 }
+      style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 9, display: 'flex', flexDirection: 'column', overflow: 'hidden', height: 440 }
     },
       /*#__PURE__*/React.createElement("div", {
         style: { padding: '10px 14px', borderBottom: '1px solid var(--bdr-soft)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--card-alt)' }
