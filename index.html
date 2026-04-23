@@ -410,12 +410,12 @@ body.v11-sidebar-open .v11-sidebar { transform: translateX(0); }
 
 /* ── V11 HOME SCREEN — chatbot-first ── */
 .v11-home {
-  height: calc(100vh - 56px);
+  min-height: calc(100vh - 56px);
   display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
+  align-items: center; justify-content: flex-start;
   padding: 40px 20px 60px;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 .v11-home::before {
   content: '';
@@ -451,42 +451,85 @@ body.v11-sidebar-open .v11-sidebar { transform: translateX(0); }
 }
 /* Override Chatbot interior styling for the v11 home context */
 .v11-home-chat-wrap .home-chat-wrap {
-  height: auto; max-height: calc(100vh - 340px); min-height: 300px;
-  border: 1px solid rgba(99,102,241,.28);
-  border-radius: 14px;
-  background: rgba(14,14,34,.65);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 0 0 1px rgba(99,102,241,.06), 0 20px 60px rgba(0,0,0,.5);
-  overflow: hidden;  /* v11 · clip children to rounded corners */
+  border: none;
+  background: transparent;
+  box-shadow: none;
 }
 /* v11 · breathing room above the sample pills when chat is empty */
 .v11-home-chat-wrap .sample-chips { padding-top: 16px; }
 .v11-home-pills {
-  display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+  display: flex; gap: 6px; flex-wrap: wrap; justify-content: center;
   width: min(720px, calc(100% - 40px));
   margin: 0 auto;
   position: relative; z-index: 1;
 }
+.v11-home-pills::before {
+  content: "Jump to";
+  display: block;
+  font-family: var(--font-m);
+  font-size: 9.5px;
+  color: var(--slate);
+  opacity: .55;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  width: 100%;
+  text-align: center;
+  margin-bottom: 4px;
+}
 .v11-home-pill {
-  display: flex; align-items: center; gap: 8px;
-  padding: 10px 18px; border-radius: 24px;
-  background: rgba(14,14,34,.6);
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 7px 12px; border-radius: 7px;
+  background: transparent;
   border: 1px solid rgba(99,102,241,.22);
-  font-family: var(--font-b); font-size: 13px; font-weight: 600;
-  color: var(--text); cursor: pointer; transition: all .15s;
+  font-family: var(--font-b); font-size: 12px; font-weight: 500;
+  color: var(--slate); cursor: pointer; transition: all .15s;
 }
 .v11-home-pill:hover {
-  border-color: rgba(99,102,241,.5);
-  background: rgba(99,102,241,.1);
-  transform: translateY(-1px);
+  border-color: rgba(99,102,241,.45);
+  background: rgba(99,102,241,.06);
+  color: var(--text);
+  transform: none;
 }
 .v11-home-pill-ico {
-  display: flex; align-items: center; color: var(--indigo-lt, #818CF8);
+  display: flex; align-items: center; color: var(--slate); opacity: .7;
 }
-.v11-home-pill.section-measurement .v11-home-pill-ico { color: #67E8F9; }
-.v11-home-pill.section-drive .v11-home-pill-ico { color: #FBBF24; }
-.v11-home-pill.section-measurement:hover { border-color: rgba(6,182,212,.5); background: rgba(6,182,212,.08); }
-.v11-home-pill.section-drive:hover { border-color: rgba(251,191,36,.4); background: rgba(251,191,36,.06); }
+.v11-home-pill:hover .v11-home-pill-ico { color: var(--text); opacity: 1; }
+.v11-home-pill.section-measurement .v11-home-pill-ico,
+.v11-home-pill.section-drive .v11-home-pill-ico { color: var(--slate); }
+.v11-home-pill.section-measurement:hover { border-color: rgba(99,102,241,.45); background: rgba(99,102,241,.06); }
+.v11-home-pill.section-drive:hover { border-color: rgba(99,102,241,.45); background: rgba(99,102,241,.06); }
+
+/* Landing nav pills belong to the empty state. When a chat goes active, the composer
+   is the viewport footer and the pills become visual clutter floating in empty space.
+   Scoped to .screen.active so that a persistent chat-wrap-active on a hidden screen
+   (all screens are mounted; inactive ones are display:none) does not hide pills on the
+   screen the user is actually looking at. */
+.screen.active:has(.chat-wrap-active) .v11-home-pills { display: none; }
+/* Masthead (kicker + greeting) collapses entirely once a conversation is engaged.
+   Same screen-scoping reason as pills above. */
+.landing-hero-block {
+  transition: max-height .35s ease, opacity .2s ease-out, padding .3s ease, margin .3s ease;
+  max-height: 600px;
+  overflow: hidden;
+}
+.screen.active:has(.chat-wrap-active) .landing-hero-block {
+  max-height: 0;
+  opacity: 0;
+  margin: 0;
+  padding: 0 !important;
+  pointer-events: none;
+}
+
+/* Screen-to-screen navigation fade. Added by nav-chip handlers before calling setScreen/onEnter.
+   The body dims during the brief window between the user's click and the new screen rendering,
+   so the transition reads as a deliberate chapter-turn rather than a teleport. */
+html.screen-transitioning body {
+  opacity: 0.25;
+  transition: opacity .32s ease;
+}
+html:not(.screen-transitioning) body {
+  transition: opacity .28s ease;
+}
 
 /* Responsive */
 @media (max-width: 640px) {
@@ -562,18 +605,42 @@ body.v11-sidebar-open .v11-sidebar { transform: translateX(0); }
 .chat-wrap-empty .sample-chips { order: 2; }
 .chat-wrap-empty .chat-footer { order: 3; }
 
-/* ACTIVE STATE — header top, messages scroll, input above bottom, action bar at bottom */
-.chat-wrap-active { max-height: calc(100vh - 200px); overflow: hidden; }
-.chat-wrap-active .chat-header { order: 1; flex-shrink: 0; }
-.chat-wrap-active .chat-messages { order: 2; flex: 1 1 auto; overflow-y: auto; min-height: 0; }
+/* ACTIVE STATE — composer pins as viewport footer (claude.ai pattern) */
+.chat-wrap-active .chat-messages { order: 2; flex: 0 0 auto; overflow: visible; min-height: 0; padding-bottom: 160px; }
 .chat-wrap-active .sample-chips { display: none; }
 .chat-wrap-active .chat-input {
-  order: 3; margin: 0; flex-shrink: 0;
-  border-top: 1px solid rgba(99,102,241,.2);
-  border-radius: 0; border-left: none; border-right: none; border-bottom: none;
-  min-height: 64px; max-height: 120px;
+  order: 3;
+  position: fixed;
+  bottom: 68px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(720px, calc(100% - 40px));
+  z-index: 20;
+  margin: 0;
+  border: 1px solid rgba(99,102,241,.32);
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+  background: rgba(14,14,34,.95);
+  backdrop-filter: blur(14px);
+  min-height: 56px; max-height: 120px;
 }
-.chat-wrap-active .chat-footer { order: 4; flex-shrink: 0; }
+.chat-wrap-active .chat-footer {
+  order: 4;
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(720px, calc(100% - 40px));
+  z-index: 20;
+  margin: 0;
+  padding: 10px 14px;
+  border: 1px solid rgba(99,102,241,.32);
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  background: rgba(14,14,34,.95);
+  backdrop-filter: blur(14px);
+  box-sizing: border-box;
+}
 
 .chat-messages {
   flex: 1 1 auto; overflow-y: auto; padding: 14px 20px;
@@ -596,22 +663,51 @@ body.v11-sidebar-open .v11-sidebar { transform: translateX(0); }
   color: #FFFFFF; font-size: 16px; padding: 12px 17px; line-height: 1.68;
   border-radius: 16px 16px 4px 16px; max-width: 78%;
 }
-.msg.assistant .bubble { flex: 1; font-size: 16px; line-height: 1.72; color: var(--text); background: rgba(22,22,58,.95); padding: 13px 17px; border-radius: 4px 16px 16px 16px; border: 1px solid rgba(99,102,241,.25); box-shadow: 0 1px 4px rgba(0,0,0,.2); }
+.msg.assistant .bubble { flex: 1; font-size: 16px; line-height: 1.72; color: var(--text); background: transparent; padding: 4px 0; border-radius: 0; border: none; box-shadow: none; }
 
-.sample-chips { padding: 16px 20px 12px; display: flex; gap: 8px; flex-wrap: wrap; background: transparent; flex-shrink: 0; }
-.chip {
-  padding: 7px 14px; background: rgba(99,102,241,.1);
-  border: 1px solid rgba(99,102,241,.28); border-radius: 20px;
-  font-size: 14px; color: rgba(238,238,255,.8); cursor: pointer; transition: all .15s;
-  box-shadow: 0 1px 3px rgba(14,31,56,0.06);
+/* ─── Sample-prompt row (Option C · top row) ───
+   Quiet, bordered, tappable. Same visual weight as the bottom nav row.
+   Small "Try asking" label handled inline in JSX via ::before */
+.sample-chips {
+  padding: 0 0 10px;
+  display: flex; gap: 6px; flex-wrap: wrap;
+  background: transparent; flex-shrink: 0;
+  position: relative;
 }
-.chip:hover { color: var(--text); border-color: var(--cyan); background: rgba(0,180,230,0.05); }
+.sample-chips::before {
+  content: "Try asking";
+  display: block;
+  font-family: var(--font-m);
+  font-size: 9.5px;
+  color: var(--slate);
+  opacity: .55;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  width: 100%;
+  margin-bottom: 2px;
+}
+.chip {
+  padding: 7px 12px;
+  background: transparent;
+  border: 1px solid rgba(99,102,241,.22);
+  border-radius: 7px;
+  font-size: 12px;
+  color: var(--slate);
+  cursor: pointer;
+  transition: all .15s;
+  font-family: var(--font-b);
+}
+.chip:hover {
+  color: var(--text);
+  border-color: rgba(99,102,241,.45);
+  background: rgba(99,102,241,.06);
+}
 .explore-link-btn { flex-shrink: 0; background: none; border: none; color: var(--cyan); font-size: 12px; font-weight: 700; cursor: pointer; padding: 4px 0; letter-spacing: .02em; opacity: .85; transition: opacity .15s; }
 .explore-link-btn:hover { opacity: 1; text-decoration: underline; }
 
 .chat-footer {
-  padding: 12px 14px; border-top: 1px solid var(--bdr);
-  background: transparent; display: flex; gap: 10px; align-items: flex-end;
+  padding: 12px 14px; border-top: none;
+  background: transparent; display: flex; gap: 10px; align-items: center;
 }
 .chat-input {
   margin: 16px 14px 0; background: #0C0C1E; border: 1px solid rgba(99,102,241,.2);
@@ -621,6 +717,56 @@ body.v11-sidebar-open .v11-sidebar { transform: translateX(0); }
 }
 .chat-input:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
 .chat-input::placeholder { color: #94A3B8; }
+
+/* ─── Single + button (replaces paperclip + Drive) ─── */
+.chat-plus-wrap { position: relative; display: flex; }
+.chat-plus-btn {
+  width: 32px; height: 32px; background: transparent;
+  border: 1px solid rgba(99,102,241,.2); border-radius: 7px;
+  cursor: pointer; color: var(--slate);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  transition: all .12s; padding: 0;
+}
+.chat-plus-btn:hover {
+  background: rgba(99,102,241,.1); color: var(--cyan-pale);
+  border-color: rgba(99,102,241,.4);
+}
+.chat-plus-popover {
+  position: absolute; bottom: calc(100% + 8px); left: 0;
+  width: 260px;
+  background: var(--card); border: 1px solid rgba(99,102,241,.35);
+  border-radius: 8px; padding: 6px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.6), 0 0 0 1px rgba(99,102,241,.08);
+  z-index: 50;
+  display: flex; flex-direction: column; gap: 1px;
+}
+.chat-plus-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; background: transparent; border: none;
+  border-radius: 5px; cursor: pointer;
+  font-family: var(--font-b); font-size: 12px;
+  color: var(--text); text-align: left; width: 100%;
+  transition: background .12s;
+}
+.chat-plus-item:hover { background: rgba(99,102,241,.1); }
+.chat-plus-item.disabled {
+  opacity: .42; cursor: not-allowed;
+}
+.chat-plus-item.disabled:hover { background: transparent; }
+.chat-plus-label { flex: 1; color: var(--text); }
+.chat-plus-item.disabled .chat-plus-label { color: var(--slate); }
+.chat-plus-sub {
+  font-family: var(--font-m); font-size: 9px;
+  color: var(--slate); opacity: .6;
+  letter-spacing: .08em; text-transform: uppercase;
+  margin-left: auto;
+}
+.chat-plus-divider {
+  height: 1px; background: rgba(99,102,241,.18);
+  margin: 4px 6px;
+}
+
+/* Legacy class kept as alias for any stray references */
 .chat-icon-btn {
   width: 32px; height: 32px; background: transparent; border: 1px solid rgba(99,102,241,.2);
   border-radius: 7px; cursor: pointer; color: var(--slate);
@@ -1664,7 +1810,7 @@ div:has(> .ig-layout) > .hero { display: none; }
 .feat-tile:hover .feat-tile-arrow { color: var(--cyan); transform: translateX(2px); }
 .home-agent-intro { padding: 16px 18px; background: linear-gradient(135deg, rgba(0,180,230,.06), rgba(5,150,105,.04)); border: 1px solid rgba(0,180,230,.2); border-radius: 10px; margin-bottom: 18px; }
 .home-chat-wrap { height: auto; display: flex; flex-direction: column; border: 1px solid rgba(99,102,241,.28); border-radius: 10px; overflow: hidden; background: var(--card); box-shadow: 0 0 0 1px rgba(99,102,241,.08), 0 8px 32px rgba(0,0,0,.4); }
-.mz-intro-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; height: calc(100vh - 56px); overflow: hidden; padding: 20px 32px 32px; }
+.mz-intro-wrap { display: flex; flex-direction: column; align-items: center; padding: 0 32px 32px; }
 .mz-intro-left { padding: 0; display: flex; flex-direction: column; width: 100%; max-width: 760px; border-right: none; }
 .mz-intro-right { display: none; }
 .mz-jump-card { background: var(--card); border: 1px solid var(--bdr); border-radius: 10px; padding: 14px 16px; cursor: pointer; transition: all .18s; box-shadow: var(--shadow); }
@@ -4160,6 +4306,16 @@ function Chatbot({
   const [msgs, setMsgs] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [plusOpen, setPlusOpen] = useState(false);
+  React.useEffect(() => {
+    if (!plusOpen) return;
+    const close = (e) => {
+      if (e.target.closest && e.target.closest('.chat-plus-wrap')) return;
+      setPlusOpen(false);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [plusOpen]);
   const [popout, setPopout] = useState(null);
   const endRef = useRef(null);
   useEffect(() => {
@@ -4231,34 +4387,7 @@ function Chatbot({
   React.useEffect(() => { if (sendRef) sendRef.current = send; }, [send, sendRef]);
   return /*#__PURE__*/React.createElement("div", {
     className: `chat-wrap ${msgs.length === 0 ? 'chat-wrap-empty' : 'chat-wrap-active'}`
-  }, msgs.length > 0 && /*#__PURE__*/React.createElement("div", {
-    className: "chat-header",
-    style: {
-      padding: '8px 20px',
-      borderBottom: '1px solid var(--bdr)',
-      background: 'var(--card-alt)',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center'
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 13,
-      color: 'var(--slate)'
-    }
-  }, msgs.filter(m => m.role === 'user').length, " exchange", msgs.filter(m => m.role === 'user').length !== 1 ? 's' : ''), /*#__PURE__*/React.createElement("button", {
-    onClick: reset,
-    style: {
-      fontSize: 12,
-      fontWeight: 600,
-      color: 'var(--slate)',
-      background: 'none',
-      border: '1px solid var(--bdr)',
-      borderRadius: 6,
-      padding: '4px 10px',
-      cursor: 'pointer'
-    }
-  }, "\u21BA Start Over")), /*#__PURE__*/React.createElement("textarea", {
+  }, /*#__PURE__*/React.createElement("textarea", {
     className: "chat-input",
     rows: 2,
     placeholder: placeholder,
@@ -4462,29 +4591,75 @@ function Chatbot({
     }
   }, "Close")))), /*#__PURE__*/React.createElement("div", {
     className: "chat-footer"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "chat-plus-wrap",
+    style: { position: 'relative' }
   }, /*#__PURE__*/React.createElement("button", {
-    className: "chat-icon-btn",
+    className: "chat-plus-btn",
     type: "button",
-    title: "Attach file"
+    title: "Attach",
+    onClick: () => setPlusOpen(v => !v),
+    "aria-haspopup": "menu",
+    "aria-expanded": plusOpen ? "true" : "false"
   }, /*#__PURE__*/React.createElement("svg", {
     viewBox: "0 0 24 24", fill: "none", stroke: "currentColor",
     strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round",
     width: 16, height: 16
-  }, /*#__PURE__*/React.createElement("path", {
-    d: "M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"
-  }))), /*#__PURE__*/React.createElement("button", {
-    className: "chat-icon-btn",
-    type: "button",
-    title: "From Drive"
-  }, /*#__PURE__*/React.createElement("svg", {
-    viewBox: "0 0 87.3 78", width: 16, height: 16
-  }, /*#__PURE__*/React.createElement("path", { d: "m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z", fill: "#0066da" }),
-     /*#__PURE__*/React.createElement("path", { d: "m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z", fill: "#00ac47" }),
-     /*#__PURE__*/React.createElement("path", { d: "m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z", fill: "#ea4335" }),
-     /*#__PURE__*/React.createElement("path", { d: "m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z", fill: "#00832d" }),
-     /*#__PURE__*/React.createElement("path", { d: "m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z", fill: "#2684fc" }),
-     /*#__PURE__*/React.createElement("path", { d: "m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 27h27.45c0-1.55-.4-3.1-1.2-4.5z", fill: "#ffba00" })
-  )), /*#__PURE__*/React.createElement("div", { style: { flex: 1 } }), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("line", { x1: 12, y1: 5, x2: 12, y2: 19 }),
+     /*#__PURE__*/React.createElement("line", { x1: 5, y1: 12, x2: 19, y2: 12 }))),
+    plusOpen && /*#__PURE__*/React.createElement("div", {
+      className: "chat-plus-popover",
+      role: "menu",
+      onClick: (e) => e.stopPropagation()
+    },
+      /*#__PURE__*/React.createElement("button", {
+        className: "chat-plus-item", type: "button",
+        onClick: () => { alert('File upload — coming in Phase 11'); setPlusOpen(false); }
+      },
+        /*#__PURE__*/React.createElement("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", width: 14, height: 14, style: { flexShrink: 0 } },
+          /*#__PURE__*/React.createElement("path", { d: "M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" })
+        ),
+        /*#__PURE__*/React.createElement("span", { className: "chat-plus-label" }, "Upload a file"),
+        /*#__PURE__*/React.createElement("span", { className: "chat-plus-sub" }, "local")
+      ),
+      /*#__PURE__*/React.createElement("button", {
+        className: "chat-plus-item", type: "button",
+        onClick: () => { alert('Google Drive — coming in Phase 11'); setPlusOpen(false); }
+      },
+        /*#__PURE__*/React.createElement("svg", { viewBox: "0 0 87.3 78", width: 14, height: 14, style: { flexShrink: 0 } },
+          /*#__PURE__*/React.createElement("path", { d: "m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z", fill: "#0066da" }),
+          /*#__PURE__*/React.createElement("path", { d: "m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z", fill: "#00ac47" }),
+          /*#__PURE__*/React.createElement("path", { d: "m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z", fill: "#ea4335" }),
+          /*#__PURE__*/React.createElement("path", { d: "m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z", fill: "#00832d" }),
+          /*#__PURE__*/React.createElement("path", { d: "m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z", fill: "#2684fc" }),
+          /*#__PURE__*/React.createElement("path", { d: "m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 27h27.45c0-1.55-.4-3.1-1.2-4.5z", fill: "#ffba00" })
+        ),
+        /*#__PURE__*/React.createElement("span", { className: "chat-plus-label" }, "Google Drive"),
+        /*#__PURE__*/React.createElement("span", { className: "chat-plus-sub" }, "connected")
+      ),
+      /*#__PURE__*/React.createElement("div", { className: "chat-plus-divider" }),
+      /*#__PURE__*/React.createElement("button", {
+        className: "chat-plus-item disabled", type: "button", disabled: true
+      },
+        /*#__PURE__*/React.createElement("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", width: 14, height: 14, style: { flexShrink: 0 } },
+          /*#__PURE__*/React.createElement("circle", { cx: 12, cy: 12, r: 3 }),
+          /*#__PURE__*/React.createElement("path", { d: "M3 12a9 9 0 0 1 18 0M3 12a9 9 0 0 0 18 0" })
+        ),
+        /*#__PURE__*/React.createElement("span", { className: "chat-plus-label" }, "Attach an audience"),
+        /*#__PURE__*/React.createElement("span", { className: "chat-plus-sub" }, "soon")
+      ),
+      /*#__PURE__*/React.createElement("button", {
+        className: "chat-plus-item disabled", type: "button", disabled: true
+      },
+        /*#__PURE__*/React.createElement("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", width: 14, height: 14, style: { flexShrink: 0 } },
+          /*#__PURE__*/React.createElement("path", { d: "M3 3v18h18" }),
+          /*#__PURE__*/React.createElement("path", { d: "M7 14l4-4 4 4 5-5" })
+        ),
+        /*#__PURE__*/React.createElement("span", { className: "chat-plus-label" }, "Pull from BigQuery"),
+        /*#__PURE__*/React.createElement("span", { className: "chat-plus-sub" }, "soon")
+      )
+    )
+  ), /*#__PURE__*/React.createElement("div", { style: { flex: 1 } }), /*#__PURE__*/React.createElement("div", {
     className: "chat-model-pill"
   }, "Sonnet 4 ", /*#__PURE__*/React.createElement("svg", {
     width: 10, height: 10, viewBox: "0 0 24 24", fill: "none",
@@ -8684,8 +8859,14 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
   if (deskHub) return /*#__PURE__*/React.createElement("div", {
     className: "camp-hub-wrap"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "hero"
-  }, /*#__PURE__*/React.createElement("div", {className: "hero-eyebrow"}, "The Marketing Desk \xB7 In-House"), /*#__PURE__*/React.createElement("h1", null, "Campaign ", /*#__PURE__*/React.createElement("span", null, "Intelligence"), " Suite"), /*#__PURE__*/React.createElement("p", null, "AI-powered audience creation, trigger sequencing, compliance-cleared creatives, and full setup-to-activation in one connected workflow.")), /*#__PURE__*/React.createElement("div", {
+    className: "landing-hero-block",
+    style: { display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 20px 0', position: 'relative' }
+  }, /*#__PURE__*/React.createElement("div", { className: "v11-home-kicker" },
+    /*#__PURE__*/React.createElement("div", { className: "v11-home-kicker-dot" }),
+    "The Marketing Desk \xB7 In-House"
+  ), /*#__PURE__*/React.createElement("h1", { className: "v11-home-greeting" },
+    "Hi Dio \u2014 ", /*#__PURE__*/React.createElement("span", null, "which audience are you exploring?")
+  )), /*#__PURE__*/React.createElement("div", {
     className: "camp-hub-body"
   }, /*#__PURE__*/React.createElement("div", {
     className: "camp-hub-left"
@@ -8740,17 +8921,11 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
     }
   }, "AI")), /*#__PURE__*/React.createElement("div", {
     style: {
-      minHeight: 0,
       display: 'flex',
       flexDirection: 'column',
-      border: '1px solid var(--bdr)',
-      borderRadius: 10,
-      background: 'var(--card)',
-      boxShadow: 'var(--shadow)',
-      overflow: 'hidden',
-      height: 'calc(100vh - 220px)',
-      minHeight: 520,
-      maxHeight: 'calc(100vh - 140px)'
+      width: '100%',
+      maxWidth: 720,
+      margin: '0 auto'
     }
   }, /*#__PURE__*/React.createElement(Chatbot, {
     systemPrompt: AUDIENCE_SYS,
@@ -13133,60 +13308,75 @@ function MeasurementIntro({
     const followUps = Array.isArray(data.followUps) ? data.followUps : [];
     const navKey = data.navigate;
     const navLabel = navKey ? CHART_LABELS[navKey] : null;
-    // Split followUps: visual CTAs navigate, others send as chat
-    return /*#__PURE__*/React.createElement("div", { className: "bubble", style: { flex: 1 } },
+    const navigateWithTransition = (ev, targetFn) => {
+      if (ev && ev.currentTarget) {
+        ev.currentTarget.style.opacity = '0.55';
+        ev.currentTarget.textContent = 'Opening\u2026';
+      }
+      document.documentElement.classList.add('screen-transitioning');
+      setTimeout(() => {
+        targetFn();
+        window.scrollTo(0, 0);
+        setTimeout(() => document.documentElement.classList.remove('screen-transitioning'), 80);
+      }, 380);
+    };
+    return /*#__PURE__*/React.createElement("div", {
+      style: { flex: 1, display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0 }
+    },
       /*#__PURE__*/React.createElement("div", {
-        style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 10, padding: '16px 18px', boxShadow: 'var(--shadow)' }
+        style: { padding: '4px 0', fontSize: 16, lineHeight: 1.72, color: 'var(--text)', whiteSpace: 'pre-wrap' }
+      }, data.text || JSON.stringify(data)),
+      (followUps.length > 0 || navLabel) && /*#__PURE__*/React.createElement("div", {
+        style: { display: 'flex', flexWrap: 'wrap', gap: 6, paddingTop: 2 }
       },
-        /*#__PURE__*/React.createElement("div", {
-          style: { fontSize: 15, color: 'var(--text)', lineHeight: 1.7, marginBottom: (followUps.length || navLabel) ? 14 : 0 }
-        }, data.text || JSON.stringify(data)),
-        (followUps.length > 0 || navLabel) && /*#__PURE__*/React.createElement("div", {
-          style: { display: 'flex', flexWrap: 'wrap', gap: 8 }
-        },
-          followUps.map((q, i) =>
-            /*#__PURE__*/React.createElement("button", {
-              key: i,
-              onClick: () => onFollowUp && onFollowUp(q),
-              style: {
-                padding: '6px 14px',
-                background: 'rgba(99,102,241,0.1)',
-                color: 'var(--indigo)',
-                border: '1px solid rgba(99,102,241,0.3)',
-                borderRadius: 20,
-                fontSize: 12,
-                fontWeight: 500,
-                cursor: 'pointer',
-                whiteSpace: 'nowrap'
-              }
-            }, q)
-          ),
-          navLabel && /*#__PURE__*/React.createElement("button", {
-            onClick: () => onEnter(CHART_IDS[navKey] || null),
+        followUps.map((q, i) =>
+          /*#__PURE__*/React.createElement("button", {
+            key: i,
+            onClick: () => onFollowUp && onFollowUp(q),
             style: {
-              padding: '7px 16px',
-              background: 'rgba(6,182,212,0.15)',
-              color: 'var(--cyan)',
-              border: '1px solid rgba(6,182,212,0.4)',
-              borderRadius: 20,
               fontSize: 12,
-              fontWeight: 700,
+              color: 'var(--cyan-pale)',
+              background: 'rgba(99,102,241,.08)',
+              border: '1px solid var(--bdr)',
+              padding: '5px 11px',
+              borderRadius: 14,
               cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 4
-            }
-          }, navLabel)
-        )
+              fontFamily: 'inherit',
+              transition: 'all .15s'
+            },
+            onMouseEnter: e => { e.currentTarget.style.background = 'rgba(99,102,241,.15)'; e.currentTarget.style.borderColor = 'var(--cyan)'; },
+            onMouseLeave: e => { e.currentTarget.style.background = 'rgba(99,102,241,.08)'; e.currentTarget.style.borderColor = 'var(--bdr)'; }
+          }, q)
+        ),
+        navLabel && /*#__PURE__*/React.createElement("button", {
+          onClick: (e) => navigateWithTransition(e, () => onEnter(CHART_IDS[navKey] || null)),
+          style: {
+            fontSize: 12,
+            color: 'var(--cyan)',
+            background: 'rgba(6,182,212,0.10)',
+            border: '1px solid rgba(6,182,212,0.35)',
+            padding: '5px 13px',
+            borderRadius: 14,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            fontWeight: 600,
+            transition: 'all .15s'
+          },
+          onMouseEnter: e => { e.currentTarget.style.background = 'rgba(6,182,212,.18)'; },
+          onMouseLeave: e => { e.currentTarget.style.background = 'rgba(6,182,212,.10)'; }
+        }, "Open the " + navLabel + " \u2192")
       )
     );
   }
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    className: "hero"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "hero-eyebrow"
-  }, "Measurement \xB7 Intelligence Layer"), /*#__PURE__*/React.createElement("h1", null, "Cohort ", /*#__PURE__*/React.createElement("span", null, "Attribution"), " & Optimization"), /*#__PURE__*/React.createElement("p", {style: {whiteSpace: 'nowrap'}}, "Explore cohort performance, drill into segment sub-groups, and trace multi-touch attribution across owned, paid, and clean room channels.")), /*#__PURE__*/React.createElement("div", {
+    className: "landing-hero-block",
+    style: { display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 20px 0', position: 'relative' }
+  }, /*#__PURE__*/React.createElement("div", { className: "v11-home-kicker" },
+    /*#__PURE__*/React.createElement("div", { className: "v11-home-kicker-dot" }),
+    "Measurement \xB7 Intelligence Layer"
+  ), /*#__PURE__*/React.createElement("h1", { className: "v11-home-greeting" },
+    "Hi Dio \u2014 ", /*#__PURE__*/React.createElement("span", null, "what would you like to measure?")
+  )), /*#__PURE__*/React.createElement("div", {
     className: "mz-intro-wrap"
   }, /*#__PURE__*/React.createElement("div", {
     className: "mz-intro-left"
@@ -13241,17 +13431,11 @@ function MeasurementIntro({
     }
   }, "AI")), /*#__PURE__*/React.createElement("div", {
     style: {
-      minHeight: 0,
       display: 'flex',
       flexDirection: 'column',
-      border: '1px solid var(--bdr)',
-      borderRadius: 10,
-      background: 'var(--card)',
-      boxShadow: 'var(--shadow)',
-      overflow: 'hidden',
-      height: 'calc(100vh - 220px)',
-      minHeight: 520,
-      maxHeight: 'calc(100vh - 140px)'
+      width: '100%',
+      maxWidth: 720,
+      margin: '0 auto'
     }
   }, /*#__PURE__*/React.createElement(Chatbot, {
     systemPrompt: liveMzSys,
@@ -14620,8 +14804,14 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
   if (cmnHub) return /*#__PURE__*/React.createElement("div", {
     className: "camp-hub-wrap"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "hero"
-  }, /*#__PURE__*/React.createElement("div", {className: "hero-eyebrow"}, "Partners \xB7 Clean Room Commerce"), /*#__PURE__*/React.createElement("h1", null, "Self-Service ", /*#__PURE__*/React.createElement("span", null, "Partner"), " Portal"), /*#__PURE__*/React.createElement("p", null, "Reach FI cardholders via transaction-based targeting, clean-room audience activation, and closed-loop attribution \u2014 zero PII exposed.")), /*#__PURE__*/React.createElement("div", {
+    className: "landing-hero-block",
+    style: { display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 20px 0', position: 'relative' }
+  }, /*#__PURE__*/React.createElement("div", { className: "v11-home-kicker" },
+    /*#__PURE__*/React.createElement("div", { className: "v11-home-kicker-dot" }),
+    "Partners \xB7 Clean Room Commerce"
+  ), /*#__PURE__*/React.createElement("h1", { className: "v11-home-greeting" },
+    "Hi Dio \u2014 ", /*#__PURE__*/React.createElement("span", null, "what do you want to build?")
+  )), /*#__PURE__*/React.createElement("div", {
     className: "camp-hub-body"
   }, /*#__PURE__*/React.createElement("div", {
     className: "camp-hub-left"
@@ -14676,17 +14866,11 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     }
   }, "AI")), /*#__PURE__*/React.createElement("div", {
     style: {
-      minHeight: 0,
       display: 'flex',
       flexDirection: 'column',
-      border: '1px solid var(--bdr)',
-      borderRadius: 10,
-      background: 'var(--card)',
-      boxShadow: 'var(--shadow)',
-      overflow: 'hidden',
-      height: 'calc(100vh - 220px)',
-      minHeight: 520,
-      maxHeight: 'calc(100vh - 140px)'
+      width: '100%',
+      maxWidth: 720,
+      margin: '0 auto'
     }
   }, /*#__PURE__*/React.createElement(Chatbot, {
     // Phase 23 — landing chatbot uses narrow-intent router only.
@@ -17966,9 +18150,21 @@ function HomeScreen({
     // followups: prefer AI-supplied, fall back to deriving one chip from legacy nav/navLabel
     const followups = Array.isArray(data.followups) && data.followups.length > 0
       ? data.followups
-      : (nav && navLabel ? [{ label: 'Go to ' + navLabel, nav: nav }] : []);
-    const handleChip = (fu) => {
-      if (fu.nav) { setScreen(fu.nav); window.scrollTo(0, 0); }
+      : (nav && navLabel ? [{ label: 'Open the ' + navLabel + ' view \u2192', nav: nav }] : []);
+    const handleChip = (fu, ev) => {
+      if (fu.nav) {
+        // brief transitional feedback so navigation reads as a narrated action, not a teleport
+        if (ev && ev.currentTarget) {
+          ev.currentTarget.style.opacity = '0.55';
+          ev.currentTarget.textContent = 'Opening\u2026';
+        }
+        document.documentElement.classList.add('screen-transitioning');
+        setTimeout(() => {
+          setScreen(fu.nav);
+          window.scrollTo(0, 0);
+          setTimeout(() => document.documentElement.classList.remove('screen-transitioning'), 80);
+        }, 380);
+      }
       else if (fu.sendText && typeof send === 'function') { send(fu.sendText); }
     };
     return /*#__PURE__*/React.createElement("div", {
@@ -17976,12 +18172,9 @@ function HomeScreen({
     },
       /*#__PURE__*/React.createElement("div", {
         style: {
-          background: 'rgba(22,22,58,.65)',
-          border: '1px solid rgba(99,102,241,.22)',
-          borderRadius: '4px 14px 14px 14px',
-          padding: '14px 18px',
+          padding: '4px 0',
           fontSize: 16,
-          lineHeight: 1.65,
+          lineHeight: 1.72,
           color: data.error ? 'var(--red)' : 'var(--text)',
           whiteSpace: 'pre-wrap'
         }
@@ -17990,7 +18183,7 @@ function HomeScreen({
         style: { display: 'flex', gap: 6, flexWrap: 'wrap', paddingTop: 2 }
       }, followups.map((fu, i) => /*#__PURE__*/React.createElement("button", {
         key: i,
-        onClick: () => handleChip(fu),
+        onClick: (e) => handleChip(fu, e),
         style: {
           fontSize: 12,
           color: 'var(--cyan-pale)',
@@ -18035,20 +18228,16 @@ function HomeScreen({
         /*#__PURE__*/React.createElement("circle", { cx: 19, cy: 18, r: 2 })
       )
     },
-    {
-      id: 'drive', section: 'drive', label: 'From Drive',
-      icon: /*#__PURE__*/React.createElement("svg", { width: 13, height: 13, viewBox: "0 0 24 24", fill: "currentColor" },
-        /*#__PURE__*/React.createElement("path", { d: "M4.4 15.5l3.2-5.5h8.8l-3.2 5.5H4.4zm11.3-6L19 14l-3 5.2-3.3-5.7 2.7-4zm-6.9-.5L6.2 14l-3.2 5.2h6.3L12.5 14 8.8 9z" })
-      )
-    },
   ];
   return /*#__PURE__*/React.createElement("div", { className: "v11-home" },
-    /*#__PURE__*/React.createElement("div", { className: "v11-home-kicker" },
-      /*#__PURE__*/React.createElement("div", { className: "v11-home-kicker-dot" }),
-      "Signalset · Living Identity Graph"
-    ),
-    /*#__PURE__*/React.createElement("h1", { className: "v11-home-greeting" },
-      "Hi Dio — ", /*#__PURE__*/React.createElement("span", null, "what would you like to do today?")
+    /*#__PURE__*/React.createElement("div", { className: "landing-hero-block", style: { display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' } },
+      /*#__PURE__*/React.createElement("div", { className: "v11-home-kicker" },
+        /*#__PURE__*/React.createElement("div", { className: "v11-home-kicker-dot" }),
+        "Signalset · Living Identity Graph"
+      ),
+      /*#__PURE__*/React.createElement("h1", { className: "v11-home-greeting" },
+        "Hi Dio — ", /*#__PURE__*/React.createElement("span", null, "what would you like to do today?")
+      )
     ),
     /*#__PURE__*/React.createElement("div", { className: "v11-home-chat-wrap" },
       /*#__PURE__*/React.createElement("div", { className: "home-chat-wrap" },
