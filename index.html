@@ -668,7 +668,7 @@ html:not(.screen-transitioning) body {
 }
 .chip {
   padding: 7px 12px;
-  background: transparent;
+  background: var(--card-alt);
   border: 1px solid rgba(99,102,241,.22);
   border-radius: 7px;
   font-size: 12px;
@@ -680,7 +680,7 @@ html:not(.screen-transitioning) body {
 .chip:hover {
   color: var(--text);
   border-color: rgba(99,102,241,.45);
-  background: rgba(99,102,241,.06);
+  background: rgba(99,102,241,.14);
 }
 .explore-link-btn { flex-shrink: 0; background: none; border: none; color: var(--cyan); font-size: 12px; font-weight: 700; cursor: pointer; padding: 4px 0; letter-spacing: .02em; opacity: .85; transition: opacity .15s; }
 .explore-link-btn:hover { opacity: 1; text-decoration: underline; }
@@ -4288,6 +4288,129 @@ function buildActionRenderer(opts) {
   };
 }
 
+// ─── Shared + popover ─────────────────────────────────────────────────────
+// Lives in the composer's .chat-bar. Manages its own open/closed state and
+// outside-click behavior. Used by the shared Chatbot component AND by any
+// hand-rolled chatbot (e.g. Creative Partner) that hasn't been ported yet.
+// Adding more + options? Do it here once — all chatbots inherit automatically.
+function ChatPlusPopover({ onUpload, onDrive }) {
+  const [plusOpen, setPlusOpen] = useState(false);
+  React.useEffect(() => {
+    if (!plusOpen) return;
+    const close = (e) => {
+      if (e.target.closest && e.target.closest('.chat-plus-wrap')) return;
+      setPlusOpen(false);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [plusOpen]);
+  const _doUpload = () => { if (onUpload) onUpload(); else alert('File upload — coming in Phase 11'); setPlusOpen(false); };
+  const _doDrive  = () => { if (onDrive)  onDrive();  else alert('Google Drive — coming in Phase 11'); setPlusOpen(false); };
+  return /*#__PURE__*/React.createElement("div", {
+    className: "chat-plus-wrap",
+    style: { position: 'relative' }
+  },
+    /*#__PURE__*/React.createElement("button", {
+      className: "chat-plus-btn",
+      type: "button",
+      title: "Attach",
+      onClick: () => setPlusOpen(v => !v),
+      "aria-haspopup": "menu",
+      "aria-expanded": plusOpen ? "true" : "false"
+    },
+      /*#__PURE__*/React.createElement("svg", {
+        viewBox: "0 0 24 24", fill: "none", stroke: "currentColor",
+        strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round",
+        width: 16, height: 16
+      },
+        /*#__PURE__*/React.createElement("line", { x1: 12, y1: 5, x2: 12, y2: 19 }),
+        /*#__PURE__*/React.createElement("line", { x1: 5, y1: 12, x2: 19, y2: 12 })
+      )
+    ),
+    plusOpen && /*#__PURE__*/React.createElement("div", {
+      className: "chat-plus-popover",
+      role: "menu",
+      onClick: (e) => e.stopPropagation()
+    },
+      /*#__PURE__*/React.createElement("button", {
+        className: "chat-plus-item", type: "button",
+        onClick: _doUpload
+      },
+        /*#__PURE__*/React.createElement("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", width: 14, height: 14, style: { flexShrink: 0 } },
+          /*#__PURE__*/React.createElement("path", { d: "M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" })
+        ),
+        /*#__PURE__*/React.createElement("span", { className: "chat-plus-label" }, "Upload a file"),
+        /*#__PURE__*/React.createElement("span", { className: "chat-plus-sub" }, "local")
+      ),
+      /*#__PURE__*/React.createElement("button", {
+        className: "chat-plus-item", type: "button",
+        onClick: _doDrive
+      },
+        /*#__PURE__*/React.createElement("svg", { viewBox: "0 0 87.3 78", width: 14, height: 14, style: { flexShrink: 0 } },
+          /*#__PURE__*/React.createElement("path", { d: "m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z", fill: "#0066da" }),
+          /*#__PURE__*/React.createElement("path", { d: "m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z", fill: "#00ac47" }),
+          /*#__PURE__*/React.createElement("path", { d: "m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z", fill: "#ea4335" }),
+          /*#__PURE__*/React.createElement("path", { d: "m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z", fill: "#00832d" }),
+          /*#__PURE__*/React.createElement("path", { d: "m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z", fill: "#2684fc" }),
+          /*#__PURE__*/React.createElement("path", { d: "m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 27h27.45c0-1.55-.4-3.1-1.2-4.5z", fill: "#ffba00" })
+        ),
+        /*#__PURE__*/React.createElement("span", { className: "chat-plus-label" }, "Google Drive"),
+        /*#__PURE__*/React.createElement("span", { className: "chat-plus-sub" }, "connected")
+      ),
+      /*#__PURE__*/React.createElement("button", {
+        className: "chat-plus-item", type: "button",
+        onClick: () => { alert('Screenshot capture \u2014 coming in Phase 11'); setPlusOpen(false); }
+      },
+        /*#__PURE__*/React.createElement("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", width: 14, height: 14, style: { flexShrink: 0 } },
+          /*#__PURE__*/React.createElement("path", { d: "M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" }),
+          /*#__PURE__*/React.createElement("circle", { cx: 12, cy: 13, r: 4 })
+        ),
+        /*#__PURE__*/React.createElement("span", { className: "chat-plus-label" }, "Take a screenshot"),
+        /*#__PURE__*/React.createElement("span", { className: "chat-plus-sub" }, "local")
+      ),
+      /*#__PURE__*/React.createElement("div", { className: "chat-plus-divider" }),
+      /*#__PURE__*/React.createElement("button", {
+        className: "chat-plus-item disabled", type: "button", disabled: true
+      },
+        /*#__PURE__*/React.createElement("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", width: 14, height: 14, style: { flexShrink: 0 } },
+          /*#__PURE__*/React.createElement("circle", { cx: 12, cy: 12, r: 3 }),
+          /*#__PURE__*/React.createElement("path", { d: "M3 12a9 9 0 0 1 18 0M3 12a9 9 0 0 0 18 0" })
+        ),
+        /*#__PURE__*/React.createElement("span", { className: "chat-plus-label" }, "Attach an audience"),
+        /*#__PURE__*/React.createElement("span", { className: "chat-plus-sub" }, "soon")
+      ),
+      /*#__PURE__*/React.createElement("button", {
+        className: "chat-plus-item disabled", type: "button", disabled: true
+      },
+        /*#__PURE__*/React.createElement("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", width: 14, height: 14, style: { flexShrink: 0 } },
+          /*#__PURE__*/React.createElement("path", { d: "M3 3v18h18" }),
+          /*#__PURE__*/React.createElement("path", { d: "M7 14l4-4 4 4 5-5" })
+        ),
+        /*#__PURE__*/React.createElement("span", { className: "chat-plus-label" }, "Pull from BigQuery"),
+        /*#__PURE__*/React.createElement("span", { className: "chat-plus-sub" }, "soon")
+      ),
+      /*#__PURE__*/React.createElement("button", {
+        className: "chat-plus-item disabled", type: "button", disabled: true
+      },
+        /*#__PURE__*/React.createElement("svg", { viewBox: "0 0 24 24", width: 14, height: 14, style: { flexShrink: 0 } },
+          /*#__PURE__*/React.createElement("path", { d: "M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5", fill: "none", stroke: "#29B5E8", strokeWidth: 1.6, strokeLinejoin: "round" })
+        ),
+        /*#__PURE__*/React.createElement("span", { className: "chat-plus-label" }, "Query Snowflake"),
+        /*#__PURE__*/React.createElement("span", { className: "chat-plus-sub" }, "soon")
+      ),
+      /*#__PURE__*/React.createElement("button", {
+        className: "chat-plus-item disabled", type: "button", disabled: true
+      },
+        /*#__PURE__*/React.createElement("svg", { viewBox: "0 0 24 24", width: 14, height: 14, style: { flexShrink: 0 } },
+          /*#__PURE__*/React.createElement("path", { d: "M12 2L3 7v10l9 5 9-5V7l-9-5zm0 2.2l6.8 3.8L12 11.8 5.2 8l6.8-3.8zM5 9.3l6.2 3.5v7.2L5 16.5V9.3zm14 0v7.2l-6.2 3.5v-7.2L19 9.3z", fill: "#FF3621" })
+        ),
+        /*#__PURE__*/React.createElement("span", { className: "chat-plus-label" }, "Load from Databricks"),
+        /*#__PURE__*/React.createElement("span", { className: "chat-plus-sub" }, "soon")
+      )
+    )
+  );
+}
+
 function Chatbot({
   systemPrompt,
   samples,
@@ -4303,16 +4426,6 @@ function Chatbot({
   const [msgs, setMsgs] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [plusOpen, setPlusOpen] = useState(false);
-  React.useEffect(() => {
-    if (!plusOpen) return;
-    const close = (e) => {
-      if (e.target.closest && e.target.closest('.chat-plus-wrap')) return;
-      setPlusOpen(false);
-    };
-    document.addEventListener('mousedown', close);
-    return () => document.removeEventListener('mousedown', close);
-  }, [plusOpen]);
   const [popout, setPopout] = useState(null);
   const endRef = useRef(null);
   useEffect(() => {
@@ -4407,75 +4520,7 @@ function Chatbot({
     disabled: loading
   }), /*#__PURE__*/React.createElement("div", {
     className: "chat-bar"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "chat-plus-wrap",
-    style: { position: 'relative' }
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "chat-plus-btn",
-    type: "button",
-    title: "Attach",
-    onClick: () => setPlusOpen(v => !v),
-    "aria-haspopup": "menu",
-    "aria-expanded": plusOpen ? "true" : "false"
-  }, /*#__PURE__*/React.createElement("svg", {
-    viewBox: "0 0 24 24", fill: "none", stroke: "currentColor",
-    strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round",
-    width: 16, height: 16
-  }, /*#__PURE__*/React.createElement("line", { x1: 12, y1: 5, x2: 12, y2: 19 }),
-     /*#__PURE__*/React.createElement("line", { x1: 5, y1: 12, x2: 19, y2: 12 }))),
-    plusOpen && /*#__PURE__*/React.createElement("div", {
-      className: "chat-plus-popover",
-      role: "menu",
-      onClick: (e) => e.stopPropagation()
-    },
-      /*#__PURE__*/React.createElement("button", {
-        className: "chat-plus-item", type: "button",
-        onClick: () => { alert('File upload — coming in Phase 11'); setPlusOpen(false); }
-      },
-        /*#__PURE__*/React.createElement("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", width: 14, height: 14, style: { flexShrink: 0 } },
-          /*#__PURE__*/React.createElement("path", { d: "M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" })
-        ),
-        /*#__PURE__*/React.createElement("span", { className: "chat-plus-label" }, "Upload a file"),
-        /*#__PURE__*/React.createElement("span", { className: "chat-plus-sub" }, "local")
-      ),
-      /*#__PURE__*/React.createElement("button", {
-        className: "chat-plus-item", type: "button",
-        onClick: () => { alert('Google Drive — coming in Phase 11'); setPlusOpen(false); }
-      },
-        /*#__PURE__*/React.createElement("svg", { viewBox: "0 0 87.3 78", width: 14, height: 14, style: { flexShrink: 0 } },
-          /*#__PURE__*/React.createElement("path", { d: "m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z", fill: "#0066da" }),
-          /*#__PURE__*/React.createElement("path", { d: "m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z", fill: "#00ac47" }),
-          /*#__PURE__*/React.createElement("path", { d: "m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z", fill: "#ea4335" }),
-          /*#__PURE__*/React.createElement("path", { d: "m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z", fill: "#00832d" }),
-          /*#__PURE__*/React.createElement("path", { d: "m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z", fill: "#2684fc" }),
-          /*#__PURE__*/React.createElement("path", { d: "m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 27h27.45c0-1.55-.4-3.1-1.2-4.5z", fill: "#ffba00" })
-        ),
-        /*#__PURE__*/React.createElement("span", { className: "chat-plus-label" }, "Google Drive"),
-        /*#__PURE__*/React.createElement("span", { className: "chat-plus-sub" }, "connected")
-      ),
-      /*#__PURE__*/React.createElement("div", { className: "chat-plus-divider" }),
-      /*#__PURE__*/React.createElement("button", {
-        className: "chat-plus-item disabled", type: "button", disabled: true
-      },
-        /*#__PURE__*/React.createElement("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", width: 14, height: 14, style: { flexShrink: 0 } },
-          /*#__PURE__*/React.createElement("circle", { cx: 12, cy: 12, r: 3 }),
-          /*#__PURE__*/React.createElement("path", { d: "M3 12a9 9 0 0 1 18 0M3 12a9 9 0 0 0 18 0" })
-        ),
-        /*#__PURE__*/React.createElement("span", { className: "chat-plus-label" }, "Attach an audience"),
-        /*#__PURE__*/React.createElement("span", { className: "chat-plus-sub" }, "soon")
-      ),
-      /*#__PURE__*/React.createElement("button", {
-        className: "chat-plus-item disabled", type: "button", disabled: true
-      },
-        /*#__PURE__*/React.createElement("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", width: 14, height: 14, style: { flexShrink: 0 } },
-          /*#__PURE__*/React.createElement("path", { d: "M3 3v18h18" }),
-          /*#__PURE__*/React.createElement("path", { d: "M7 14l4-4 4 4 5-5" })
-        ),
-        /*#__PURE__*/React.createElement("span", { className: "chat-plus-label" }, "Pull from BigQuery"),
-        /*#__PURE__*/React.createElement("span", { className: "chat-plus-sub" }, "soon")
-      )
-    )
-  ), /*#__PURE__*/React.createElement("div", { style: { flex: 1 } }), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(ChatPlusPopover, null), /*#__PURE__*/React.createElement("div", { style: { flex: 1 } }), /*#__PURE__*/React.createElement("div", {
     className: "chat-model-pill"
   }, "Sonnet 4 ", /*#__PURE__*/React.createElement("svg", {
     width: 10, height: 10, viewBox: "0 0 24 24", fill: "none",
@@ -16399,20 +16444,19 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
       onKeyDown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCampaignBuilderOpen(true); window.scrollTo(0, 0); } },
       style: {
         padding: '14px 14px',
-        background: 'linear-gradient(135deg, rgba(167,139,250,0.26), rgba(99,102,241,0.22))',
-        borderBottom: '1px solid rgba(167,139,250,0.28)',
-        boxShadow: 'inset 0 1px 0 rgba(167,139,250,0.22)',
+        background: 'var(--white)',
+        borderBottom: '1px solid rgba(14,14,26,.08)',
         display: 'flex',
         alignItems: 'center',
         gap: 12,
         cursor: 'pointer',
         transition: 'background .15s, box-shadow .15s'
       },
-      onMouseEnter: e => { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(167,139,250,0.36), rgba(99,102,241,0.32))'; e.currentTarget.style.boxShadow = 'inset 0 1px 0 rgba(167,139,250,0.35), 0 0 0 1px rgba(167,139,250,0.2) inset'; },
-      onMouseLeave: e => { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(167,139,250,0.26), rgba(99,102,241,0.22))'; e.currentTarget.style.boxShadow = 'inset 0 1px 0 rgba(167,139,250,0.22)'; }
+      onMouseEnter: e => { e.currentTarget.style.background = '#FFFFFF'; e.currentTarget.style.boxShadow = '0 0 0 1px rgba(167,139,250,.55), 0 2px 14px rgba(167,139,250,.25)'; },
+      onMouseLeave: e => { e.currentTarget.style.background = 'var(--white)'; e.currentTarget.style.boxShadow = 'none'; }
     },
       /*#__PURE__*/React.createElement("div", {
-        style: { width: 34, height: 34, borderRadius: 9, background: 'var(--purple)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0 }
+        style: { width: 34, height: 34, borderRadius: 9, background: 'linear-gradient(135deg, var(--purple), var(--indigo, #6366F1))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0, boxShadow: '0 2px 8px rgba(99,102,241,.35)' }
       },
         /*#__PURE__*/React.createElement("svg", {
           width: 15, height: 15, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2.6, strokeLinecap: "round"
@@ -16422,8 +16466,8 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
         )
       ),
       /*#__PURE__*/React.createElement("div", { style: { flex: 1, minWidth: 0 } },
-        /*#__PURE__*/React.createElement("div", { style: { fontSize: 14, fontWeight: 800, color: 'var(--text)' } }, "New Campaign"),
-        /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2 } }, "Guided setup \xB7 audience \u2192 creative \u2192 launch")
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 14, fontWeight: 800, color: '#0E0E1A' } }, "New Campaign"),
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: 'rgba(14,14,26,.60)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2 } }, "Guided setup \xB7 audience \u2192 creative \u2192 launch")
       ),
       /*#__PURE__*/React.createElement("span", { style: { color: 'var(--purple)', fontSize: 18, fontWeight: 700, flexShrink: 0 } }, "\u203A")
     ),
@@ -17688,15 +17732,15 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
           }, a.id)
         )
       );
-      // Phase-UX-3 · wrap layout — first 2 cards stack beside chat (matching composer height), rest flow full-width below
+      // Phase-UX-3 · wrap layout — first 2 cards stack beside chat (chat fills to match right-col height), rest flow full-width below
       const _rightCol = _audFiltered.slice(0, 2);
       const _belowCards = _audFiltered.slice(2);
       return /*#__PURE__*/React.createElement(React.Fragment, null,
         /*#__PURE__*/React.createElement("div", {
-          style: { display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 10, alignItems: 'start' }
+          style: { display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 10, alignItems: 'stretch' }
         },
           /*#__PURE__*/React.createElement("div", {
-            style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 10, overflow: 'hidden' }
+            style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 10, overflow: 'hidden', display: 'flex', flexDirection: 'column' }
           },
             /*#__PURE__*/React.createElement("div", {
               style: { padding: '12px 16px', borderBottom: '1px solid var(--bdr)', display: 'flex', alignItems: 'center', gap: 10, background: 'var(--card-alt)' }
@@ -17705,7 +17749,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
               /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, fontWeight: 600, color: 'var(--text)' } }, "Describe the audience you want"),
               /*#__PURE__*/React.createElement("div", { style: { marginLeft: 'auto', fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace' } }, "Natural language \u00b7 AI-resolved \u00b7 clean-room gated")
             ),
-            /*#__PURE__*/React.createElement("div", { style: { padding: 14 } },
+            /*#__PURE__*/React.createElement("div", { style: { padding: 14, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 } },
               /*#__PURE__*/React.createElement(Chatbot, {
                 systemPrompt: CMN_CHATBOT_SYS,
                 samples: [
@@ -17862,42 +17906,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
         /*#__PURE__*/React.createElement("div", {
           style: { display: 'flex', alignItems: 'center', gap: 6, background: 'var(--card-alt2)', border: '1px solid var(--bdr)', borderRadius: 10, padding: '4px 4px 4px 6px', transition: 'border-color .15s' }
         },
-          /*#__PURE__*/React.createElement("button", {
-            onClick: () => setCrvUploadModal(true),
-            "aria-label": "Upload file",
-            title: "Upload file",
-            style: { width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', borderRadius: 6, color: 'var(--slate)', cursor: 'pointer', flexShrink: 0, padding: 0 },
-            onMouseEnter: e => { e.currentTarget.style.background = 'rgba(99,102,241,.12)'; e.currentTarget.style.color = 'var(--cyan-pale)'; },
-            onMouseLeave: e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--slate)'; }
-          },
-            /*#__PURE__*/React.createElement("svg", {
-              width: 14, height: 14, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round"
-            },
-              /*#__PURE__*/React.createElement("path", { d: "M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" })
-            )
-          ),
-          /*#__PURE__*/React.createElement("button", {
-            onClick: () => alert('Drive integration coming in Phase 11'),
-            "aria-label": "Attach from Drive",
-            title: "Attach from Drive",
-            style: { width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', borderRadius: 6, cursor: 'pointer', flexShrink: 0, padding: 0 },
-            onMouseEnter: e => { e.currentTarget.style.background = 'rgba(99,102,241,.12)'; },
-            onMouseLeave: e => { e.currentTarget.style.background = 'transparent'; }
-          },
-            /*#__PURE__*/React.createElement("svg", {
-              viewBox: "0 0 87.3 78", width: 14, height: 14
-            },
-              /*#__PURE__*/React.createElement("path", { d: "m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z", fill: "#0066da" }),
-              /*#__PURE__*/React.createElement("path", { d: "m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z", fill: "#00ac47" }),
-              /*#__PURE__*/React.createElement("path", { d: "m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z", fill: "#ea4335" }),
-              /*#__PURE__*/React.createElement("path", { d: "m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z", fill: "#00832d" }),
-              /*#__PURE__*/React.createElement("path", { d: "m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z", fill: "#2684fc" }),
-              /*#__PURE__*/React.createElement("path", { d: "m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 27h27.45c0-1.55-.4-3.1-1.2-4.5z", fill: "#ffba00" })
-            )
-          ),
-          /*#__PURE__*/React.createElement("span", {
-            style: { width: 1, height: 16, background: 'var(--bdr)', margin: '0 4px 0 2px', flexShrink: 0 }
-          }),
+          /*#__PURE__*/React.createElement(ChatPlusPopover, { onUpload: () => setCrvUploadModal(true) }),
           /*#__PURE__*/React.createElement("input", {
             type: "text",
             value: crvChatInput,
