@@ -8747,7 +8747,10 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
       borderRadius: 10,
       background: 'var(--card)',
       boxShadow: 'var(--shadow)',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      height: 'calc(100vh - 220px)',
+      minHeight: 520,
+      maxHeight: 'calc(100vh - 140px)'
     }
   }, /*#__PURE__*/React.createElement(Chatbot, {
     systemPrompt: AUDIENCE_SYS,
@@ -13245,7 +13248,10 @@ function MeasurementIntro({
       borderRadius: 10,
       background: 'var(--card)',
       boxShadow: 'var(--shadow)',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      height: 'calc(100vh - 220px)',
+      minHeight: 520,
+      maxHeight: 'calc(100vh - 140px)'
     }
   }, /*#__PURE__*/React.createElement(Chatbot, {
     systemPrompt: liveMzSys,
@@ -14677,7 +14683,10 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
       borderRadius: 10,
       background: 'var(--card)',
       boxShadow: 'var(--shadow)',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      height: 'calc(100vh - 220px)',
+      minHeight: 520,
+      maxHeight: 'calc(100vh - 140px)'
     }
   }, /*#__PURE__*/React.createElement(Chatbot, {
     // Phase 23 — landing chatbot uses narrow-intent router only.
@@ -17600,7 +17609,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     ];
 
     const _chatColumn = /*#__PURE__*/React.createElement("div", {
-      style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 9, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 460 }
+      style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 9, display: 'flex', flexDirection: 'column', overflow: 'hidden', height: 560 }
     },
       /*#__PURE__*/React.createElement("div", {
         style: { padding: '10px 14px', borderBottom: '1px solid var(--bdr-soft)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--card-alt)' }
@@ -17614,7 +17623,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
         }, "Design with AI")
       ),
       /*#__PURE__*/React.createElement("div", {
-        style: { flex: 1, padding: 12, display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto', minHeight: 280, maxHeight: 400 }
+        style: { flex: 1, padding: 12, display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'auto', minHeight: 0 }
       },
         crvChatHistory.length === 0 && /*#__PURE__*/React.createElement("div", {
           style: { display: 'flex', flexDirection: 'column', gap: 10, margin: 'auto 0', padding: '14px 4px' }
@@ -17623,7 +17632,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
           _crvSampleChips.map((chip, i) => /*#__PURE__*/React.createElement("button", {
             key: i,
             onClick: () => _submitCrvPrompt(chip),
-            style: { textAlign: 'left', background: 'rgba(99,102,241,.06)', border: '1px solid var(--bdr)', borderRadius: 10, padding: '10px 13px', fontSize: 12, color: 'var(--text)', cursor: 'pointer', fontFamily: 'inherit', transition: 'background .15s' },
+            style: { textAlign: 'left', background: 'rgba(99,102,241,.06)', border: '1px solid var(--bdr)', borderRadius: 10, padding: '10px 13px', fontSize: 13, color: 'var(--text)', cursor: 'pointer', fontFamily: 'inherit', transition: 'background .15s' },
             onMouseEnter: e => e.currentTarget.style.background = 'rgba(99,102,241,.15)',
             onMouseLeave: e => e.currentTarget.style.background = 'rgba(99,102,241,.06)'
           }, chip))
@@ -17635,7 +17644,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
           border: '1px solid ' + (m.role === 'user' ? 'var(--bdr)' : m.role === 'sys' ? 'rgba(167,139,250,.25)' : 'var(--bdr-soft)'),
           borderRadius: m.role === 'user' ? '9px 9px 3px 9px' : '9px 9px 9px 3px',
           padding: '8px 11px',
-          fontSize: 12,
+          fontSize: 14,
           lineHeight: 1.5,
           color: m.role === 'sys' ? 'var(--purple)' : m.role === 'user' ? 'var(--text)' : 'var(--slate)',
           maxWidth: m.role === 'user' ? '82%' : '92%',
@@ -17656,7 +17665,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
             setCrvChatHistory(prev => [...prev, { role: 'sys', text: 'Created ' + act.variants.length + ' AI variants \u00b7 saved to library as drafts' }]);
           }
         },
-        style: { background: 'var(--cyan)', color: '#fff', border: 'none', borderRadius: 5, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }
+        style: { background: 'var(--cyan)', color: '#fff', border: 'none', borderRadius: 5, padding: '5px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }
       }, act.label))))) ),
       crvChatBusy && /*#__PURE__*/React.createElement("div", {
         style: { padding: '6px 14px', fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', borderTop: '1px solid var(--bdr-soft)' }
@@ -17709,7 +17718,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
             onChange: e => setCrvChatInput(e.target.value),
             onKeyDown: e => { if (e.key === 'Enter') _submitCrvPrompt(crvChatInput); },
             placeholder: _activeCreative ? ("Describe a change to " + _activeCreative.name + "\u2026") : "Describe a creative, or click a library card to load one\u2026",
-            style: { flex: 1, background: 'transparent', border: 'none', padding: '8px 0', fontSize: 13, color: 'var(--text)', outline: 'none', fontFamily: 'inherit' }
+            style: { flex: 1, background: 'transparent', border: 'none', padding: '8px 0', fontSize: 14, color: 'var(--text)', outline: 'none', fontFamily: 'inherit' }
           }),
           /*#__PURE__*/React.createElement("button", {
             onClick: () => _submitCrvPrompt(crvChatInput),
@@ -17738,7 +17747,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     );
 
     const _canvasColumn = /*#__PURE__*/React.createElement("div", {
-      style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 9, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 460 }
+      style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 9, display: 'flex', flexDirection: 'column', overflow: 'hidden', height: 560 }
     },
       /*#__PURE__*/React.createElement("div", {
         style: { padding: '10px 14px', borderBottom: '1px solid var(--bdr-soft)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--card-alt)' }
