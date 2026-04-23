@@ -451,7 +451,7 @@ body.v11-sidebar-open .v11-sidebar { transform: translateX(0); }
 }
 /* Override Chatbot interior styling for the v11 home context */
 .v11-home-chat-wrap .home-chat-wrap {
-  height: auto; max-height: calc(100vh - 240px);
+  height: auto; max-height: calc(100vh - 340px); min-height: 300px;
   border: 1px solid rgba(99,102,241,.28);
   border-radius: 14px;
   background: rgba(14,14,34,.65);
@@ -17959,67 +17959,53 @@ function HomeScreen({
     color: '#F59E0B',
     bg: 'rgba(245,158,11,.08)'
   }];
-  function HomeResultRenderer(data, setPopout) {
+  function HomeResultRenderer(data, send) {
     if (!data || !data.text && !data.error) return null;
     const nav = data.nav || null;
-    const label = data.navLabel || 'Explore →';
+    const navLabel = data.navLabel || null;
+    // followups: prefer AI-supplied, fall back to deriving one chip from legacy nav/navLabel
+    const followups = Array.isArray(data.followups) && data.followups.length > 0
+      ? data.followups
+      : (nav && navLabel ? [{ label: 'Go to ' + navLabel, nav: nav }] : []);
+    const handleChip = (fu) => {
+      if (fu.nav) { setScreen(fu.nav); window.scrollTo(0, 0); }
+      else if (fu.sendText && typeof send === 'function') { send(fu.sendText); }
+    };
     return /*#__PURE__*/React.createElement("div", {
-      className: "bubble",
-      style: {
-        flex: 1,
-        padding: '4px 0'
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        background: 'var(--card)',
-        border: '1px solid var(--bdr)',
-        borderRadius: 10,
-        overflow: 'hidden',
-        boxShadow: 'var(--shadow)'
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        padding: '16px 18px',
-        fontSize: 15,
-        lineHeight: 1.7,
-        color: 'var(--text)'
-      }
-    }, data.text), /*#__PURE__*/React.createElement("div", {
-      style: {
-        padding: '12px 18px',
-        borderTop: '1px solid var(--bdr)',
-        background: 'var(--card-alt)',
-        display: 'flex',
-        justifyContent: 'flex-end',
-        gap: 8
-      }
-    }, nav && /*#__PURE__*/React.createElement("button", {
-      onClick: () => { setScreen(nav); window.scrollTo(0, 0); },
-      style: {
-        padding: '9px 20px',
-        background: 'var(--navy)',
-        color: '#fff',
-        border: 'none',
-        borderRadius: 8,
-        fontSize: 13,
-        fontWeight: 700,
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 7
-      }
-    }, label, /*#__PURE__*/React.createElement("svg", {
-      width: "12",
-      height: "12",
-      viewBox: "0 0 16 16",
-      fill: "none"
-    }, /*#__PURE__*/React.createElement("path", {
-      d: "M3 8h10M9 4l4 4-4 4",
-      stroke: "white",
-      strokeWidth: "1.6",
-      strokeLinecap: "round",
-      strokeLinejoin: "round"
-    }))))));
+      style: { flex: 1, display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0 }
+    },
+      /*#__PURE__*/React.createElement("div", {
+        style: {
+          background: 'rgba(22,22,58,.65)',
+          border: '1px solid rgba(99,102,241,.22)',
+          borderRadius: '4px 14px 14px 14px',
+          padding: '14px 18px',
+          fontSize: 16,
+          lineHeight: 1.65,
+          color: data.error ? 'var(--red)' : 'var(--text)',
+          whiteSpace: 'pre-wrap'
+        }
+      }, data.text || data.error),
+      followups.length > 0 && /*#__PURE__*/React.createElement("div", {
+        style: { display: 'flex', gap: 6, flexWrap: 'wrap', paddingTop: 2 }
+      }, followups.map((fu, i) => /*#__PURE__*/React.createElement("button", {
+        key: i,
+        onClick: () => handleChip(fu),
+        style: {
+          fontSize: 12,
+          color: 'var(--cyan-pale)',
+          background: 'rgba(99,102,241,.08)',
+          border: '1px solid var(--bdr)',
+          padding: '5px 11px',
+          borderRadius: 14,
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+          transition: 'all .15s'
+        },
+        onMouseEnter: e => { e.currentTarget.style.background = 'rgba(99,102,241,.15)'; e.currentTarget.style.borderColor = 'var(--cyan)'; },
+        onMouseLeave: e => { e.currentTarget.style.background = 'rgba(99,102,241,.08)'; e.currentTarget.style.borderColor = 'var(--bdr)'; }
+      }, fu.label)))
+    );
   }
   // v11 — chatbot-first Home: kicker + greeting + centered chatbot + 4 context pills
   const PILLS = [
@@ -18072,7 +18058,7 @@ function HomeScreen({
           exploreScreen: () => { setScreen('identity'); window.scrollTo(0, 0); },
           samples: HOME_SAMPLES,
           placeholder: "Ask about identity, measurement, campaigns, or partner activation…",
-          resultRenderer: d => HomeResultRenderer(d)
+          resultRenderer: (d, send) => HomeResultRenderer(d, send)
         })
       )
     ),
