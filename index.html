@@ -15887,7 +15887,13 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
   }, selectedBuildAudienceIds.length, " selected")),
   /*#__PURE__*/React.createElement("div", {
     style: { maxHeight: 260, overflowY: 'auto', padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 8 }
-  }, merchantAudiences.map(a => {
+  }, [...merchantAudiences].sort((a, b) => {
+    const aSelected = selectedBuildAudienceIds.includes(a.id);
+    const bSelected = selectedBuildAudienceIds.includes(b.id);
+    if (aSelected && !bSelected) return -1;
+    if (!aSelected && bSelected) return 1;
+    return 0;
+  }).map(a => {
     const isSelected = selectedBuildAudienceIds.includes(a.id);
     return /*#__PURE__*/React.createElement("div", {
       key: a.id,
@@ -18772,29 +18778,23 @@ function V11Rail({ screen, navigate, sidebarOpen, onToggleSidebar, onNewChat, on
 
     /*#__PURE__*/React.createElement("div", { className: "v11-rail-divider" }),
 
-    // Section cluster — Identity / Measurement / Marketers / Partners
-    // When Partner (cmn) is active, FI-internal sections show as locked/dimmed
+    // Section cluster — hide FI-internal sections entirely when Partner (cmn) is active.
+    // Full role-based hide ships with Phase 9 Supabase auth; this is the interim fix.
     sections.map(s => {
       const isPartnerView = screen === 'cmn';
       const isFIOnly = s.id !== 'cmn';
-      const locked = isPartnerView && isFIOnly;
+      if (isPartnerView && isFIOnly) return null; // hidden — merchant has no access
       return /*#__PURE__*/React.createElement("div", {
         key: s.id,
-        className: "v11-rail-icon" + (screen === s.id ? ' active section-' + s.section : '') + (locked ? ' rail-locked' : ''),
-        "data-label": locked ? s.label + ' — FI access only' : s.label,
-        onClick: locked ? undefined : () => navigate(s.id),
+        className: "v11-rail-icon" + (screen === s.id ? ' active section-' + s.section : ''),
+        "data-label": s.label,
+        onClick: () => navigate(s.id),
         role: "button",
-        tabIndex: locked ? -1 : 0,
-        "aria-label": locked ? s.label + ' (restricted)' : s.label,
+        tabIndex: 0,
+        "aria-label": s.label,
         "aria-current": screen === s.id ? 'page' : undefined,
-        style: locked ? { opacity: 0.28, cursor: 'not-allowed', position: 'relative' } : {},
-        onKeyDown: locked ? undefined : (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(s.id); } }
-      }, s.icon, locked && /*#__PURE__*/React.createElement("div", {
-        style: { position: 'absolute', bottom: 3, right: 3, width: 10, height: 10, background: 'var(--bdr)', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }
-      }, /*#__PURE__*/React.createElement("svg", { width: 7, height: 7, viewBox: "0 0 24 24", fill: "none", stroke: "var(--slate)", strokeWidth: 2.5 },
-        /*#__PURE__*/React.createElement("rect", { x: 3, y: 11, width: 18, height: 11, rx: 2, ry: 2 }),
-        /*#__PURE__*/React.createElement("path", { d: "M7 11V7a5 5 0 0 1 10 0v4" })
-      )));
+        onKeyDown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(s.id); } }
+      }, s.icon);
     }),
 
     /*#__PURE__*/React.createElement("div", { className: "v11-rail-spacer" }),
