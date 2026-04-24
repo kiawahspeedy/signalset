@@ -615,6 +615,9 @@ html:not(.screen-transitioning) body {
    This override anchors the sample-chips + composer to the bottom so the
    bottom inset matches the adjacent cards' ~14px card padding. */
 .chat-in-card-stretched .chat-wrap-empty { justify-content: flex-end; padding-bottom: 4px; }
+/* Card-embedded chats must never go fixed — override the viewport-footer position */
+.chat-in-card-stretched .chat-shell { position: static !important; transform: none !important; width: 100% !important; bottom: auto !important; left: auto !important; z-index: auto !important; }
+.chat-in-card-stretched .chat-wrap-active .chat-messages { padding-bottom: 0 !important; }
 .chat-wrap-active .chat-shell {
   order: 2;
   position: fixed;
@@ -6923,7 +6926,10 @@ function CreativeBuilderChat({ onTriggerBuilder }) {
       const data = await res.json();
       const raw = data.content?.[0]?.text || '';
       let parsed;
-      try { parsed = JSON.parse(raw.replace(/```json|```/g, '').trim()); } catch(e) { parsed = { text: raw || 'Something went wrong — please try again.' }; }
+      try { parsed = JSON.parse(raw.replace(/```json|```/g, '').trim()); } catch(e) {
+        const jm = raw.match(/\{[\s\S]*\}/); if (jm) { try { parsed = JSON.parse(jm[0]); } catch(e2) { parsed = null; } }
+        if (!parsed) parsed = { text: raw || 'Something went wrong — please try again.' };
+      }
       if (typeof parsed === 'string') parsed = { text: parsed };
       if (parsed.beats && Array.isArray(parsed.beats) && parsed.beats.length) {
         setMsgs(m => m.slice(0, -1));
@@ -7686,7 +7692,10 @@ function AudienceBuilderChat({ onTriggerBuilder }) {
       }).then(function(r) { return r.json(); }).then(function(data) {
         var raw = (data.content && data.content[0] && data.content[0].text) || '';
         var parsed;
-        try { parsed = JSON.parse(raw.replace(/```json|```/g, '').trim()); } catch(e) { parsed = { text: raw || 'Something went wrong — please try again.' }; }
+        try { parsed = JSON.parse(raw.replace(/```json|```/g, '').trim()); } catch(e) {
+          var jm = raw.match(/\{[\s\S]*\}/); if (jm) { try { parsed = JSON.parse(jm[0]); } catch(e2) { parsed = null; } }
+          if (!parsed) parsed = { text: raw || 'Something went wrong — please try again.' };
+        }
         if (typeof parsed === 'string') parsed = { text: parsed };
         if (parsed.beats && Array.isArray(parsed.beats) && parsed.beats.length) {
           setMsgs(function(m) { return m.slice(0, -1); });
@@ -7879,7 +7888,10 @@ function JourneyBuilderChat({ onTriggerBuilder }) {
       }).then(function(r) { return r.json(); }).then(function(data) {
         var raw = (data.content && data.content[0] && data.content[0].text) || '';
         var parsed;
-        try { parsed = JSON.parse(raw.replace(/```json|```/g, '').trim()); } catch(e) { parsed = { text: raw || 'Something went wrong — please try again.' }; }
+        try { parsed = JSON.parse(raw.replace(/```json|```/g, '').trim()); } catch(e) {
+          var jm = raw.match(/\{[\s\S]*\}/); if (jm) { try { parsed = JSON.parse(jm[0]); } catch(e2) { parsed = null; } }
+          if (!parsed) parsed = { text: raw || 'Something went wrong — please try again.' };
+        }
         if (typeof parsed === 'string') parsed = { text: parsed };
         if (parsed.beats && Array.isArray(parsed.beats) && parsed.beats.length) {
           setMsgs(function(m) { return m.slice(0, -1); });
@@ -8125,7 +8137,7 @@ function AudienceBuilderLightbox({ open, onClose, context, onSave }) {
               style: { flex: 1, padding: '14px', borderRadius: 10, border: '2px solid var(--bdr)', background: 'var(--bg)', cursor: 'pointer', textAlign: 'center', transition: 'all .15s' },
               onClick: function() { up('intent', 'reach'); }
             },
-              React.createElement('div', { style: { marginBottom: 8, display: 'flex', justifyContent: 'center' } }, Icon('antenna', 28, 'var(--navy)', 1.5)),
+              React.createElement('div', { style: { marginBottom: 8, display: 'flex', justifyContent: 'center' } }, Icon('antenna', 28, 'var(--indigo)', 1.5)),
               React.createElement('div', { style: { fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 4 } }, 'Maximum Reach'),
               React.createElement('div', { style: { fontSize: 11, color: 'var(--slate)', lineHeight: 1.4 } }, 'Broad universe, 1\u20133 qualifiers, high volume \u2014 best for awareness and new acquisition pools')
             ),
@@ -8133,7 +8145,7 @@ function AudienceBuilderLightbox({ open, onClose, context, onSave }) {
               style: { flex: 1, padding: '14px', borderRadius: 10, border: '2px solid var(--bdr)', background: 'var(--bg)', cursor: 'pointer', textAlign: 'center', transition: 'all .15s' },
               onClick: function() { up('intent', 'precision'); }
             },
-              React.createElement('div', { style: { marginBottom: 8, display: 'flex', justifyContent: 'center' } }, Icon('crosshair', 28, 'var(--navy)', 1.5)),
+              React.createElement('div', { style: { marginBottom: 8, display: 'flex', justifyContent: 'center' } }, Icon('crosshair', 28, 'var(--indigo)', 1.5)),
               React.createElement('div', { style: { fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 4 } }, 'Precision Targeting'),
               React.createElement('div', { style: { fontSize: 11, color: 'var(--slate)', lineHeight: 1.4 } }, 'Tighter micro-segment, 4\u20138 qualifiers, higher propensity \u2014 best for efficiency and CVR lift')
             )
@@ -10937,14 +10949,13 @@ function StackedBar({
 const CREATIVE_SYS = `You are the Creative Intelligence Assistant inside The Marketing Desk — a financial institution's AI-powered marketing platform. You guide marketers through building high-performing creatives for credit card campaigns.
 
 CONVERSATION FLOW — follow strictly:
-1. User selects an objective via pill (CVR Lift, Improve ROAS, Boost VTR, Increase CTR) or types their goal. Acknowledge and confirm the campaign context. Return single text, no options.
-2. Return a BEATS response — 4 beats showing the 90-day analysis arriving: (a) "Analyzing 90 days of travel rewards creative performance for [objective]…", (b) "📊 **Format finding:** [Top format] outperforms [other format] by [X]% [metric] for this segment — [specific data point].", (c) "🎯 **Audience insight:** [Segment] responds [X]% better to [message style] vs. [alternative] — [supporting data].", (d) "✅ **Projected lift:** [X–Y]% [metric] with optimized format + message direction. Which format do you want to build?" Put format options in the options field.
-3. Once format confirmed, ask message angle. Return single text + options: Aspiration | Rewards value | Urgency | Cost offset | Something else.
-4. Once angle confirmed, summarize and end with exactly: "Ready to build your creative? Click **Build Creative** below to open the builder." Return single text, no options.
+1. User selects an objective via pill (CVR Lift, Improve ROAS, Boost VTR, Increase CTR) or types their goal. Go IMMEDIATELY to beats analysis — skip any acknowledgment-only turn. Return a BEATS response — 4 beats showing the 90-day analysis arriving: (a) "Analyzing 90 days of travel rewards creative performance for [objective]…", (b) "📊 **Format finding:** [Top format] outperforms [other format] by [X]% [metric] for this segment — [specific data point].", (c) "🎯 **Audience insight:** [Segment] responds [X]% better to [message style] vs. [alternative] — [supporting data].", (d) "✅ **Projected lift:** [X–Y]% [metric] with optimized format + message direction. Which format do you want to build?" Put format options in the options field.
+2. Once format confirmed, ask message angle. Return single text + options: Aspiration | Rewards value | Urgency | Cost offset | Something else.
+3. Once angle confirmed, summarize and end with exactly: "Ready to build your creative? Click **Build Creative** below to open the builder." Return single text, no options.
 
 RULES:
 - Never ask more than one question per turn.
-- Step 4 must include exact phrase: "Ready to build your creative? Click **Build Creative** below to open the builder."
+- Step 3 must include exact phrase: "Ready to build your creative? Click **Build Creative** below to open the builder."
 - For compliance/library questions, answer normally in single text format.
 - You understand Financial Promotions, WCAG 2.1 AA, UDAAP, Fair Lending, TCPA/CAN-SPAM.
 
@@ -10954,7 +10965,7 @@ MODE 1 — Single message:
 {"text": "Your response with **bold** supported", "options": ["Choice 1", "Choice 2"]}
 Omit options when not presenting choices.
 
-MODE 2 — Beats (step 2 analysis only):
+MODE 2 — Beats (step 1 analysis — fires on FIRST user turn):
 {"beats": ["Beat 1", "Beat 2", "Beat 3", "Beat 4"], "options": ["Email HTML 600px", "Display 300×250", "Mobile Push", "CTV 15s", "Email + Display pairing"]}
 Return ONLY valid JSON, no markdown.`;
 const CREATIVE_SAMPLES = ['I want to build a new creative for the travel rewards acquisition campaign', 'Which creative has the best compliance score for a travel rewards offer?', 'Run a full compliance check on the Display 300×250 variant'];
@@ -14411,6 +14422,22 @@ const CMN_CREATIVES = [{
   ctr: '4.4%',
   tags: ['Disclosures ✓', 'Brand ✓', 'WCAG AA ✓', 'Platform ✓'],
   channels: ['CTV :30s', 'CTV :15s', 'Email HTML']
+}, {
+  name: 'Double Miles — Limited Offer',
+  format: 'Display + Push',
+  color: '#10B981',
+  msg: 'Earn double miles on every Meridian booking this month — for Signature cardholders only',
+  ctr: '7.1%',
+  tags: ['Disclosures ✓', 'Rate claim verified ✓', 'WCAG AA ✓'],
+  channels: ['Display 300×250', 'Display 160×600', 'Mobile Push']
+}, {
+  name: 'Airport Lounge Access Upgrade',
+  format: 'Email',
+  color: '#6366F1',
+  msg: 'Your card already comes with lounge access — here\'s how to activate it before your next flight',
+  ctr: '5.8%',
+  tags: ['Disclosures ✓', 'Brand ✓', 'WCAG AA ✓', 'Platform ✓'],
+  channels: ['Email HTML 600px', 'Email Plain Text']
 }];
 const CMN_GEO_DMAS = ['Chicago', 'New York', 'Los Angeles', 'Miami', 'Dallas', 'San Francisco', 'Boston', 'Seattle'];
 const CMN_SEGMENTS = ['Explorers (High Intent)', 'Revelers (Brand Affinity)', 'Luxuriates (Premium)', 'Bask & Chill (Loyalty)'];
@@ -16557,10 +16584,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     }, camp.status === 'active' ? 'Pause' : 'Resume'), /*#__PURE__*/React.createElement("button", {
       className: "btn btn-secondary",
       style: { fontSize: 12, color: 'var(--text)', fontWeight: 600 }
-    }, "Edit"), /*#__PURE__*/React.createElement("button", {
-      className: "btn btn-secondary",
-      style: { fontSize: 12, color: 'var(--text)', fontWeight: 600 },
-      onClick: () => setCmnTab('results')
+    }, "Edit \u270E"), /*#__PURE__*/React.createElement("button", {
     }, "Results \u2197"))), /*#__PURE__*/React.createElement("div", {
       style: { display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }
     }, [['Spend', '$' + camp.spent + 'K', pct + '% of $' + camp.budget + 'K', 'var(--text)'], ['Impressions', (camp.impressions / 1000).toFixed(0) + 'K', '$' + cpm + ' CPM', 'var(--text)'], ['Conversions', camp.conversions.toLocaleString(), '$' + cpa + ' CPA', 'var(--text)'], ['ROAS', camp.roas + '\u00d7', '+' + (camp.roas - 3.8).toFixed(1) + '\u00d7 vs target', 'var(--green)'], ['Lift', '+' + camp.lift + '%', 'vs control', 'var(--green)']].map(kpi => /*#__PURE__*/React.createElement("div", {
@@ -18714,17 +18738,29 @@ function V11Rail({ screen, navigate, sidebarOpen, onToggleSidebar, onNewChat, on
     /*#__PURE__*/React.createElement("div", { className: "v11-rail-divider" }),
 
     // Section cluster — Identity / Measurement / Marketers / Partners
-    sections.map(s => /*#__PURE__*/React.createElement("div", {
-      key: s.id,
-      className: "v11-rail-icon" + (screen === s.id ? ' active section-' + s.section : ''),
-      "data-label": s.label,
-      onClick: () => navigate(s.id),
-      role: "button",
-      tabIndex: 0,
-      "aria-label": s.label,
-      "aria-current": screen === s.id ? 'page' : undefined,
-      onKeyDown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(s.id); } }
-    }, s.icon)),
+    // When Partner (cmn) is active, FI-internal sections show as locked/dimmed
+    sections.map(s => {
+      const isPartnerView = screen === 'cmn';
+      const isFIOnly = s.id !== 'cmn';
+      const locked = isPartnerView && isFIOnly;
+      return /*#__PURE__*/React.createElement("div", {
+        key: s.id,
+        className: "v11-rail-icon" + (screen === s.id ? ' active section-' + s.section : '') + (locked ? ' rail-locked' : ''),
+        "data-label": locked ? s.label + ' — FI access only' : s.label,
+        onClick: locked ? undefined : () => navigate(s.id),
+        role: "button",
+        tabIndex: locked ? -1 : 0,
+        "aria-label": locked ? s.label + ' (restricted)' : s.label,
+        "aria-current": screen === s.id ? 'page' : undefined,
+        style: locked ? { opacity: 0.28, cursor: 'not-allowed', position: 'relative' } : {},
+        onKeyDown: locked ? undefined : (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(s.id); } }
+      }, s.icon, locked && /*#__PURE__*/React.createElement("div", {
+        style: { position: 'absolute', bottom: 3, right: 3, width: 10, height: 10, background: 'var(--bdr)', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }
+      }, /*#__PURE__*/React.createElement("svg", { width: 7, height: 7, viewBox: "0 0 24 24", fill: "none", stroke: "var(--slate)", strokeWidth: 2.5 },
+        /*#__PURE__*/React.createElement("rect", { x: 3, y: 11, width: 18, height: 11, rx: 2, ry: 2 }),
+        /*#__PURE__*/React.createElement("path", { d: "M7 11V7a5 5 0 0 1 10 0v4" })
+      )));
+    }),
 
     /*#__PURE__*/React.createElement("div", { className: "v11-rail-spacer" }),
     /*#__PURE__*/React.createElement("div", { className: "v11-rail-divider" }),
