@@ -18049,51 +18049,31 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     const _previewGrad = _activeCreative ? (_variantGrads[activeVariantIdx] || _activeCreative.grad) : null;
 
     // Shared submit — called by chat input Enter key, send button, and sample chips.
-    const _submitCrvPrompt = async (q) => {
+    const _submitCrvPrompt = (q) => {
       q = (q || '').trim();
       if (!q || crvChatBusy) return;
       setCrvChatInput('');
       setCrvChatHistory(prev => [...prev, { role: 'user', text: q }]);
       setCrvChatBusy(true);
-      // ── Phase 25: Live Creative Partner Worker call ──────────────────
-      try {
-        const apiMessages = [
-          ...crvChatHistory.filter(m => m.role === 'user' || m.role === 'assistant').map(m => ({
-            role: m.role === 'assistant' ? 'assistant' : 'user',
-            content: typeof m.text === 'string' ? m.text : JSON.stringify(m)
-          })),
-          { role: 'user', content: q }
-        ];
-        const res = await fetch('https://signalset-lig-api.tickersignals.workers.dev/api/claude', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: 'claude-sonnet-4-20250514',
-            max_tokens: 1000,
-            system: CREATIVE_SYS,
-            messages: apiMessages
-          })
-        });
-        const data = await res.json();
-        const raw = data.content?.[0]?.text || '';
-        let parsed;
-        try { parsed = JSON.parse(raw.replace(/```json|```/g, '').trim()); } catch(e) {
-          const jm = raw.match(/\{[\s\S]*\}/); if (jm) { try { parsed = JSON.parse(jm[0]); } catch(e2) { parsed = null; } }
-          if (!parsed) parsed = { text: raw || 'Something went wrong — please try again.' };
-        }
-        if (parsed.beats && Array.isArray(parsed.beats)) {
-          // Animate beats sequentially
-          for (let i = 0; i < parsed.beats.length; i++) {
-            await new Promise(r => setTimeout(r, i === 0 ? 0 : 700));
-            setCrvChatHistory(prev => [...prev, { role: 'assistant', text: parsed.beats[i], ...(i === parsed.beats.length - 1 && parsed.options ? { options: parsed.options } : {}) }]);
-          }
+      setTimeout(() => {
+        const ql = q.toLowerCase();
+        let resp;
+        if (ql.includes('push')) {
+          resp = { role: 'assistant', text: 'Here are 3 push variations (80-char limit):\n\u2460 "5\u00d7 miles just landed."\n\u2461 "Your next trip, 5\u00d7 closer."\n\u2462 "Earn 5\u00d7 on your next flight."\n\nWant me to create these as push creatives?', actions: [{ kind: 'createVariants', label: 'Generate all three', format: 'Push', variants: ['5\u00d7 miles just landed.', 'Your next trip, 5\u00d7 closer.', 'Earn 5\u00d7 on your next flight.'] }] };
+        } else if (ql.includes('punchier') || ql.includes('shorter') || ql.includes('urgent')) {
+          resp = { role: 'assistant', text: 'Three punchier variants:\n\u2460 "Book now. Miles triple."\n\u2461 "Last call \u2014 5\u00d7 rewards."\n\u2462 "48 hours. 5\u00d7 miles. Go."\n\nGenerate?', actions: [{ kind: 'createVariants', label: 'Generate all three', format: 'Email', variants: ['Book now. Miles triple.', 'Last call \u2014 5\u00d7 rewards.', '48 hours. 5\u00d7 miles. Go.'] }] };
+        } else if (ql.includes('color') || ql.includes('variant')) {
+          resp = { role: 'assistant', text: 'Two new color variants generated in brand-safe palette:\n\u2022 Warm coral \u2014 higher energy, young-skewed\n\u2022 Deep emerald \u2014 premium, high-earner appeal\n\nSaved both as drafts with AI badge.', actions: [{ kind: 'createVariants', label: 'Save both variants', format: 'Display', variants: ['Warm coral variant', 'Deep emerald variant'] }] };
+        } else if (ql.includes('ctr') || ql.includes('performance') || ql.includes('best')) {
+          resp = { role: 'assistant', text: 'Your highest-CTR creative is CRV-03 (Business upgrade banner) at 6.8%. The pattern: short headline + dollar value in first 3 words + clear CTA. Email format outperforms Display by 1.2\u00d7 on this audience. Want me to generate new variants using this pattern?' };
+        } else if (ql.includes('email') || ql.includes('rewrite')) {
+          resp = { role: 'assistant', text: 'Three rewrites of your top email headline:\n\u2460 "Unlock 5\u00d7 miles \u2014 exclusive for you"\n\u2461 "Your next flight, at 5\u00d7 the value"\n\u2462 "Miles multiplied. Today only."\n\nCreate all three?', actions: [{ kind: 'createVariants', label: 'Generate all three', format: 'Email', variants: ['Unlock 5\u00d7 miles \u2014 exclusive for you', 'Your next flight, at 5\u00d7 the value', 'Miles multiplied. Today only.'] }] };
         } else {
-          setCrvChatHistory(prev => [...prev, { role: 'assistant', text: parsed.text || String(parsed), ...(parsed.options ? { options: parsed.options } : {}) }]);
+          resp = { role: 'assistant', text: 'I can help with: copy rewrites, format adaptation (email \u2192 push \u2192 display), color variants from a seed, variant generation for A/B testing, or performance analysis of your existing creatives. What do you want to try?' };
         }
-      } catch (err) {
-        setCrvChatHistory(prev => [...prev, { role: 'assistant', text: 'Connection issue — please try again.' }]);
-      }
-      setCrvChatBusy(false);
+        setCrvChatHistory(prev => [...prev, resp]);
+        setCrvChatBusy(false);
+      }, 900);
     };
     const _crvSampleChips = [
       'Rewrite email headline punchier',
@@ -18164,14 +18144,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
           }
         },
         style: { background: 'var(--cyan)', color: '#fff', border: 'none', borderRadius: 5, padding: '5px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }
-      }, act.label)))),
-      m.options && i === crvChatHistory.length - 1 && /*#__PURE__*/React.createElement("div", {
-        style: { marginTop: 8, display: 'flex', gap: 6, flexWrap: 'wrap' }
-      }, m.options.map((opt, oi) => /*#__PURE__*/React.createElement("button", {
-        key: oi, onClick: () => _submitCrvPrompt(opt),
-        style: { background: 'var(--card-alt)', border: '1px solid rgba(99,102,241,.28)', borderRadius: 7, padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: 'var(--text)', fontFamily: 'var(--font-b)' }
-      }, opt)))
-    ) ),
+      }, act.label))))) ),
       crvChatBusy && /*#__PURE__*/React.createElement("div", {
         style: { padding: '6px 14px', fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', borderTop: '1px solid var(--bdr-soft)' }
       }, "Creative Partner is thinking\u2026"),
@@ -19477,6 +19450,24 @@ function GeneralSettings() {
   );
 }
 
+class ErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { hasError: false, error: null, info: null }; }
+  componentDidCatch(error, info) { this.setState({ hasError: true, error, info }); }
+  static getDerivedStateFromError(error) { return { hasError: true, error }; }
+  render() {
+    if (this.state.hasError) {
+      return React.createElement('div', {
+        style: { position: 'fixed', inset: 0, background: '#0A0A1A', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 40, fontFamily: 'IBM Plex Mono, monospace', color: '#EEEEFF' }
+      },
+        React.createElement('div', { style: { fontSize: 13, fontWeight: 700, color: '#F87171', marginBottom: 12, letterSpacing: '.06em', textTransform: 'uppercase' } }, '⚠ React Render Error'),
+        React.createElement('div', { style: { fontSize: 13, color: '#F87171', marginBottom: 16, maxWidth: 720, textAlign: 'center', lineHeight: 1.6 } }, this.state.error && this.state.error.toString()),
+        React.createElement('div', { style: { fontSize: 11, color: 'rgba(238,238,255,.45)', maxWidth: 720, textAlign: 'left', whiteSpace: 'pre-wrap', lineHeight: 1.5 } }, this.state.info && this.state.info.componentStack)
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function App() {
   const [appState, setAppState] = React.useState('splash'); // 'splash' | 'platform'
   const [screen, setScreen] = useState('home');
@@ -19581,7 +19572,7 @@ function App() {
     className: `screen ${screen === 'identity' ? 'active' : ''}`
   }, /*#__PURE__*/React.createElement(IdentityGraph, null)), /*#__PURE__*/React.createElement("div", {
     className: `screen ${screen === 'desk' ? 'active' : ''}`
-  }, /*#__PURE__*/React.createElement(MarketingDesk, { jumpTab: screen === 'desk' ? navSub : null, onTabConsumed: () => setNavSub(null) })), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(ErrorBoundary, null, /*#__PURE__*/React.createElement(MarketingDesk, { jumpTab: screen === 'desk' ? navSub : null, onTabConsumed: () => setNavSub(null) }))), /*#__PURE__*/React.createElement("div", {
     className: `screen ${screen === 'measurement' ? 'active' : ''}`
   }, /*#__PURE__*/React.createElement(MeasurementZone, {
     active: screen === 'measurement'
