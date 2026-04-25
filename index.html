@@ -457,6 +457,7 @@ body.v11-sidebar-open .v11-sidebar { transform: translateX(0); }
   background: transparent;
   box-shadow: none;
 }
+.v11-home-chat-wrap .sample-chips .chip { font-size: 12px; }
 /* Sample-chips sit above the composer with tight spacing; the .sample-chips rule
    below already handles its own padding-bottom. No additional padding needed here. */
 .v11-home-pills {
@@ -9129,7 +9130,7 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
       }
     }, 600 + Math.random()*350);
   };
-  const AUDIENCE_SAMPLES = ['Which of my active campaigns has the highest ROAS right now?', 'Show me my highest-performing audiences for credit card upgrade campaigns', 'Which trigger path has the best CVR for High-Intent Travelers in the last 90 days?'];
+  const AUDIENCE_SAMPLES = ['Build a new card acquisition campaign for Meridian Air', 'Show me my highest-performing audiences for credit card upgrade campaigns', 'Which trigger path has the best CVR for High-Intent Travelers in the last 90 days?'];
   const DESK_CONCIERGE_SYS = `You are the Signalset Marketing Desk concierge — a routing and navigation assistant for a financial institution's AI-powered marketing platform.
 
 Your ONLY job is to understand what the marketer wants and tell them exactly where to go in 1-2 plain sentences. No markdown. No asterisks. No bullet points.
@@ -9206,6 +9207,8 @@ Rules:
     "The Marketing Desk \xB7 In-House"
   ), /*#__PURE__*/React.createElement("h1", { className: "v11-home-greeting" },
     "Hi Dio \u2014 ", /*#__PURE__*/React.createElement("span", null, "what would you like to do today?")
+  ), /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, color: 'var(--slate)', marginTop: 10, marginBottom: 4, textAlign: 'center', lineHeight: 1.6 } },
+    "Ask a question below, or jump directly to a tool using the pills."
   )), /*#__PURE__*/React.createElement("div", {
     className: "camp-hub-body"
   }, /*#__PURE__*/React.createElement("div", {
@@ -9397,15 +9400,14 @@ Rules:
     /* LEFT: conversation */
     /*#__PURE__*/React.createElement("div", { style: { flex: '0 0 58%', display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--bdr)', overflow: 'hidden' } },
       /* Chat header */
-      /*#__PURE__*/React.createElement("div", { style: { padding: '12px 20px', background: 'var(--card-alt)', borderBottom: '1px solid var(--bdr)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 } },
+      /*#__PURE__*/React.createElement("div", { style: { padding: '12px 20px', background: 'var(--card-alt)', borderBottom: '1px solid var(--bdr)', display: 'flex', alignItems: 'center', flexShrink: 0, minHeight: 54 } },
         /*#__PURE__*/React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 10 } },
           /*#__PURE__*/React.createElement("div", { style: { width: 8, height: 8, borderRadius: '50%', background: 'var(--green)' } }),
           /*#__PURE__*/React.createElement("div", null,
             /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, fontWeight: 700 } }, "Campaign Builder \xB7 AI Concierge"),
             /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: 'var(--slate)' } }, "Full LIG \xB7 Identity Graph \xB7 Measurement \xB7 Clean Room access")
           )
-        ),
-        /*#__PURE__*/React.createElement("button", { className: "btn btn-secondary", style: { fontSize: 11, padding: '5px 10px', color: 'var(--amber)', borderColor: 'rgba(245,158,11,.3)' }, onClick: saveBuilderAsDraft }, "Save draft & exit")
+        )
       ),
       /* Messages */
       /*#__PURE__*/React.createElement("div", { style: { flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: 14 } },
@@ -9433,7 +9435,7 @@ Rules:
     ),
     /* RIGHT: Progress + summary */
     /*#__PURE__*/React.createElement("div", { style: { flex: '0 0 42%', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--card-alt2)' } },
-      /*#__PURE__*/React.createElement("div", { style: { padding: '14px 20px', borderBottom: '1px solid var(--bdr)', background: 'var(--card-alt)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 } },
+      /*#__PURE__*/React.createElement("div", { style: { padding: '12px 20px', borderBottom: '1px solid var(--bdr)', background: 'var(--card-alt)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, minHeight: 54 } },
         /*#__PURE__*/React.createElement("div", null,
           /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, fontWeight: 700 } }, builderStep === 4 ? 'Creative Library \xB7 AUD-001 Ranked' : 'Campaign in Progress'),
           /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2 } }, builderStep === 4 ? 'Select, modify, upload, or generate' : (builderCampData.name || 'New Campaign'))
