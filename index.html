@@ -8874,7 +8874,7 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
   }, [activationState]);
   // (legacy tab-driven interval removed — Activate button now drives animation)
   // Legacy interval block fully replaced by activation-driven interval above
-  const AUDIENCE_SAMPLES = ['Show me the best representation of a High-Intent Traveler for our new travel rewards card', 'Create an audience of heavy travelers ≥4 flights/90d, no current Signature card, consent email+push', 'Affluent spenders $5K+/mo, active mobile, not current premium cardholders — credit card upgrade target'];
+  const AUDIENCE_SAMPLES = ['Build a new Meridian Air campaign — travel rewards acquisition, $450K, May flight', 'Show me my highest-performing audiences for credit card upgrade campaigns', 'Which trigger path has the best CVR for High-Intent Travelers in the last 90 days?'];
   const JOURNEY_SAMPLES = ['Build an AI-optimized conversion path for High-Intent Travelers — maximize CVR within a 14-day window', 'What trigger sequence drives the fastest path to Signature card application for mobile-first Explorers?'];
   const SMART_TRIGGERS_HEADER = /*#__PURE__*/React.createElement("div", {
     style: {
@@ -8932,7 +8932,7 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
     /*#__PURE__*/React.createElement("div", { className: "v11-home-kicker-dot" }),
     "The Marketing Desk \xB7 In-House"
   ), /*#__PURE__*/React.createElement("h1", { className: "v11-home-greeting" },
-    "Hi Dio \u2014 ", /*#__PURE__*/React.createElement("span", null, "which audience are you exploring?")
+    "Hi Dio \u2014 ", /*#__PURE__*/React.createElement("span", null, "what campaign would you like to build?")
   )), /*#__PURE__*/React.createElement("div", {
     className: "camp-hub-body"
   }, /*#__PURE__*/React.createElement("div", {
@@ -8999,7 +8999,7 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
     samples: AUDIENCE_SAMPLES,
     exploreLabel: "Campaign Platform",
     exploreScreen: () => { setDeskHub(false); window.scrollTo(0,0); },
-    placeholder: "Describe the audience for your credit card campaign\u2026",
+    placeholder: "Describe the campaign you want to build, or jump to a specific tool\u2026",
     resultRenderer: d => /*#__PURE__*/React.createElement("div", { style: { flex: 1 } }, /*#__PURE__*/React.createElement(AudienceResult, {
       data: d
     }), /*#__PURE__*/React.createElement("div", {
@@ -9075,7 +9075,7 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
         fontWeight: 500
       }
     }, "Something else\u2026"))),
-  })), /*#__PURE__*/React.createElement("div", { className: "v11-home-pills", style: { marginTop: 18, justifyContent: "center" } }, /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setDeskHub(false); setTab('campaigns'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0, style: { background: 'rgba(99,102,241,.1)', borderColor: 'rgba(99,102,241,.4)' } }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'broadcast', size: 13, color: 'var(--cyan-dim)' })), 'Build a Campaign'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setDeskHub(false); setTab('audience'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'target', size: 13, color: 'currentColor' })), 'Audiences'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setDeskHub(false); setTab('journey'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'lightning', size: 13, color: 'currentColor' })), 'Triggers'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setDeskHub(false); setTab('creative'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'palette', size: 13, color: 'currentColor' })), 'Creatives'), false && /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => alert('From Drive integration coming in Phase 11'), role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'store', size: 13, color: 'currentColor' })), 'From Drive'))), /*#__PURE__*/React.createElement("div", {
+  })), /*#__PURE__*/React.createElement("div", { className: "v11-home-pills", style: { marginTop: 18, justifyContent: "center" } }, /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setDeskHub(false); setTab('campaigns'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'broadcast', size: 13, color: 'var(--cyan-dim)' })), 'Build a Campaign'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setDeskHub(false); setTab('audience'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'target', size: 13, color: 'currentColor' })), 'Audiences'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setDeskHub(false); setTab('journey'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'lightning', size: 13, color: 'currentColor' })), 'Triggers'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setDeskHub(false); setTab('creative'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'palette', size: 13, color: 'currentColor' })), 'Creatives'), false && /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => alert('From Drive integration coming in Phase 11'), role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'store', size: 13, color: 'currentColor' })), 'From Drive'))), /*#__PURE__*/React.createElement("div", {
     className: "camp-hub-right"
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -9290,7 +9290,7 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
     /*#__PURE__*/React.createElement("div", {
       className: `cmn-tab ${tab === 'summary' || tab === 'activate' ? 'active' : ''}`,
       onClick: () => setTab('summary')
-    }, "Results")
+    }, "Launch \u2197")
   ),
   /*#__PURE__*/React.createElement("div", {
     className: `desk-cap ${tab === 'campaigns' ? 'active' : ''}`
@@ -10020,7 +10020,7 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
       )
     )))
   ), false && /*#__PURE__*/React.createElement("div", { style: { borderTop: '1px solid var(--bdr)', background: 'var(--card-alt)', padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: 10, flexShrink: 0 } },/*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },/*#__PURE__*/React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 10 } },/*#__PURE__*/React.createElement("span", { style: { fontSize: 10, fontWeight: 700, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '.07em', fontFamily: 'IBM Plex Mono, monospace' } }, "Step 3 of 6"),/*#__PURE__*/React.createElement("span", { style: { fontSize: 13, fontWeight: 700, color: 'var(--text)' } }, "Bind destinations for this trigger sequence"),/*#__PURE__*/React.createElement("span", { style: { fontSize: 11, fontFamily: 'IBM Plex Mono, monospace', padding: '2px 8px', background: moduleDests.journey.length > 0 ? 'rgba(74,222,128,.1)' : 'rgba(245,158,11,.1)', border: `1px solid ${moduleDests.journey.length > 0 ? 'rgba(74,222,128,.3)' : 'rgba(245,158,11,.3)'}`, borderRadius: 3, color: moduleDests.journey.length > 0 ? 'var(--green)' : 'var(--amber)', fontWeight: 600 } }, moduleDests.journey.length > 0 ? "COMPLIANCE ✓ PASS" : "COMPLIANCE ○ PENDING")),/*#__PURE__*/React.createElement("button", { disabled: moduleDests.journey.length === 0, onClick: () => { setModuleApproved(m => ({...m, journey: true})); goNextTab(); }, style: { padding: '8px 16px', background: moduleDests.journey.length > 0 ? 'var(--cyan)' : 'var(--card)', color: moduleDests.journey.length > 0 ? '#fff' : 'var(--slate-lt)', border: moduleDests.journey.length > 0 ? 'none' : '1px solid var(--bdr)', borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: moduleDests.journey.length > 0 ? 'pointer' : 'not-allowed' } }, moduleApproved.journey ? "✓ Approved · Continue to Creatives →" : "Approve & Continue to Creatives →")),/*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 6, flexWrap: 'wrap' } },DEST_CATALOG.map(d => { const on = moduleDests.journey.includes(d.id); return /*#__PURE__*/React.createElement("div", { key: d.id, onClick: () => toggleModuleDest('journey', d.id), role: "button", tabIndex: 0, style: { padding: '5px 10px', background: on ? 'rgba(99,102,241,.15)' : 'var(--card)', border: `1px solid ${on ? 'var(--cyan)' : 'var(--bdr)'}`, borderRadius: 14, fontSize: 11, color: on ? 'var(--cyan-pale)' : 'var(--slate)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'IBM Plex Mono, monospace', userSelect: 'none' } }, on ? "✓ " : "+ ", d.name, /*#__PURE__*/React.createElement("span", { style: { fontSize: 9, color: on ? 'var(--cyan-dim)' : 'var(--slate-lt)', marginLeft: 4 } }, d.match + "%")); })))), /*#__PURE__*/React.createElement("div", {
-    className: `desk-cap ${tab === 'creative' ? 'active' : ''}`
+    className: `desk-cap ${tab === 'creative' ? 'active three-col' : ''}`
   }, newCreativeOpen && /*#__PURE__*/React.createElement("div", {
     className: "opt-modal-overlay",
     onClick: () => setNewCreativeOpen(false)
