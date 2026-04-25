@@ -8941,38 +8941,167 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
   // ── Builder initialization — greet the user when entering builder mode ─
   useEffect(() => {
     if (!builderMode || builderMessages.length > 0) return;
-    setBuilderMessages([{ role: 'assistant', text: "Let\u2019s build your campaign. I\u2019ll walk you through each step \u2014 the right panel tracks your progress.\n\nStep 1 of 6 \xB7 Setup\nWhat\u2019s the campaign objective?", options: ['New card acquisition', 'Product upgrade', 'Spend activation', 'Retention'] }]);
+    setBuilderMessages([{ role: 'assistant', text: "Let\u2019s build your campaign. I\u2019ll pull live data from the LIG at each step \u2014 audiences from real propensity scores, triggers from 90-day MTA, creatives ranked by audience fit with auto-lint.\n\nStep 1 of 5 \xB7 Setup\nWhat\u2019s the campaign name?", options: ['Meridian Air Q2 Acquisition', 'Custom name \u2192'] }]);
   }, [builderMode]);
 
+  const [builderCreativeIdx, setBuilderCreativeIdx] = useState(0);
+
+  // ── Builder library (mock) ────────────────────────────────────────
+  const BUILDER_CREATIVES = [
+    { id: 'CRV-001', name: 'Premium Rewards \u2014 Travel Hero', format: 'Email \xB7 600px HTML', ctr: '6.8%', fit: 92, gradient: 'linear-gradient(135deg,#5B5EF4,#818CF8)', badges: ['Disclosures \u2713','Brand \u2713','WCAG AA \u2713'], fixes: 2 },
+    { id: 'CRV-002', name: 'First-Class Upgrade Offer', format: 'Display \xB7 300\xD7250 + 728\xD790', ctr: '4.1%', fit: 87, gradient: 'linear-gradient(135deg,#A78BFA,#6366F1)', badges: ['All checks \u2713'], fixes: 0 },
+    { id: 'CRV-003', name: 'Miles Accelerator Push', format: 'Push \xB7 iOS / Android', ctr: '8.3%', fit: 78, gradient: 'linear-gradient(135deg,#059669,#10B981)', badges: ['TCPA \u2713','CAN-SPAM \u2713'], fixes: 0 },
+  ];
+
+  // ── Rich card renderer for builder messages ───────────────────────
+  const _renderBuilderCards = (cards) => {
+    if (!cards || !cards.length) return null;
+    return /*#__PURE__*/React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8, maxWidth: '95%' } },
+      cards.map((card, ci) => {
+        if (card.type === 'audience') return /*#__PURE__*/React.createElement("div", { key: ci, style: { background: 'rgba(8,8,15,.7)', border: '1px solid rgba(99,102,241,.25)', borderRadius: 9, padding: 14, opacity: card.recommended ? 1 : 0.75 } },
+          /* Header */
+          /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 } },
+            /*#__PURE__*/React.createElement("div", null,
+              card.recommended && /*#__PURE__*/React.createElement("div", { style: { fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--cyan-dim)', fontFamily: 'IBM Plex Mono, monospace', marginBottom: 4 } }, '\u2605 Recommended'),
+              /*#__PURE__*/React.createElement("div", { style: { fontSize: 14, fontWeight: 700 } }, card.name),
+              /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2 } }, card.id + ' \xB7 ' + card.taxonomy)
+            ),
+            /*#__PURE__*/React.createElement("div", { style: { textAlign: 'right' } },
+              /*#__PURE__*/React.createElement("div", { style: { fontSize: 22, fontWeight: 800, color: 'var(--cyan-dim)', fontFamily: 'IBM Plex Mono, monospace', lineHeight: 1 } }, card.size),
+              /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--slate)', marginTop: 2 } }, card.sizeLabel)
+            )
+          ),
+          /* Criteria */
+          /*#__PURE__*/React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 3, marginBottom: 10 } },
+            card.criteria.map((c, i) => /*#__PURE__*/React.createElement("div", { key: i, style: { fontSize: 11, color: 'var(--slate)', display: 'flex', alignItems: 'center', gap: 6 } },
+              /*#__PURE__*/React.createElement("span", { style: { color: 'var(--cyan-dim)', fontWeight: 700 } }, '\xB7'), c
+            ))
+          ),
+          /* Feature bars */
+          /*#__PURE__*/React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 10 } },
+            card.features.map((f, i) => /*#__PURE__*/React.createElement("div", { key: i, style: { display: 'flex', alignItems: 'center', gap: 8 } },
+              /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, fontFamily: 'IBM Plex Mono, monospace', color: 'var(--slate)', width: 110, flexShrink: 0 } }, f.label),
+              /*#__PURE__*/React.createElement("div", { style: { flex: 1, height: 4, background: 'rgba(99,102,241,.1)', borderRadius: 2, overflow: 'hidden' } },
+                /*#__PURE__*/React.createElement("div", { style: { width: f.pct + '%', height: '100%', background: 'linear-gradient(90deg,var(--cyan),var(--green))', borderRadius: 2 } })
+              ),
+              /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace', color: 'var(--cyan-dim)', width: 28, textAlign: 'right' } }, f.pct + '%')
+            ))
+          ),
+          /* Destinations + compliance */
+          /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(99,102,241,.15)', paddingTop: 8 } },
+            /*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 4, flexWrap: 'wrap', flex: 1 } },
+              card.dests.map((d, i) => /*#__PURE__*/React.createElement("span", { key: i, style: { fontSize: 10, padding: '2px 7px', borderRadius: 4, background: 'rgba(99,102,241,.1)', border: '1px solid rgba(99,102,241,.2)', color: 'var(--cyan-dim)', fontFamily: 'IBM Plex Mono, monospace' } }, d))
+            ),
+            /*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 3 } },
+              card.compliance.map((c, i) => /*#__PURE__*/React.createElement("span", { key: i, style: { fontSize: 9, padding: '2px 6px', borderRadius: 4, background: 'rgba(74,222,128,.07)', border: '1px solid rgba(74,222,128,.2)', color: 'var(--green)', fontFamily: 'IBM Plex Mono, monospace' } }, c))
+            )
+          ),
+          card.recommended && /*#__PURE__*/React.createElement("div", { style: { marginTop: 8, fontSize: 11, fontWeight: 700, color: 'var(--green)', fontFamily: 'IBM Plex Mono, monospace' } }, 'Conversion propensity: ' + card.propensity + '%')
+        );
+        if (card.type === 'trigger') return /*#__PURE__*/React.createElement("div", { key: ci, style: { background: 'rgba(8,8,15,.7)', border: '1px solid rgba(99,102,241,.25)', borderRadius: 9, padding: 14, opacity: card.recommended ? 1 : 0.75 } },
+          /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 } },
+            /*#__PURE__*/React.createElement("div", null,
+              card.recommended && /*#__PURE__*/React.createElement("div", { style: { fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--cyan-dim)', fontFamily: 'IBM Plex Mono, monospace', marginBottom: 4 } }, '\u2605 Highest CVR for AUD-001'),
+              /*#__PURE__*/React.createElement("div", { style: { fontSize: 14, fontWeight: 700 } }, card.name),
+              /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2 } }, card.id + ' \xB7 ' + card.taxonomy)
+            ),
+            /*#__PURE__*/React.createElement("div", { style: { textAlign: 'right' } },
+              /*#__PURE__*/React.createElement("div", { style: { fontSize: 22, fontWeight: 800, color: 'var(--green)', fontFamily: 'IBM Plex Mono, monospace', lineHeight: 1 } }, card.cvr),
+              /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--slate)', marginTop: 2 } }, 'proj. CVR')
+            )
+          ),
+          /* Channel sequence */
+          /*#__PURE__*/React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', margin: '10px 0', padding: '8px 10px', background: 'rgba(99,102,241,.06)', borderRadius: 6 } },
+            card.channels.map((ch, i) => /*#__PURE__*/React.createElement("div", { key: i, style: { display: 'flex', alignItems: 'center', gap: 4 } },
+              /*#__PURE__*/React.createElement("div", { style: { padding: '3px 9px', borderRadius: 5, background: i === card.channels.length - 1 ? 'rgba(74,222,128,.1)' : 'rgba(99,102,241,.12)', border: '1px solid ' + (i === card.channels.length - 1 ? 'rgba(74,222,128,.3)' : 'rgba(99,102,241,.22)'), color: i === card.channels.length - 1 ? 'var(--green)' : 'var(--text)', fontSize: 11, fontWeight: 700 } }, ch),
+              i < card.channels.length - 1 && /*#__PURE__*/React.createElement("span", { style: { color: 'var(--slate)', fontSize: 11 } }, '\u2192')
+            ))
+          ),
+          /* Meta row */
+          /*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 14, borderTop: '1px solid rgba(99,102,241,.15)', paddingTop: 8 } },
+            [['Avg path', card.pathDays], ['Freq cap', card.freqCap], ['Attribution', card.attribution]].map(([lbl, val]) =>
+              /*#__PURE__*/React.createElement("div", { key: lbl, style: { fontSize: 11, fontFamily: 'IBM Plex Mono, monospace' } }, lbl + ': ', /*#__PURE__*/React.createElement("span", { style: { color: 'var(--cyan-dim)', fontWeight: 700 } }, val))
+            )
+          ),
+          card.delta && /*#__PURE__*/React.createElement("div", { style: { marginTop: 6, fontSize: 11, fontWeight: 700, color: 'var(--green)', fontFamily: 'IBM Plex Mono, monospace' } }, card.delta)
+        );
+        return null;
+      })
+    );
+  };
+
+  // ── Rewritten _builderGetResponse with rich data cards ────────────
   const _builderGetResponse = (text, step, data) => {
+    // STEP 1a — Campaign name
+    if (step === 1 && !data.name) {
+      return { text: "Let\u2019s build your campaign. I\u2019ll pull live data from the LIG at each step \u2014 audiences, triggers, and creatives will be grounded in your actual performance data.\n\nStep 1 of 6 \xB7 Setup\nWhat\u2019s the campaign name?", options: ['Meridian Air Q2 Acquisition', 'Custom name \u2192'], dataUpdate: {} };
+    }
+    // STEP 1b — Name captured, ask objective
     if (step === 1 && !data.objective) {
-      return { text: text + ' confirmed.\n\nBudget and flight? I\u2019ll suggest defaults based on your Q2 run rate \u2014 you can override.', options: ['$450K \xB7 May 1 \u2192 May 31', 'Override budget / dates'], dataUpdate: { objective: text } };
+      const nm = text.includes('Custom') ? 'New Campaign' : text;
+      return { text: '\u201c' + nm + '\u201d \u2014 noted.\n\nObjective?', options: ['New card acquisition', 'Product upgrade', 'Spend activation', 'Retention'], dataUpdate: { name: nm } };
     }
+    // STEP 1c — Objective captured, ask budget/flight
     if (step === 1 && !data.budget) {
-      const bud = text.includes('Override') ? '$350K \xB7 Custom dates' : '$450K \xB7 May 1\u201331';
-      return { text: '\u2713 Setup complete. Moving to Step 2 \xB7 Audiences.\n\nBased on your LIG I found 3 strong candidates. Which audience should anchor this campaign?', options: ['High-Intent Travel Rewards (52K \xB7 84% propensity)', 'Affluent Mobile-First Upgraders (38K \xB7 79%)', 'Deal Maximizer Upgrade Cohort (29K \xB7 68%)', 'Build a custom audience first'], stepComplete: true, dataUpdate: { budget: bud, flight: 'May 1\u201331, 2026' } };
+      return { text: '\u2713 Objective: ' + text + '\n\nBudget and flight? Defaulting to Q2 run rate:', options: ['\$450K \xB7 May 1 \u2192 May 31', 'Override budget / dates'], dataUpdate: { objective: text } };
     }
+    // STEP 1d — Budget captured, advance to step 2
+    if (step === 1) {
+      const bud = text.includes('Override') ? '\$350K \xB7 Custom dates' : '\$450K \xB7 May 1\u201331';
+      return {
+        text: '\u2713 Setup complete.\n\nStep 2 \xB7 Audiences \u2014 querying the LIG for acquisition-intent segments with active consent and no existing Signature card\u2026',
+        cards: [
+          { type: 'audience', id: 'AUD-001', name: 'High-Intent Travel Rewards', taxonomy: 'Explorers \xB7 Revelers \xB7 CR-matched', size: '52,400', sizeLabel: 'qualified prospects', criteria: ['\u22654 flight/hotel transactions / 90d', 'Mobile sessions \u226510/wk \xB7 HHI proxy \u2265\$140K', 'No current Signature card \xB7 Consent: email + push'], features: [{ label: 'Travel spend', pct: 87 }, { label: 'Mobile sessions', pct: 73 }, { label: 'Email open rate', pct: 68 }], propensity: 84, dests: ['SFMC / Email', 'TTD (UID2)', 'AJO Journeys'], compliance: ['Fair Lending \u2713', 'GLBA \u2713', 'TCPA \u2713'], recommended: true },
+          { type: 'audience', id: 'AUD-002', name: 'Affluent Mobile-First Upgraders', taxonomy: 'Luxuriates \xB7 IAB-matched', size: '38,700', sizeLabel: 'upgrade targets', criteria: ['Monthly spend \$5K+ \xB7 3 consecutive months', 'Mobile primary >80% \xB7 No premium card in wallet'], features: [{ label: 'Monthly spend', pct: 81 }, { label: 'Mobile primary', pct: 74 }], propensity: 79, dests: ['Adobe RTCDP', 'SFMC / Email', 'Clean Room (LR)'], compliance: ['Fair Lending \u2713', 'UDAAP \u2713'], recommended: false }
+        ],
+        options: ['\u2713 Use AUD-001 \u2014 High-Intent Travel Rewards', 'Use AUD-002 instead', 'Show AUD-003', 'Build a custom segment \u2192'],
+        stepComplete: true, dataUpdate: { budget: bud, flight: 'May 1\u201331, 2026' }
+      };
+    }
+    // STEP 2 — Audience selection
     if (step === 2 && !data.audience) {
-      const aud = text.split('\u0020\u0028')[0];
-      return { text: '\u2713 Audience locked: ' + aud + '.\n\nStep 3 \xB7 Triggers. Based on 90-day MTA for this audience, which conversion sequence should I use?', options: ['Owned-First Travel Fast Path (4.2% proj. CVR)', 'High-Intent Conversion Sprint (3.9% CVR)', 'Cashback Upgrade Sequence (3.6% CVR)', 'Build a new one'], stepComplete: true, dataUpdate: { audience: aud + ' \u2713' } };
+      const audName = text.includes('AUD-001') || text.includes('High-Intent') ? 'AUD-001 High-Intent Travel Rewards' : text.includes('AUD-002') ? 'AUD-002 Affluent Mobile-First Upgraders' : text;
+      const audShort = audName.includes('AUD-001') ? 'AUD-001 \xB7 52,400 \xB7 84% propensity' : 'AUD-002 \xB7 38,700 \xB7 79% propensity';
+      return {
+        text: '\u2713 Audience locked: ' + audName + '\n\nStep 3 \xB7 Triggers \u2014 running 90-day MTA on ' + audName.split(' ')[0] + ' across 9,120 attributed conversions\u2026',
+        cards: [
+          { type: 'trigger', id: 'TRG-001', name: 'Owned-First Travel Fast Path', taxonomy: 'Best for High-Intent Travel Rewards', cvr: '4.2%', channels: ['Email', 'Push', 'In-App', 'Paid Search', 'CTV', 'Apply'], pathDays: '8.3 days', freqCap: 'Email 2/wk \xB7 Push 1/day', attribution: '91% confidence', delta: '+0.8% CVR vs next best', compliance: ['TCPA \u2713', 'CAN-SPAM \u2713'], recommended: true },
+          { type: 'trigger', id: 'TRG-002', name: 'High-Intent Conversion Sprint', taxonomy: 'Affluent Mobile-First Upgraders', cvr: '3.9%', channels: ['Email', 'Push+SMS', 'Paid Search', 'Display Retarget', 'Apply'], pathDays: '6.1 days', freqCap: 'Email 3/wk \xB7 Push 2/day', attribution: '87% confidence', delta: '', compliance: ['TCPA \u2713', 'CAN-SPAM \u2713'], recommended: false }
+        ],
+        options: ['\u2713 Use TRG-001 \u2014 Owned-First Fast Path', 'Use TRG-002 instead', 'Build a custom sequence \u2192'],
+        stepComplete: true, dataUpdate: { audience: audShort + ' \u2713' }
+      };
     }
+    // STEP 3 — Trigger selection
     if (step === 3 && !data.trigger) {
-      const trg = text.split('\u0020\u0028')[0];
-      return { text: '\u2713 Trigger path locked: ' + trg + '.\n\nStep 4 \xB7 Creatives. Highest-fit asset for this audience:', options: ['Premium Rewards \u2014 Travel Hero (6.8% pred. CTR \xB7 92% fit)', 'Miles Accelerator Push (5.1% CTR \xB7 88% fit)', 'Build a new creative with AI'], stepComplete: true, dataUpdate: { trigger: trg + ' \u2713' } };
+      const trgName = text.includes('TRG-001') || text.includes('Owned') ? 'TRG-001 Owned-First Fast Path' : text.includes('TRG-002') ? 'TRG-002 High-Intent Conversion Sprint' : text;
+      return {
+        text: '\u2713 Trigger path locked: ' + trgName + '\n\nStep 4 \xB7 Creatives \u2014 ranking your library by AUD-001 fit and running auto-lint. Select an asset, modify one with AI, upload an image, or build from scratch.',
+        stepComplete: true, dataUpdate: { trigger: trgName + ' \u2713' },
+        creativeStep: true
+      };
     }
+    // STEP 4 — Creative selection/build
     if (step === 4 && !data.creative) {
-      const crv = text.split('\u0020\u0028')[0];
-      const summary = (data.objective||'Campaign') + ' \xB7 ' + (data.budget||'$450K') + ' \xB7 ' + (data.flight||'May') + '\n' + (data.audience||'Audience') + '\n' + (data.trigger||'Trigger') + '\n' + crv;
-      return { text: '\u2713 Creative locked: ' + crv + '.\n\nStep 5 \xB7 Summary & Approval. Auto-compliance ran \u2014 all clear.\n\n' + summary + '\n\nI need your sign-off. Compliance review will be triggered automatically after you approve.', options: ['\u2713 I approve \u2014 send to compliance', 'Request changes'], stepComplete: true, dataUpdate: { creative: crv + ' \u2713' } };
+      let crvName = 'CRV-001 Premium Rewards \u2014 Travel Hero';
+      if (text.toLowerCase().includes('crv-002') || text.toLowerCase().includes('first-class')) crvName = 'CRV-002 First-Class Upgrade Offer';
+      if (text.toLowerCase().includes('crv-003') || text.toLowerCase().includes('push') || text.toLowerCase().includes('accelerator')) crvName = 'CRV-003 Miles Accelerator Push';
+      const sumLines = [data.name||'Campaign', data.objective||'New card acquisition', data.budget||'\$450K', data.flight||'May 1\u201331', data.audience||'Audience', data.trigger||'Trigger', crvName].join(' \xB7 ');
+      return {
+        text: '\u2713 Creative locked: ' + crvName + ' \xB7 auto-lint clear\n\nStep 5 \xB7 Summary & Approval\nAuto-compliance ran \u2014 16/16 checks passed, 2 issues auto-fixed by AI.\n\n' + sumLines + '\n\nI need your sign-off. Compliance review triggers automatically after you approve.',
+        options: ['\u2713 I approve \u2014 send to compliance', 'View compliance report \u2192', 'Request changes'],
+        stepComplete: true, dataUpdate: { creative: crvName + ' \u2713' }
+      };
     }
+    // STEP 5 — Approval (final step, auto-activate)
     if (step === 5) {
       if (text.toLowerCase().includes('approve') || text.includes('\u2713')) {
-        return { text: '\u2713 Marketer approval logged. Compliance sign-off requested.\n\nStep 6 \xB7 Activate. Once compliance approves, the campaign activates to SFMC, Adobe RTCDP, and AJO Journeys.\n\nSet to auto-activate on compliance approval?', options: ['\uD83D\uDE80 Auto-activate on approval', "I\u2019ll activate manually later"], stepComplete: true };
+        return {
+          text: '\u2713 Marketer approval logged. Compliance review has been notified.\n\nYour campaign is queued for activation. It will auto-activate once compliance signs off \u2014 estimated 2\u20134 hours.\n\nTaking you to your Campaigns dashboard\u2026',
+          stepComplete: true, activate: true
+        };
       }
-      return { text: 'What would you like to change? I can adjust the audience, trigger, creative, budget, or flight dates.', options: ['Change audience', 'Change trigger', 'Change creative', 'Change budget / dates'] };
-    }
-    if (step === 6) {
-      return { text: '\u2713 Campaign queued for activation. You\u2019ll be notified when compliance approves. Taking you to your Campaigns dashboard\u2026', stepComplete: true, activate: true };
+      return { text: 'What would you like to change?', options: ['Change audience', 'Change trigger', 'Change creative', 'Change budget / dates'] };
     }
     return { text: 'Got it \u2014 anything else you\u2019d like to adjust?' };
   };
@@ -8987,20 +9116,22 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
     setTimeout(() => {
       if (resp.dataUpdate) setBuilderCampData(prev => ({ ...prev, ...resp.dataUpdate }));
       if (resp.stepComplete) setBuilderStep(prev => Math.min(prev + 1, 6));
-      setBuilderMessages(prev => [...prev, { role: 'assistant', text: resp.text, options: resp.options }]);
+      setBuilderMessages(prev => [...prev, { role: 'assistant', text: resp.text, options: resp.options, cards: resp.cards || null }]);
       setBuilderBusy(false);
       if (resp.activate) {
         setTimeout(() => {
           const d = { ...builderCampData, ...(resp.dataUpdate || {}) };
-          const newCamp = { id: 'MK-' + Math.random().toString(36).slice(2,6).toUpperCase(), name: (d.objective||'New') + ' Campaign', creative: (d.creative||'Email').replace(' \u2713',''), segment: (d.audience||'AI Audience').replace(' \u2713',''), dmas: 'Multi-market', startDate: 'May 1', endDate: 'May 31', status: 'active', budget: 450, spent: 0, impressions: 0, clicks: 0, conversions: 0, roas: 0, lift: 0 };
+          const nm = d.name || (d.objective ? d.objective + ' Campaign' : 'New Campaign');
+          const newCamp = { id: 'MK-' + Math.random().toString(36).slice(2,6).toUpperCase(), name: nm, creative: (d.creative||'Email').replace(' \u2713',''), segment: (d.audience||'AI Audience').replace(/AUD-\d+ /,'').replace(' \u2713',''), dmas: 'Multi-market', startDate: 'May 1', endDate: 'May 31', status: 'active', budget: 450, spent: 0, impressions: 0, clicks: 0, conversions: 0, roas: 0, lift: 0 };
           setMarketingCampaigns(prev => [newCamp, ...prev]);
           setMkSelectedCampIdx(0);
-          setBuilderMode(false); setBuilderMessages([]); setBuilderStep(1);
+          setBuilderMode(false); setBuilderMessages([]); setBuilderStep(1); setBuilderCreativeIdx(0);
           setBuilderCampData({ name:'', objective:'', budget:'', flight:'', audience:'', trigger:'', creative:'' });
+          setBuilderExited(true); setActivationState('idle');
           setTab('campaigns');
-        }, 2000);
+        }, 2200);
       }
-    }, 700 + Math.random()*400);
+    }, 600 + Math.random()*350);
   };
   const AUDIENCE_SAMPLES = ['Build a new Meridian Air campaign — travel rewards acquisition, $450K, May flight', 'Show me my highest-performing audiences for credit card upgrade campaigns', 'Which trigger path has the best CVR for High-Intent Travelers in the last 90 days?'];
   const DESK_CONCIERGE_SYS = `You are the Signalset Marketing Desk concierge — a routing and navigation assistant for a financial institution's AI-powered marketing platform.
@@ -9282,10 +9413,11 @@ Rules:
       /* Messages */
       /*#__PURE__*/React.createElement("div", { style: { flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: 14 } },
         builderMessages.map((m, i) => /*#__PURE__*/React.createElement("div", { key: i, style: { display: 'flex', flexDirection: 'column', alignItems: m.role === 'user' ? 'flex-end' : 'flex-start', gap: 6 } },
-          /*#__PURE__*/React.createElement("div", { style: { maxWidth: '88%', padding: '12px 16px', borderRadius: m.role === 'user' ? '16px 16px 4px 16px' : '4px 16px 16px 16px', background: m.role === 'user' ? 'var(--cyan)' : 'rgba(22,22,58,.95)', border: m.role === 'user' ? 'none' : '1px solid rgba(99,102,241,.3)', fontSize: 14, lineHeight: 1.65, color: m.role === 'user' ? '#fff' : 'var(--text)', whiteSpace: 'pre-wrap' } }, m.text),
+          /*#__PURE__*/React.createElement("div", { style: { maxWidth: '88%', padding: '12px 16px', borderRadius: m.role === 'user' ? '16px 16px 4px 16px' : '4px 16px 16px 16px', background: m.role === 'user' ? 'var(--cyan)' : 'rgba(22,22,58,.95)', border: m.role === 'user' ? 'none' : '1px solid rgba(99,102,241,.3)', fontSize: 13, lineHeight: 1.65, color: m.role === 'user' ? '#fff' : 'var(--text)', whiteSpace: 'pre-wrap' } }, m.text),
+          m.role === 'assistant' && m.cards && _renderBuilderCards(m.cards),
           m.role === 'assistant' && m.options && i === builderMessages.length - 1 &&
           /*#__PURE__*/React.createElement("div", { style: { display: 'flex', flexWrap: 'wrap', gap: 7 } },
-            m.options.map((opt, oi) => /*#__PURE__*/React.createElement("button", { key: oi, onClick: () => _builderSend(opt), style: { padding: '7px 13px', borderRadius: 7, fontSize: 12, fontWeight: 600, background: 'var(--card-alt)', border: '1px solid rgba(99,102,241,.28)', color: 'var(--text)', cursor: 'pointer', fontFamily: 'var(--font-b)', transition: 'all .15s' } }, opt))
+            m.options.map((opt, oi) => /*#__PURE__*/React.createElement("button", { key: oi, onClick: () => _builderSend(opt), style: { padding: '7px 13px', borderRadius: 7, fontSize: 12, fontWeight: 600, background: opt.includes('\u2713') ? 'rgba(74,222,128,.08)' : 'var(--card-alt)', border: '1px solid ' + (opt.includes('\u2713') ? 'rgba(74,222,128,.35)' : 'rgba(99,102,241,.28)'), color: opt.includes('\u2713') ? 'var(--green)' : 'var(--text)', cursor: 'pointer', fontFamily: 'var(--font-b)', transition: 'all .15s' } }, opt))
           )
         )),
         builderBusy && /*#__PURE__*/React.createElement("div", { style: { display: 'flex', alignItems: 'flex-start' } },
@@ -9306,26 +9438,67 @@ Rules:
     /*#__PURE__*/React.createElement("div", { style: { flex: '0 0 42%', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--card-alt2)' } },
       /*#__PURE__*/React.createElement("div", { style: { padding: '14px 20px', borderBottom: '1px solid var(--bdr)', background: 'var(--card-alt)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 } },
         /*#__PURE__*/React.createElement("div", null,
-          /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, fontWeight: 700 } }, "Campaign in Progress"),
-          /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2 } }, builderCampData.name || 'New Campaign')
+          /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, fontWeight: 700 } }, builderStep === 4 ? 'Creative Library \xB7 AUD-001 Ranked' : 'Campaign in Progress'),
+          /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2 } }, builderStep === 4 ? 'Select, modify, upload, or generate' : (builderCampData.name || 'New Campaign'))
         ),
-        /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, fontFamily: 'IBM Plex Mono, monospace', color: 'var(--cyan-dim)', fontWeight: 700 } }, 'Step ' + builderStep + ' of 6')
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, fontFamily: 'IBM Plex Mono, monospace', color: builderStep >= 5 ? 'var(--green)' : 'var(--cyan-dim)', fontWeight: 700 } }, builderStep >= 5 ? '\u2713 All steps done' : 'Step ' + builderStep + ' of 5')
       ),
-      /*#__PURE__*/React.createElement("div", { style: { flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 10 } },
+      /* Creative step — show library instead of tracker */
+      builderStep === 4 && /*#__PURE__*/React.createElement("div", { style: { flex: 1, overflowY: 'auto', padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 8 } },
+        /* Active canvas preview */
+        BUILDER_CREATIVES[builderCreativeIdx] && /*#__PURE__*/React.createElement("div", null,
+          /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginBottom: 8 } }, 'Active Canvas \xB7 ' + BUILDER_CREATIVES[builderCreativeIdx].id),
+          /*#__PURE__*/React.createElement("div", { style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 9, overflow: 'hidden' } },
+            /*#__PURE__*/React.createElement("div", { style: { height: 80, background: BUILDER_CREATIVES[builderCreativeIdx].gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 4 } },
+              /*#__PURE__*/React.createElement("div", { style: { fontSize: 9, letterSpacing: '.1em', color: 'rgba(255,255,255,.65)', textTransform: 'uppercase', fontFamily: 'IBM Plex Mono, monospace' } }, BUILDER_CREATIVES[builderCreativeIdx].format),
+              /*#__PURE__*/React.createElement("div", { style: { fontSize: 14, fontWeight: 800, color: '#fff', textAlign: 'center', padding: '0 16px' } }, 'Earn 5\xD7 miles on every booking')
+            ),
+            /*#__PURE__*/React.createElement("div", { style: { padding: '10px 12px' } },
+              /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 } },
+                /*#__PURE__*/React.createElement("div", null,
+                  /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, fontWeight: 700 } }, BUILDER_CREATIVES[builderCreativeIdx].name),
+                  /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2 } }, 'Audience fit: ' + BUILDER_CREATIVES[builderCreativeIdx].fit + '%')
+                ),
+                /*#__PURE__*/React.createElement("div", { style: { fontSize: 14, fontWeight: 800, color: 'var(--cyan-dim)', fontFamily: 'IBM Plex Mono, monospace' } }, BUILDER_CREATIVES[builderCreativeIdx].ctr + ' CTR')
+              ),
+              /*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 4, flexWrap: 'wrap' } },
+                BUILDER_CREATIVES[builderCreativeIdx].badges.map((b, bi) => /*#__PURE__*/React.createElement("span", { key: bi, style: { fontSize: 10, padding: '2px 7px', borderRadius: 4, background: 'rgba(74,222,128,.07)', border: '1px solid rgba(74,222,128,.2)', color: 'var(--green)', fontFamily: 'IBM Plex Mono, monospace' } }, b)),
+                BUILDER_CREATIVES[builderCreativeIdx].fixes > 0 && /*#__PURE__*/React.createElement("span", { style: { fontSize: 10, padding: '2px 7px', borderRadius: 4, background: 'rgba(99,102,241,.08)', border: '1px solid rgba(99,102,241,.25)', color: 'var(--cyan-dim)', fontFamily: 'IBM Plex Mono, monospace' } }, BUILDER_CREATIVES[builderCreativeIdx].fixes + ' AI-fixed')
+              )
+            )
+          )
+        ),
+        /* Library cards */
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 4 } }, 'Library \xB7 Ranked by AUD-001 fit'),
+        BUILDER_CREATIVES.map((crv, ci) => /*#__PURE__*/React.createElement("div", { key: ci, onClick: () => { setBuilderCreativeIdx(ci); }, style: { display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 9, background: builderCreativeIdx === ci ? 'rgba(99,102,241,.12)' : 'var(--card)', border: '1px solid ' + (builderCreativeIdx === ci ? 'var(--cyan-dim)' : 'var(--bdr-soft)'), cursor: 'pointer', transition: 'all .15s' } },
+          /*#__PURE__*/React.createElement("div", { style: { width: 36, height: 36, borderRadius: 7, background: crv.gradient, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontFamily: 'IBM Plex Mono, monospace', fontWeight: 700, color: 'rgba(255,255,255,.7)' } }, crv.id),
+          /*#__PURE__*/React.createElement("div", { style: { flex: 1, minWidth: 0 } },
+            /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, crv.name),
+            /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2 } }, crv.format + ' \xB7 Fit ' + crv.fit + '%')
+          ),
+          /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, fontWeight: 800, color: 'var(--cyan-dim)', fontFamily: 'IBM Plex Mono, monospace', flexShrink: 0 } }, crv.ctr)
+        )),
+        /* Action chips */
+        /*#__PURE__*/React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 } },
+          [['Use ' + BUILDER_CREATIVES[builderCreativeIdx].id + ' \u2014 ' + BUILDER_CREATIVES[builderCreativeIdx].name, true], ['Modify with AI \u2192', false], ['Upload an image \u2192', false]].map(([lbl, isPrimary], ai) =>
+            /*#__PURE__*/React.createElement("button", { key: ai, onClick: () => _builderSend(lbl), style: { padding: '8px 14px', borderRadius: 7, fontSize: 12, fontWeight: 600, background: isPrimary ? 'rgba(74,222,128,.08)' : 'var(--card)', border: '1px solid ' + (isPrimary ? 'rgba(74,222,128,.3)' : 'var(--bdr-soft)'), color: isPrimary ? 'var(--green)' : 'var(--text)', cursor: 'pointer', fontFamily: 'var(--font-b)', textAlign: 'left' } }, lbl)
+          )
+        ),
+      builderStep !== 4 && /*#__PURE__*/React.createElement("div", { style: { flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 10 } },
         /* Step list */
         /*#__PURE__*/React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 6 } },
-          [['Setup',1],['Audiences',2],['Triggers',3],['Creatives',4],['Summary & Approval',5],['Activate',6]].map(([lbl,sn]) => {
+          [['Setup',1],['Audiences',2],['Triggers',3],['Creatives',4],['Summary & Approval',5]].map(([lbl,sn]) => {
             const done = builderStep > sn, active = builderStep === sn;
             return /*#__PURE__*/React.createElement("div", { key: sn, style: { display: 'flex', alignItems: 'flex-start', gap: 10 } },
               /*#__PURE__*/React.createElement("div", { style: { width: 24, height: 24, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 800, fontFamily: 'IBM Plex Mono, monospace', flexShrink: 0, marginTop: 2, background: done ? 'var(--green)' : active ? 'var(--cyan-dim)' : 'var(--card-alt)', border: !done && !active ? '1px solid var(--bdr)' : 'none', color: done||active ? '#fff' : 'var(--slate)' } }, done ? '\u2713' : sn),
               /*#__PURE__*/React.createElement("div", { style: { flex: 1 } },
                 /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, fontWeight: 700, color: done||active ? 'var(--text)' : 'var(--slate)', display: 'flex', alignItems: 'center', gap: 6 } }, lbl, active && /*#__PURE__*/React.createElement("span", { style: { fontSize: 9, color: 'var(--cyan-dim)', fontFamily: 'IBM Plex Mono, monospace' } }, "\u2190 in progress")),
                 /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2, opacity: done ? 1 : 0.5 } },
-                  sn===1 ? (builderCampData.objective||(done||active?'In progress':'Not started')) :
-                  sn===2 ? (builderCampData.audience||(done||active?'In progress':'Not started')) :
-                  sn===3 ? (builderCampData.trigger||(done||active?'In progress':'Not started')) :
-                  sn===4 ? (builderCampData.creative||(done||active?'In progress':'Not started')) :
-                  (done||active?'In progress':'Not started')
+                  sn===1 ? ((builderCampData.name ? builderCampData.name + ' \xB7 ' : '') + (builderCampData.objective||'')) || (done||active ? 'In progress' : 'Not started') :
+                  sn===2 ? (builderCampData.audience||(done||active?'Querying LIG…':'Not started')) :
+                  sn===3 ? (builderCampData.trigger||(done||active?'Querying MTA…':'Not started')) :
+                  sn===4 ? (builderCampData.creative||(done||active?'Select or build →':'Not started')) :
+                  (done||active?'Awaiting sign-off':'Not started')
                 )
               )
             );
@@ -9334,20 +9507,21 @@ Rules:
         /* Summary card */
         /*#__PURE__*/React.createElement("div", { style: { background: 'var(--card)', border: '1px solid var(--bdr-soft)', borderRadius: 9, padding: '12px 14px' } },
           /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginBottom: 8 } }, "Campaign Summary"),
-          [['Objective',builderCampData.objective],['Budget',builderCampData.budget],['Flight',builderCampData.flight],['Audience',builderCampData.audience],['Trigger',builderCampData.trigger],['Creative',builderCampData.creative]].map(([lbl,val]) =>
+          [['Name', builderCampData.name], ['Objective',builderCampData.objective],['Budget',builderCampData.budget],['Flight',builderCampData.flight],['Audience',builderCampData.audience],['Trigger',builderCampData.trigger],['Creative',builderCampData.creative]].map(([lbl,val]) =>
             /*#__PURE__*/React.createElement("div", { key: lbl, style: { display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', borderBottom: '1px solid var(--bdr-soft)' } },
-              /*#__PURE__*/React.createElement("span", { style: { color: 'var(--slate)' } }, lbl),
-              /*#__PURE__*/React.createElement("span", { style: { fontWeight: 700, fontSize: 11, color: val ? (val.includes('\u2713') ? 'var(--green)' : 'var(--text)') : 'var(--slate)', fontStyle: val ? 'normal' : 'italic' } }, val || 'Pending')
+              /*#__PURE__*/React.createElement("span", { style: { color: 'var(--slate)', flexShrink: 0 } }, lbl),
+              /*#__PURE__*/React.createElement("span", { style: { fontWeight: 700, fontSize: 10, color: val ? (val.includes('\u2713') ? 'var(--green)' : 'var(--text)') : 'var(--slate)', fontStyle: val ? 'normal' : 'italic', textAlign: 'right', maxWidth: '55%' } }, val || 'Pending')
             )
           )
         ),
         /* Progress bar */
         /*#__PURE__*/React.createElement("div", { style: { background: 'rgba(99,102,241,.06)', border: '1px solid var(--bdr-soft)', borderRadius: 9, padding: '12px 14px' } },
           /*#__PURE__*/React.createElement("div", { style: { height: 4, background: 'var(--card-alt)', borderRadius: 2, overflow: 'hidden' } },
-            /*#__PURE__*/React.createElement("div", { style: { width: Math.round((builderStep-1)/6*100)+'%', height: '100%', background: 'linear-gradient(90deg,var(--indigo),var(--cyan-dim))', borderRadius: 2, transition: 'width .4s ease' } })
+            /*#__PURE__*/React.createElement("div", { style: { width: Math.round((builderStep-1)/5*100)+'%', height: '100%', background: 'linear-gradient(90deg,var(--indigo),var(--cyan-dim))', borderRadius: 2, transition: 'width .4s ease' } })
           ),
-          /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--slate)', marginTop: 5, fontFamily: 'IBM Plex Mono, monospace' } }, (builderStep-1) + ' of 6 steps complete')
+          /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--slate)', marginTop: 5, fontFamily: 'IBM Plex Mono, monospace' } }, Math.min(builderStep-1, 5) + ' of 5 steps complete')
         )
+      )
       ),
       /* Exit bar */
       /*#__PURE__*/React.createElement("div", { style: { padding: '12px 20px', borderTop: '1px solid var(--bdr)', display: 'flex', gap: 8, flexShrink: 0 } },
