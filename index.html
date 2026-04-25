@@ -9032,12 +9032,8 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
 
   // ── Rewritten _builderGetResponse with rich data cards ────────────
   const _builderGetResponse = (text, step, data) => {
-    // STEP 1a — Campaign name
+    // STEP 1a — Name captured from first chip/input, ask objective
     if (step === 1 && !data.name) {
-      return { text: "Let\u2019s build your campaign. I\u2019ll pull live data from the LIG at each step \u2014 audiences, triggers, and creatives will be grounded in your actual performance data.\n\nStep 1 of 6 \xB7 Setup\nWhat\u2019s the campaign name?", options: ['Meridian Air Q2 Acquisition', 'Custom name \u2192'], dataUpdate: {} };
-    }
-    // STEP 1b — Name captured, ask objective
-    if (step === 1 && !data.objective) {
       const nm = text.includes('Custom') ? 'New Campaign' : text;
       return { text: '\u201c' + nm + '\u201d \u2014 noted.\n\nObjective?', options: ['New card acquisition', 'Product upgrade', 'Spend activation', 'Retention'], dataUpdate: { name: nm } };
     }
