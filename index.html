@@ -8942,7 +8942,21 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
   // ── Builder initialization — greet the user when entering builder mode ─
   useEffect(() => {
     if (!builderMode || builderMessages.length > 0) return;
-    setBuilderMessages([{ role: 'assistant', text: "Let\u2019s build your campaign. I\u2019ll pull live data from the LIG at each step \u2014 audiences from real propensity scores, triggers from 90-day MTA, creatives ranked by audience fit with auto-lint.\n\nStep 1 of 5 \xB7 Setup\nWhat\u2019s the campaign name?", options: ['Meridian Air Q2 Acquisition', 'Custom name \u2192'] }]);
+    if (builderBrief && builderBrief.objective) {
+      const campName = builderBrief.name || (builderBrief.co_brand ? builderBrief.co_brand + ' Campaign' : 'New Campaign');
+      const budStr = builderBrief.budget ? '$' + (builderBrief.budget/1000).toFixed(0) + 'K' : 'TBD';
+      setBuilderCampData({ name: campName, objective: (builderBrief.objective||'').replace(/_/g,' '), budget: budStr + (builderBrief.flight ? ' \xB7 ' + builderBrief.flight : ''), flight: builderBrief.flight||'', audience: '', trigger: '', creative: '' });
+      setBuilderStep(2);
+      setBuilderMessages([{ role: 'assistant', text: '\u2713 Brief loaded from your ideation session.\n\nPre-filled:\n\u2022 ' + campName + '\n\u2022 ' + (builderBrief.objective||'').replace(/_/g,' ') + ' \xB7 ' + budStr + (builderBrief.flight ? ' \xB7 ' + builderBrief.flight : '') + (builderBrief.creative_direction ? '\n\u2022 Creative direction: ' + builderBrief.creative_direction : '') + '\n\nSkipping to Step 2 \xB7 Audiences \u2014 querying the LIG with your target profile' + (builderBrief.audience_hint ? ': ' + builderBrief.audience_hint : '') + '\u2026',
+        cards: [
+          { type: 'audience', id: 'AUD-001', name: 'High-Intent Travel Rewards', taxonomy: 'Explorers \xB7 Revelers \xB7 CR-matched', size: '52,400', sizeLabel: 'qualified prospects', criteria: ['\u22654 flight/hotel transactions / 90d', 'Mobile sessions \u226510/wk \xB7 HHI proxy \u2265\$140K', 'No current Signature card \xB7 Consent: email + push'], features: [{ label: 'Travel spend', pct: 87 }, { label: 'Mobile sessions', pct: 73 }, { label: 'Email open rate', pct: 68 }], propensity: 84, dests: ['SFMC / Email', 'TTD (UID2)', 'AJO Journeys'], compliance: ['Fair Lending \u2713', 'GLBA \u2713', 'TCPA \u2713'], recommended: true },
+          { type: 'audience', id: 'AUD-002', name: 'Affluent Mobile-First Upgraders', taxonomy: 'Luxuriates \xB7 IAB-matched', size: '38,700', sizeLabel: 'upgrade targets', criteria: ['Monthly spend \$5K+ \xB7 3 consecutive months', 'Mobile primary >80%'], features: [{ label: 'Monthly spend', pct: 81 }, { label: 'Mobile primary', pct: 74 }], propensity: 79, dests: ['Adobe RTCDP', 'SFMC / Email', 'Clean Room (LR)'], compliance: ['Fair Lending \u2713', 'UDAAP \u2713'], recommended: false }
+        ],
+        options: ['\u2713 Use AUD-001 \u2014 High-Intent Travel Rewards', 'Use AUD-002 instead', 'Build a custom segment \u2192']
+      }]);
+    } else {
+      setBuilderMessages([{ role: 'assistant', text: "Let\u2019s build your campaign. I\u2019ll pull live data from the LIG at each step \u2014 audiences from real propensity scores, triggers from 90-day MTA, creatives ranked by audience fit with auto-lint.\n\nStep 1 of 5 \xB7 Setup\nWhat\u2019s the campaign name?", options: ['Meridian Air Q2 Acquisition', 'Custom name \u2192'] }]);
+    }
   }, [builderMode]);
 
   const [builderCreativeIdx, setBuilderCreativeIdx] = useState(0);
@@ -9124,31 +9138,113 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
           setMkSelectedCampIdx(0);
           setBuilderMode(false); setBuilderMessages([]); setBuilderStep(1); setBuilderCreativeIdx(0);
           setBuilderCampData({ name:'', objective:'', budget:'', flight:'', audience:'', trigger:'', creative:'' });
-          setBuilderExited(true); setActivationState('idle');
+          setBuilderExited(true); setActivationState('idle'); setHubBriefReady(false);
           setTab('campaigns');
         }, 2200);
       }
     }, 600 + Math.random()*350);
   };
-  const AUDIENCE_SAMPLES = ['Build a new card acquisition campaign for Meridian Air', 'Show me my highest-performing audiences for credit card upgrade campaigns', 'Which trigger path has the best CVR for High-Intent Travelers in the last 90 days?'];
-  const DESK_CONCIERGE_SYS = `You are the Signalset Marketing Desk concierge — a routing and navigation assistant for a financial institution's AI-powered marketing platform.
+  // ── Ideation chat init ─────────────────────────────────────────────
+  useEffect(() => {
+    if (!deskHub || ideaMessages.length > 0) return;
+    setIdeaMessages([{ role: 'assistant', text: "Let\u2019s talk through your next campaign before we start building.\n\nWhat partner or product are you focused on? And what\u2019s the primary outcome you\u2019re trying to drive \u2014 new card acquisition, spend activation, product upgrade, or retention?" }]);
+  }, [deskHub]);
 
-Your ONLY job is to understand what the marketer wants and tell them exactly where to go in 1-2 plain sentences. No markdown. No asterisks. No bullet points.
+  const HUB_IDEATION_SYS = `You are a senior campaign strategist at a financial institution's marketing desk powered by the Signalset Living Identity Graph (LIG). Your job is to conduct a rigorous ideation interview before the marketer enters the structured campaign builder.
 
-Navigation options:
-- Build a campaign / New campaign: Use the "Build a Campaign" pill below this chat to launch the AI-guided campaign builder directly.
-- View campaigns, ROAS, spend metrics: Click the Campaigns tab in the tab bar above.
-- Audiences / segments: Click the Audiences tab.
-- Trigger paths / journey sequences: Click the Triggers tab.
-- Creatives / ad assets: Click the Creatives tab.
+ROLE: Strategist. You extract a complete campaign brief through conversation. You never route, never say "click a button," never rush.
 
-Rules:
-- 1-2 sentences maximum. Always name the specific UI element to click.
-- Never attempt to build, analyze, or query data yourself.
-- Never use markdown bold (**text**) or any formatting — plain text only.
-- If the question is about ROAS, spend, or active campaigns: direct to the Campaigns tab.
-- If the question is about audiences: direct to the Audiences tab.
-- If the question is about triggers or CVR: direct to the Triggers tab.`;
+RULES:
+- Ask ONE or TWO focused questions per turn. Never more.
+- Push back on vague answers. If they say "something for travel," ask which partner, which product, which audience.
+- Build the brief across 4-6 exchanges minimum. Do not declare ready before exchange 4.
+- When you have confirmed: objective + co-brand partner + audience description + budget + flight timing, set ready: true.
+- ALWAYS respond with valid JSON only. No markdown fences, no preamble, no other text outside the JSON object.
+
+BRIEF FIELDS:
+- name: suggested campaign name based on partner + objective
+- objective: "new_card_acquisition" | "spend_activation" | "product_upgrade" | "retention"
+- co_brand: partner brand name (e.g. "Meridian Air") or null
+- audience_hint: plain language description of the target audience with specific behavioral signals if mentioned
+- budget: number in dollars or null
+- flight: date range string or null
+- creative_direction: tone, visual style, key message, any brand constraints
+- success_metric: what defines campaign success to this marketer
+- notes: suppression rules, channel preferences, compliance flags, anything else
+
+RESPONSE FORMAT — always this exact structure:
+{
+  "text": "your conversational response — the only thing the user reads",
+  "brief": { partial brief fields confirmed so far — null for unknown fields },
+  "ready": false,
+  "exchange": N
+}
+
+When ready becomes true, set "launch_cta": "Launch Campaign Builder \u2192" in the response.
+Be direct, analytical, and specific. This is a professional tool, not a consumer product.`;
+
+  const _ideaSend = async (text) => {
+    const q = (text || ideaInput).trim();
+    if (!q || ideaBusy) return;
+    setIdeaInput('');
+    const newMsgs = [...ideaMessages, { role: 'user', text: q }];
+    setIdeaMessages(newMsgs);
+    setIdeaBusy(true);
+    try {
+      const apiMessages = newMsgs.map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.text }));
+      const res = await fetch('https://signalset-lig-api.tickersignals.workers.dev/api/claude', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, system: HUB_IDEATION_SYS, messages: apiMessages })
+      });
+      const data = await res.json();
+      const raw = data.content?.[0]?.text || '';
+      let parsed;
+      try { parsed = JSON.parse(raw.replace(/```json|```/g, '').trim()); }
+      catch(e) { const jm = raw.match(/\{[\s\S]*\}/); try { parsed = JSON.parse(jm?.[0]||'{}'); } catch(e2) { parsed = { text: raw }; } }
+      if (parsed.brief && Object.keys(parsed.brief).some(k => parsed.brief[k] !== null)) {
+        setBuilderBrief(prev => ({ ...(prev || {}), ...Object.fromEntries(Object.entries(parsed.brief).filter(([,v]) => v !== null)) }));
+      }
+      if (parsed.ready) setBriefReady(true);
+      setIdeaMessages(prev => [...prev, { role: 'assistant', text: parsed.text || raw, ready: parsed.ready, launchCta: parsed.launch_cta }]);
+    } catch(err) {
+      setIdeaMessages(prev => [...prev, { role: 'assistant', text: 'Connection issue \u2014 please try again.' }]);
+    }
+    setIdeaBusy(false);
+  };
+
+  const AUDIENCE_SAMPLES = ['I want to build a card acquisition campaign for Meridian Air targeting affluent frequent travelers', 'Help me plan a spend activation campaign for existing cardholders who are underleveraging rewards', 'I need to design a product upgrade campaign targeting high-LTV customers ready to move to Signature'];
+  const DESK_CONCIERGE_SYS = `You are the Signalset Campaign Strategist — an AI embedded in a financial institution's marketing platform. Your job is to have a genuine strategic conversation with the marketer to build a complete campaign brief before they enter the campaign builder.
+
+You are NOT a router. Never say "click a button" or "use the pill." You ARE the starting point of the campaign build.
+
+YOUR GOAL: Extract a complete brief through natural, intelligent conversation. Ask one focused question at a time. Push back on vague answers. The brief needs:
+1. Campaign name and partner (if co-brand)
+2. Objective (new card acquisition / product upgrade / spend activation / retention — be specific)
+3. Target audience intuition (who they're going after, behavioral signals, any exclusions)
+4. Budget and flight dates
+5. Creative direction and tone
+6. Success metric (ROAS target, conversion goal, lift target)
+7. Any constraints (brand rules, compliance considerations, channels to avoid)
+
+HOW TO BEHAVE:
+- Start by asking what campaign they want to build — open-ended, warm, conversational
+- After each answer, probe deeper before moving on. If they say "affluent travelers" ask what income proxy, what behavioral signals, what card they currently hold
+- If they give a budget without a timeframe, ask for the flight
+- If they give an objective without a success metric, ask how they'll know it worked
+- Keep responses SHORT — 1-3 sentences max, then one focused question
+- Never ask more than one question at a time
+- After you have all 7 brief elements confirmed, include the exact text "BRIEF_COMPLETE" somewhere in your response along with a natural transition like "I have everything I need — ready to build this out in the campaign builder."
+
+TONE: Warm, sharp, experienced. Like a senior strategist who's run hundreds of credit card campaigns and knows exactly what details matter.
+
+Do NOT return JSON. Plain conversational text only. No markdown.`;
+
+  const [builderBrief, setBuilderBrief] = useState(null);
+  const [briefReady, setBriefReady] = useState(false);
+  const [ideaMessages, setIdeaMessages] = useState([]);
+  const [ideaInput, setIdeaInput] = useState('');
+  const [ideaBusy, setIdeaBusy] = useState(false);
+  const [hubBriefReady, setHubBriefReady] = useState(false);
   const JOURNEY_SAMPLES = ['Build an AI-optimized conversion path for High-Intent Travelers — maximize CVR within a 14-day window', 'What trigger sequence drives the fastest path to Signature card application for mobile-first Explorers?'];
   const SMART_TRIGGERS_HEADER = /*#__PURE__*/React.createElement("div", {
     style: {
@@ -9208,7 +9304,7 @@ Rules:
   ), /*#__PURE__*/React.createElement("h1", { className: "v11-home-greeting" },
     "Hi Dio \u2014 ", /*#__PURE__*/React.createElement("span", null, "what would you like to do today?")
   ), /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, color: 'var(--slate)', marginTop: 10, marginBottom: 4, textAlign: 'center', lineHeight: 1.6 } },
-    "Ask a question below, or jump directly to a tool using the pills."
+    "Describe the campaign you want to build. The more detail you give, the smarter the builder gets."
   )), /*#__PURE__*/React.createElement("div", {
     className: "camp-hub-body"
   }, /*#__PURE__*/React.createElement("div", {
@@ -9262,21 +9358,67 @@ Rules:
       fontWeight: 700,
       flexShrink: 0
     }
-  }, "AI")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      flexDirection: 'column',
-      width: '100%',
-      maxWidth: 720,
-      margin: '0 auto'
-    }
-  }, /*#__PURE__*/React.createElement(Chatbot, {
-    systemPrompt: DESK_CONCIERGE_SYS,
-    samples: AUDIENCE_SAMPLES,
-    exploreLabel: "Campaign Platform",
-    exploreScreen: () => { setDeskHub(false); window.scrollTo(0,0); },
-    placeholder: "Ask about campaigns, audiences, triggers, or creatives\u2026",
-  })), /*#__PURE__*/React.createElement("div", { className: "v11-home-pills", style: { marginTop: 18, justifyContent: "center" } }, /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setBuilderMode(true); setDeskHub(false); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'broadcast', size: 13, color: 'var(--cyan-dim)' })), 'Build a Campaign'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setDeskHub(false); setTab('audience'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'target', size: 13, color: 'currentColor' })), 'Audiences'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setDeskHub(false); setTab('journey'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'lightning', size: 13, color: 'currentColor' })), 'Triggers'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setDeskHub(false); setTab('creative'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'palette', size: 13, color: 'currentColor' })), 'Creatives'), false && /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => alert('From Drive integration coming in Phase 11'), role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'store', size: 13, color: 'currentColor' })), 'From Drive'))), /*#__PURE__*/React.createElement("div", {
+  }, "AI")),
+  /* ── Ideation Chat — full-width canvas ── */
+  /*#__PURE__*/React.createElement("div", {
+    style: { width: '100%', maxWidth: 860, margin: '0 auto', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }
+  },
+    /* Messages */
+    /*#__PURE__*/React.createElement("div", {
+      style: { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 14, padding: '4px 0 20px' }
+    },
+      ideaMessages.map((m, i) => /*#__PURE__*/React.createElement("div", { key: i, style: { display: 'flex', flexDirection: 'column', alignItems: m.role === 'user' ? 'flex-end' : 'flex-start', gap: 8 } },
+        /*#__PURE__*/React.createElement("div", {
+          style: { maxWidth: m.role === 'user' ? '72%' : '88%', padding: '13px 18px', borderRadius: m.role === 'user' ? '18px 18px 4px 18px' : '4px 18px 18px 18px', background: m.role === 'user' ? 'var(--cyan)' : 'var(--card-alt)', border: m.role === 'user' ? 'none' : '1px solid rgba(99,102,241,.25)', fontSize: 15, lineHeight: 1.7, color: m.role === 'user' ? '#fff' : 'var(--text)', whiteSpace: 'pre-wrap' }
+        }, m.text),
+        m.role === 'assistant' && m.ready && /*#__PURE__*/React.createElement("button", {
+          onClick: () => { setBuilderMode(true); setDeskHub(false); window.scrollTo(0,0); },
+          style: { alignSelf: 'flex-start', padding: '11px 22px', borderRadius: 10, background: 'var(--indigo)', color: '#fff', border: 'none', fontSize: 14, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'var(--font-b)', boxShadow: '0 4px 20px rgba(99,102,241,.4)', transition: 'all .15s' }
+        }, "\uD83D\uDE80 ", m.launchCta || "Launch Campaign Builder \u2192")
+      )),
+      ideaBusy && /*#__PURE__*/React.createElement("div", { style: { display: 'flex', alignItems: 'flex-start' } },
+        /*#__PURE__*/React.createElement("div", { style: { padding: '12px 16px', borderRadius: '4px 16px 16px 16px', background: 'var(--card-alt)', border: '1px solid rgba(99,102,241,.25)', display: 'flex', gap: 5, alignItems: 'center' } },
+          [0,1,2].map(i => /*#__PURE__*/React.createElement("div", { key: i, style: { width: 7, height: 7, borderRadius: '50%', background: 'var(--cyan-dim)', animation: 'typing-bounce 1.2s ease ' + (i*0.2) + 's infinite' } }))
+        )
+      )
+    ),
+    /* Brief progress strip */
+    builderBrief && Object.values(builderBrief).some(v => v) && /*#__PURE__*/React.createElement("div", {
+      style: { display: 'flex', gap: 6, flexWrap: 'wrap', padding: '10px 0', borderTop: '1px solid var(--bdr-soft)', marginTop: 4 }
+    },
+      [['Objective', builderBrief.objective], ['Partner', builderBrief.co_brand], ['Audience', builderBrief.audience_hint ? builderBrief.audience_hint.slice(0,40)+'\u2026' : null], ['Budget', builderBrief.budget ? '$' + (builderBrief.budget/1000).toFixed(0) + 'K' : null], ['Flight', builderBrief.flight]].filter(([,v]) => v).map(([lbl, val]) =>
+        /*#__PURE__*/React.createElement("div", { key: lbl, style: { fontSize: 11, padding: '3px 9px', borderRadius: 5, background: 'rgba(74,222,128,.07)', border: '1px solid rgba(74,222,128,.2)', color: 'var(--green)', fontFamily: 'IBM Plex Mono, monospace', display: 'flex', gap: 5 } },
+          /*#__PURE__*/React.createElement("span", { style: { color: 'var(--slate)' } }, lbl + ':'),
+          /*#__PURE__*/React.createElement("span", { style: { fontWeight: 700 } }, val)
+        )
+      )
+    ),
+    /* Input */
+    /*#__PURE__*/React.createElement("div", { style: { paddingTop: 10 } },
+      /*#__PURE__*/React.createElement("div", { style: { display: 'flex', alignItems: 'flex-end', gap: 8, background: 'var(--card-alt)', border: '1px solid rgba(99,102,241,.28)', borderRadius: 12, padding: '12px 14px', boxShadow: '0 0 0 1px rgba(99,102,241,.08), 0 4px 24px rgba(0,0,0,.3)' } },
+        /*#__PURE__*/React.createElement("textarea", {
+          rows: 2, value: ideaInput,
+          onChange: e => setIdeaInput(e.target.value),
+          onKeyDown: e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); _ideaSend(); } },
+          placeholder: 'Tell me about the campaign you want to build\u2026',
+          disabled: ideaBusy,
+          style: { flex: 1, background: 'none', border: 'none', outline: 'none', resize: 'none', fontSize: 15, color: 'var(--text)', fontFamily: 'var(--font-b)', lineHeight: 1.6, minHeight: 44 }
+        }),
+        /*#__PURE__*/React.createElement("button", {
+          onClick: () => _ideaSend(), disabled: !ideaInput.trim() || ideaBusy,
+          style: { width: 36, height: 36, borderRadius: 9, border: 'none', background: ideaInput.trim() && !ideaBusy ? 'var(--indigo)' : 'rgba(99,102,241,.25)', color: '#fff', cursor: ideaInput.trim() && !ideaBusy ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 16, transition: 'all .15s' }
+        }, '\u2191')
+      ),
+      /*#__PURE__*/React.createElement("div", { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, padding: '0 2px' } },
+        /*#__PURE__*/React.createElement("span", { style: { fontSize: 11, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace' } }, 'Shift+Enter for new line \xB7 Sonnet 4'),
+        /*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 8 } },
+          [['Audiences', 'audience', 'target'], ['Triggers', 'journey', 'lightning'], ['Creatives', 'creative', 'palette']].map(([lbl, tabId]) =>
+            /*#__PURE__*/React.createElement("button", { key: lbl, onClick: () => { setDeskHub(false); setTab(tabId); window.scrollTo(0,0); }, style: { fontSize: 11, padding: '3px 10px', borderRadius: 6, background: 'transparent', border: '1px solid var(--bdr-soft)', color: 'var(--slate)', cursor: 'pointer', fontFamily: 'var(--font-b)', transition: 'all .15s' } }, lbl)
+          )
+        )
+      )
+    )
+  ), /*#__PURE__*/React.createElement("div", {
     className: "camp-hub-right"
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -9380,7 +9522,7 @@ Rules:
       color: 'var(--slate)',
       lineHeight: 1.5
     }
-  }, card.desc))))));
+  }, card.desc)))))));
   return /*#__PURE__*/React.createElement("div", {className: "desk-screen-wrap"}, /*#__PURE__*/React.createElement("div", {
     className: "hero"
   }, /*#__PURE__*/React.createElement("div", {
@@ -9400,7 +9542,7 @@ Rules:
     /* LEFT: conversation */
     /*#__PURE__*/React.createElement("div", { style: { flex: '0 0 58%', display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--bdr)', overflow: 'hidden' } },
       /* Chat header */
-      /*#__PURE__*/React.createElement("div", { style: { padding: '12px 20px', background: 'var(--card-alt)', borderBottom: '1px solid var(--bdr)', display: 'flex', alignItems: 'center', flexShrink: 0, minHeight: 54 } },
+      /*#__PURE__*/React.createElement("div", { style: { height: 56, padding: '0 20px', background: 'var(--card-alt)', borderBottom: '1px solid var(--bdr)', display: 'flex', alignItems: 'center', flexShrink: 0, boxSizing: 'border-box' } },
         /*#__PURE__*/React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 10 } },
           /*#__PURE__*/React.createElement("div", { style: { width: 8, height: 8, borderRadius: '50%', background: 'var(--green)' } }),
           /*#__PURE__*/React.createElement("div", null,
@@ -9435,7 +9577,7 @@ Rules:
     ),
     /* RIGHT: Progress + summary */
     /*#__PURE__*/React.createElement("div", { style: { flex: '0 0 42%', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--card-alt2)' } },
-      /*#__PURE__*/React.createElement("div", { style: { padding: '12px 20px', borderBottom: '1px solid var(--bdr)', background: 'var(--card-alt)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, minHeight: 54 } },
+      /*#__PURE__*/React.createElement("div", { style: { height: 56, padding: '0 20px', borderBottom: '1px solid var(--bdr)', background: 'var(--card-alt)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, boxSizing: 'border-box', overflow: 'hidden' } },
         /*#__PURE__*/React.createElement("div", null,
           /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, fontWeight: 700 } }, builderStep === 4 ? 'Creative Library \xB7 AUD-001 Ranked' : 'Campaign in Progress'),
           /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2 } }, builderStep === 4 ? 'Select, modify, upload, or generate' : (builderCampData.name || 'New Campaign'))
@@ -9525,7 +9667,7 @@ Rules:
       /* Exit bar */
       /*#__PURE__*/React.createElement("div", { style: { padding: '12px 20px', borderTop: '1px solid var(--bdr)', display: 'flex', gap: 8, flexShrink: 0 } },
         /*#__PURE__*/React.createElement("button", { className: 'btn btn-secondary', style: { flex: 1, justifyContent: 'center', fontSize: 12, color: 'var(--amber)', borderColor: 'rgba(245,158,11,.3)' }, onClick: saveBuilderAsDraft }, "Save as draft"),
-        /*#__PURE__*/React.createElement("button", { className: 'btn btn-ghost', style: { fontSize: 12 }, onClick: () => { setBuilderMode(false); setBuilderMessages([]); setBuilderStep(1); setBuilderCampData({name:'',objective:'',budget:'',flight:'',audience:'',trigger:'',creative:''}); setTab('campaigns'); } }, "Exit without saving")
+        /*#__PURE__*/React.createElement("button", { className: 'btn btn-ghost', style: { fontSize: 12 }, onClick: () => { setBuilderMode(false); setBuilderMessages([]); setBuilderStep(1); setBuilderCreativeIdx(0); setHubBriefReady(false); setBuilderCampData({name:'',objective:'',budget:'',flight:'',audience:'',trigger:'',creative:''}); setTab('campaigns'); } }, "Exit without saving")
       )
     )
   ) :
