@@ -448,8 +448,8 @@ body.v11-sidebar-open .v11-sidebar { transform: translateX(0); }
 .v11-home-greeting span { color: var(--indigo-lt, #818CF8); font-weight: 800; }
 .v11-home-chat-wrap {
   width: min(720px, calc(100% - 40px));
+  margin: 0 auto 14px;
   position: relative; z-index: 1;
-  margin-bottom: 14px;
 }
 /* Override Chatbot interior styling for the v11 home context */
 .v11-home-chat-wrap .home-chat-wrap {
@@ -624,11 +624,12 @@ html:not(.screen-transitioning) body {
   order: 2;
   position: fixed;
   bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(720px, calc(100% - 40px));
+  left: 52px;
+  right: 0;
+  margin: 0 auto;
+  transform: none;
+  width: min(720px, calc(100vw - 52px - 40px));
   z-index: 20;
-  margin: 0;
   background: rgba(14,14,34,.95);
   backdrop-filter: blur(14px);
   box-shadow: 0 12px 32px rgba(0,0,0,.4);
@@ -8875,6 +8876,23 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
   // (legacy tab-driven interval removed — Activate button now drives animation)
   // Legacy interval block fully replaced by activation-driven interval above
   const AUDIENCE_SAMPLES = ['Build a new Meridian Air campaign — travel rewards acquisition, $450K, May flight', 'Show me my highest-performing audiences for credit card upgrade campaigns', 'Which trigger path has the best CVR for High-Intent Travelers in the last 90 days?'];
+  const DESK_CONCIERGE_SYS = `You are the Signalset Marketing Desk concierge — a routing and navigation assistant for a financial institution's AI-powered marketing platform.
+
+Your ONLY job is to understand what the marketer wants to do and tell them exactly where to go. You do NOT build audiences, trigger paths, or creatives here. Those are done in dedicated tabs.
+
+Navigation options:
+- "Build a Campaign" / "New Campaign": Click the Campaigns tab → New Campaign tile. This opens the full 6-step campaign builder.
+- Audiences: Click the Audiences tab. The AI will help build segments there.
+- Triggers / Journey paths: Click the Triggers tab.
+- Creatives: Click the Creatives tab.
+- View active campaigns / ROAS / metrics: Click the Campaigns tab.
+
+Rules:
+- Keep responses to 1-2 sentences maximum.
+- Always name the specific tab or button to click.
+- Never attempt to build an audience, trigger, or creative yourself.
+- Never return JSON. Plain text only.
+- If the intent is unclear, ask one clarifying question: are they starting a new campaign, or working on an existing one?`;
   const JOURNEY_SAMPLES = ['Build an AI-optimized conversion path for High-Intent Travelers — maximize CVR within a 14-day window', 'What trigger sequence drives the fastest path to Signature card application for mobile-first Explorers?'];
   const SMART_TRIGGERS_HEADER = /*#__PURE__*/React.createElement("div", {
     style: {
@@ -8995,86 +9013,11 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
       margin: '0 auto'
     }
   }, /*#__PURE__*/React.createElement(Chatbot, {
-    systemPrompt: AUDIENCE_SYS,
+    systemPrompt: DESK_CONCIERGE_SYS,
     samples: AUDIENCE_SAMPLES,
     exploreLabel: "Campaign Platform",
     exploreScreen: () => { setDeskHub(false); window.scrollTo(0,0); },
     placeholder: "Describe the campaign you want to build, or jump to a specific tool\u2026",
-    resultRenderer: d => /*#__PURE__*/React.createElement("div", { style: { flex: 1 } }, /*#__PURE__*/React.createElement(AudienceResult, {
-      data: d
-    }), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: 8,
-        marginTop: 10,
-        padding: '12px 16px',
-        background: 'var(--card)',
-        border: '1px solid var(--bdr)',
-        borderRadius: 10,
-        alignItems: 'center'
-      }
-    }, /*#__PURE__*/React.createElement("button", {
-      key: 'journey',
-      onClick: () => { setDeskHub(false); setTab('journey'); window.scrollTo(0, 0); },
-      style: {
-        padding: '6px 14px',
-        borderRadius: 20,
-        fontSize: 12,
-        cursor: 'pointer',
-        whiteSpace: 'nowrap',
-        fontFamily: 'inherit',
-        background: 'rgba(6,182,212,0.15)',
-        color: 'var(--cyan)',
-        border: '1px solid rgba(6,182,212,0.4)',
-        fontWeight: 700
-      }
-    }, "Build trigger journey \u2192"), /*#__PURE__*/React.createElement("button", {
-      key: 'creative',
-      onClick: () => { setDeskHub(false); setTab('creative'); window.scrollTo(0, 0); },
-      style: {
-        padding: '6px 14px',
-        borderRadius: 20,
-        fontSize: 12,
-        cursor: 'pointer',
-        whiteSpace: 'nowrap',
-        fontFamily: 'inherit',
-        background: 'rgba(99,102,241,0.1)',
-        color: 'var(--indigo)',
-        border: '1px solid rgba(99,102,241,0.3)',
-        fontWeight: 500
-      }
-    }, "Build creative"), /*#__PURE__*/React.createElement("button", {
-      key: 'approve',
-      onClick: () => { setDeskHub(false); setTab('summary'); window.scrollTo(0, 0); },
-      style: {
-        padding: '6px 14px',
-        borderRadius: 20,
-        fontSize: 12,
-        cursor: 'pointer',
-        whiteSpace: 'nowrap',
-        fontFamily: 'inherit',
-        background: 'rgba(99,102,241,0.1)',
-        color: 'var(--indigo)',
-        border: '1px solid rgba(99,102,241,0.3)',
-        fontWeight: 500
-      }
-    }, "Review & approve"), /*#__PURE__*/React.createElement("button", {
-      key: 'escape',
-      onClick: () => { const el = document.querySelector('.screen.active .chat-input'); if (el) el.focus(); },
-      style: {
-        padding: '6px 14px',
-        borderRadius: 20,
-        fontSize: 12,
-        cursor: 'pointer',
-        whiteSpace: 'nowrap',
-        fontFamily: 'inherit',
-        background: 'transparent',
-        color: 'var(--slate)',
-        border: '1px dashed var(--bdr)',
-        fontWeight: 500
-      }
-    }, "Something else\u2026"))),
   })), /*#__PURE__*/React.createElement("div", { className: "v11-home-pills", style: { marginTop: 18, justifyContent: "center" } }, /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setDeskHub(false); setTab('campaigns'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'broadcast', size: 13, color: 'var(--cyan-dim)' })), 'Build a Campaign'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setDeskHub(false); setTab('audience'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'target', size: 13, color: 'currentColor' })), 'Audiences'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setDeskHub(false); setTab('journey'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'lightning', size: 13, color: 'currentColor' })), 'Triggers'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setDeskHub(false); setTab('creative'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'palette', size: 13, color: 'currentColor' })), 'Creatives'), false && /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => alert('From Drive integration coming in Phase 11'), role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'store', size: 13, color: 'currentColor' })), 'From Drive'))), /*#__PURE__*/React.createElement("div", {
     className: "camp-hub-right"
   }, /*#__PURE__*/React.createElement("div", {
