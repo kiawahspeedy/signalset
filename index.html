@@ -657,10 +657,10 @@ html:not(.screen-transitioning) body {
 .msg.user { justify-content: flex-end; }
 .msg.user .bubble {
   background: var(--cyan); border: none;
-  color: #FFFFFF; font-size: 16px; padding: 12px 17px; line-height: 1.68;
+  color: #FFFFFF; font-size: 15px; padding: 12px 17px; line-height: 1.68;
   border-radius: 16px 16px 4px 16px; max-width: 78%;
 }
-.msg.assistant .bubble { flex: 1; font-size: 16px; line-height: 1.72; color: var(--text); background: transparent; padding: 4px 0; border-radius: 0; border: none; box-shadow: none; }
+.msg.assistant .bubble { flex: 1; font-size: 15px; line-height: 1.7; color: var(--text); background: transparent; padding: 4px 0; border-radius: 0; border: none; box-shadow: none; }
 
 /* ─── Sample-prompt row (Option C · top row) ───
    Quiet, bordered, tappable. Same visual weight as the bottom nav row.
@@ -4584,7 +4584,7 @@ function Chatbot({
       fontSize: 15,
       lineHeight: 1.7
     }
-  }, msg.content?.error || msg.content?.text || JSON.stringify(msg.content)))), /*#__PURE__*/React.createElement("div", {
+  }, (msg.content?.error || msg.content?.text || JSON.stringify(msg.content) || '').replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1')))), /*#__PURE__*/React.createElement("div", {
     ref: endRef
   })), false && msgs.some(m => m.role === 'assistant' && m.content && !m.loading) && /*#__PURE__*/React.createElement("div", {
     style: {
@@ -13761,10 +13761,10 @@ function MeasurementIntro({
       style: { flex: 1, display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0 }
     },
       /*#__PURE__*/React.createElement("div", {
-        style: { padding: '4px 0', fontSize: 16, lineHeight: 1.72, color: 'var(--text)', whiteSpace: 'pre-wrap' }
+        style: { padding: '4px 0', fontSize: 15, lineHeight: 1.7, color: 'var(--text)', whiteSpace: 'pre-wrap' }
       }, data.text || JSON.stringify(data)),
       (followUps.length > 0 || navLabel) && /*#__PURE__*/React.createElement("div", {
-        style: { display: 'flex', flexWrap: 'wrap', gap: 6, paddingTop: 2 }
+        style: { display: 'flex', flexWrap: 'wrap', gap: 6, paddingTop: 6 }
       },
         followUps.map((q, i) =>
           /*#__PURE__*/React.createElement("button", {
@@ -13772,36 +13772,37 @@ function MeasurementIntro({
             onClick: () => onFollowUp && onFollowUp(q),
             style: {
               fontSize: 12,
-              color: 'var(--cyan-pale)',
-              background: 'rgba(99,102,241,.08)',
-              border: '1px solid var(--bdr)',
-              padding: '5px 11px',
-              borderRadius: 14,
+              color: 'var(--slate)',
+              background: 'var(--card-alt)',
+              border: '1px solid rgba(99,102,241,.22)',
+              padding: '7px 12px',
+              borderRadius: 7,
               cursor: 'pointer',
-              fontFamily: 'inherit',
+              fontFamily: 'var(--font-b)',
+              fontWeight: 500,
               transition: 'all .15s'
             },
-            onMouseEnter: e => { e.currentTarget.style.background = 'rgba(99,102,241,.15)'; e.currentTarget.style.borderColor = 'var(--cyan)'; },
-            onMouseLeave: e => { e.currentTarget.style.background = 'rgba(99,102,241,.08)'; e.currentTarget.style.borderColor = 'var(--bdr)'; }
+            onMouseEnter: e => { e.currentTarget.style.color = 'var(--text)'; e.currentTarget.style.background = 'rgba(99,102,241,.14)'; e.currentTarget.style.borderColor = 'rgba(99,102,241,.45)'; },
+            onMouseLeave: e => { e.currentTarget.style.color = 'var(--slate)'; e.currentTarget.style.background = 'var(--card-alt)'; e.currentTarget.style.borderColor = 'rgba(99,102,241,.22)'; }
           }, q)
         ),
         navLabel && /*#__PURE__*/React.createElement("button", {
           onClick: (e) => navigateWithTransition(e, () => onEnter(CHART_IDS[navKey] || null)),
           style: {
             fontSize: 12,
-            color: 'var(--cyan)',
-            background: 'rgba(6,182,212,0.10)',
-            border: '1px solid rgba(6,182,212,0.35)',
-            padding: '5px 13px',
-            borderRadius: 14,
+            color: 'var(--cyan-dim)',
+            background: 'rgba(99,102,241,.1)',
+            border: '1px solid rgba(99,102,241,.3)',
+            padding: '7px 13px',
+            borderRadius: 7,
             cursor: 'pointer',
-            fontFamily: 'inherit',
-            fontWeight: 600,
+            fontFamily: 'var(--font-b)',
+            fontWeight: 700,
             transition: 'all .15s'
           },
-          onMouseEnter: e => { e.currentTarget.style.background = 'rgba(6,182,212,.18)'; },
-          onMouseLeave: e => { e.currentTarget.style.background = 'rgba(6,182,212,.10)'; }
-        }, "Open the " + navLabel + " \u2192")
+          onMouseEnter: e => { e.currentTarget.style.background = 'rgba(99,102,241,.2)'; e.currentTarget.style.borderColor = 'rgba(99,102,241,.5)'; },
+          onMouseLeave: e => { e.currentTarget.style.background = 'rgba(99,102,241,.1)'; e.currentTarget.style.borderColor = 'rgba(99,102,241,.3)'; }
+        }, navLabel + " \u2197")
       )
     );
   }
