@@ -650,6 +650,10 @@ html:not(.screen-transitioning) body {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+@keyframes typing-bounce {
+  0%,60%,100% { transform: translateY(0); opacity:.4; }
+  30% { transform: translateY(-5px); opacity:1; }
+}
 .msg.user { justify-content: flex-end; }
 .msg.user .bubble {
   background: var(--cyan); border: none;
@@ -8875,6 +8879,129 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
   }, [activationState]);
   // (legacy tab-driven interval removed — Activate button now drives animation)
   // Legacy interval block fully replaced by activation-driven interval above
+
+  // ── Cycle 2 · Campaign Builder completion handler ─────────────────────
+  // When activation completes → add campaign to list + navigate to Campaigns tab
+  const [builderExited, setBuilderExited] = useState(false);
+  const [builderMode, setBuilderMode] = useState(false);
+  const [builderMessages, setBuilderMessages] = useState([]);
+  const [builderStep, setBuilderStep] = useState(1);
+  const [builderBusy, setBuilderBusy] = useState(false);
+  const [builderInput, setBuilderInput] = useState('');
+  const [builderCampData, setBuilderCampData] = useState({ name: '', objective: '', budget: '', flight: '', audience: '', trigger: '', creative: '' });
+  useEffect(() => {
+    if (activationState !== 'activated' || builderExited) return;
+    const id = setTimeout(() => {
+      const newCamp = {
+        id: 'MK-' + Math.random().toString(36).slice(2,6).toUpperCase(),
+        name: campSetup.name,
+        creative: 'Email + Display',
+        segment: campSetup.audience || 'AI-built Audience',
+        dmas: 'Multi-market',
+        startDate: campSetup.flightStart ? campSetup.flightStart.slice(5) : 'TBD',
+        endDate: campSetup.flightEnd ? campSetup.flightEnd.slice(5) : 'TBD',
+        status: 'active',
+        budget: campSetup.budget || 450,
+        spent: 0,
+        impressions: 0,
+        clicks: 0,
+        conversions: 0,
+        roas: 0,
+        lift: 0
+      };
+      setMarketingCampaigns(prev => [newCamp, ...prev]);
+      setMkSelectedCampIdx(0);
+      setBuilderExited(true);
+      setActivationState('idle');
+      setTab('campaigns');
+    }, 1600); // brief delay so user sees the success state
+    return () => clearTimeout(id);
+  }, [activationState, builderExited]);
+
+  const saveBuilderAsDraft = () => {
+    const draftCamp = {
+      id: 'MK-' + Math.random().toString(36).slice(2,6).toUpperCase(),
+      name: campSetup.name || 'Untitled Campaign',
+      creative: '—',
+      segment: campSetup.audience || '—',
+      dmas: '—',
+      startDate: campSetup.flightStart ? campSetup.flightStart.slice(5) : '—',
+      endDate: campSetup.flightEnd ? campSetup.flightEnd.slice(5) : '—',
+      status: 'draft',
+      budget: campSetup.budget || 0,
+      spent: 0, impressions: 0, clicks: 0, conversions: 0, roas: 0, lift: 0
+    };
+    setMarketingCampaigns(prev => [draftCamp, ...prev]);
+    setMkSelectedCampIdx(0);
+    setBuilderExited(true);
+    setActivationState('idle');
+    setTab('campaigns');
+  };
+
+  // ── Builder initialization — greet the user when entering builder mode ─
+  useEffect(() => {
+    if (!builderMode || builderMessages.length > 0) return;
+    setBuilderMessages([{ role: 'assistant', text: "Let\u2019s build your campaign. I\u2019ll walk you through each step \u2014 the right panel tracks your progress.\n\nStep 1 of 6 \xB7 Setup\nWhat\u2019s the campaign objective?", options: ['New card acquisition', 'Product upgrade', 'Spend activation', 'Retention'] }]);
+  }, [builderMode]);
+
+  const _builderGetResponse = (text, step, data) => {
+    if (step === 1 && !data.objective) {
+      return { text: text + ' confirmed.\n\nBudget and flight? I\u2019ll suggest defaults based on your Q2 run rate \u2014 you can override.', options: ['$450K \xB7 May 1 \u2192 May 31', 'Override budget / dates'], dataUpdate: { objective: text } };
+    }
+    if (step === 1 && !data.budget) {
+      const bud = text.includes('Override') ? '$350K \xB7 Custom dates' : '$450K \xB7 May 1\u201331';
+      return { text: '\u2713 Setup complete. Moving to Step 2 \xB7 Audiences.\n\nBased on your LIG I found 3 strong candidates. Which audience should anchor this campaign?', options: ['High-Intent Travel Rewards (52K \xB7 84% propensity)', 'Affluent Mobile-First Upgraders (38K \xB7 79%)', 'Deal Maximizer Upgrade Cohort (29K \xB7 68%)', 'Build a custom audience first'], stepComplete: true, dataUpdate: { budget: bud, flight: 'May 1\u201331, 2026' } };
+    }
+    if (step === 2 && !data.audience) {
+      const aud = text.split('\u0020\u0028')[0];
+      return { text: '\u2713 Audience locked: ' + aud + '.\n\nStep 3 \xB7 Triggers. Based on 90-day MTA for this audience, which conversion sequence should I use?', options: ['Owned-First Travel Fast Path (4.2% proj. CVR)', 'High-Intent Conversion Sprint (3.9% CVR)', 'Cashback Upgrade Sequence (3.6% CVR)', 'Build a new one'], stepComplete: true, dataUpdate: { audience: aud + ' \u2713' } };
+    }
+    if (step === 3 && !data.trigger) {
+      const trg = text.split('\u0020\u0028')[0];
+      return { text: '\u2713 Trigger path locked: ' + trg + '.\n\nStep 4 \xB7 Creatives. Highest-fit asset for this audience:', options: ['Premium Rewards \u2014 Travel Hero (6.8% pred. CTR \xB7 92% fit)', 'Miles Accelerator Push (5.1% CTR \xB7 88% fit)', 'Build a new creative with AI'], stepComplete: true, dataUpdate: { trigger: trg + ' \u2713' } };
+    }
+    if (step === 4 && !data.creative) {
+      const crv = text.split('\u0020\u0028')[0];
+      const summary = (data.objective||'Campaign') + ' \xB7 ' + (data.budget||'$450K') + ' \xB7 ' + (data.flight||'May') + '\n' + (data.audience||'Audience') + '\n' + (data.trigger||'Trigger') + '\n' + crv;
+      return { text: '\u2713 Creative locked: ' + crv + '.\n\nStep 5 \xB7 Summary & Approval. Auto-compliance ran \u2014 all clear.\n\n' + summary + '\n\nI need your sign-off. Compliance review will be triggered automatically after you approve.', options: ['\u2713 I approve \u2014 send to compliance', 'Request changes'], stepComplete: true, dataUpdate: { creative: crv + ' \u2713' } };
+    }
+    if (step === 5) {
+      if (text.toLowerCase().includes('approve') || text.includes('\u2713')) {
+        return { text: '\u2713 Marketer approval logged. Compliance sign-off requested.\n\nStep 6 \xB7 Activate. Once compliance approves, the campaign activates to SFMC, Adobe RTCDP, and AJO Journeys.\n\nSet to auto-activate on compliance approval?', options: ['\uD83D\uDE80 Auto-activate on approval', "I\u2019ll activate manually later"], stepComplete: true };
+      }
+      return { text: 'What would you like to change? I can adjust the audience, trigger, creative, budget, or flight dates.', options: ['Change audience', 'Change trigger', 'Change creative', 'Change budget / dates'] };
+    }
+    if (step === 6) {
+      return { text: '\u2713 Campaign queued for activation. You\u2019ll be notified when compliance approves. Taking you to your Campaigns dashboard\u2026', stepComplete: true, activate: true };
+    }
+    return { text: 'Got it \u2014 anything else you\u2019d like to adjust?' };
+  };
+
+  const _builderSend = (text) => {
+    const q = (text || builderInput).trim();
+    if (!q || builderBusy) return;
+    setBuilderInput('');
+    setBuilderMessages(prev => [...prev, { role: 'user', text: q }]);
+    setBuilderBusy(true);
+    const resp = _builderGetResponse(q, builderStep, builderCampData);
+    setTimeout(() => {
+      if (resp.dataUpdate) setBuilderCampData(prev => ({ ...prev, ...resp.dataUpdate }));
+      if (resp.stepComplete) setBuilderStep(prev => Math.min(prev + 1, 6));
+      setBuilderMessages(prev => [...prev, { role: 'assistant', text: resp.text, options: resp.options }]);
+      setBuilderBusy(false);
+      if (resp.activate) {
+        setTimeout(() => {
+          const d = { ...builderCampData, ...(resp.dataUpdate || {}) };
+          const newCamp = { id: 'MK-' + Math.random().toString(36).slice(2,6).toUpperCase(), name: (d.objective||'New') + ' Campaign', creative: (d.creative||'Email').replace(' \u2713',''), segment: (d.audience||'AI Audience').replace(' \u2713',''), dmas: 'Multi-market', startDate: 'May 1', endDate: 'May 31', status: 'active', budget: 450, spent: 0, impressions: 0, clicks: 0, conversions: 0, roas: 0, lift: 0 };
+          setMarketingCampaigns(prev => [newCamp, ...prev]);
+          setMkSelectedCampIdx(0);
+          setBuilderMode(false); setBuilderMessages([]); setBuilderStep(1);
+          setBuilderCampData({ name:'', objective:'', budget:'', flight:'', audience:'', trigger:'', creative:'' });
+          setTab('campaigns');
+        }, 2000);
+      }
+    }, 700 + Math.random()*400);
+  };
   const AUDIENCE_SAMPLES = ['Build a new Meridian Air campaign — travel rewards acquisition, $450K, May flight', 'Show me my highest-performing audiences for credit card upgrade campaigns', 'Which trigger path has the best CVR for High-Intent Travelers in the last 90 days?'];
   const DESK_CONCIERGE_SYS = `You are the Signalset Marketing Desk concierge — a routing and navigation assistant for a financial institution's AI-powered marketing platform.
 
@@ -9018,7 +9145,7 @@ Rules:
     exploreLabel: "Campaign Platform",
     exploreScreen: () => { setDeskHub(false); window.scrollTo(0,0); },
     placeholder: "Describe the campaign you want to build, or jump to a specific tool\u2026",
-  })), /*#__PURE__*/React.createElement("div", { className: "v11-home-pills", style: { marginTop: 18, justifyContent: "center" } }, /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setDeskHub(false); setTab('campaigns'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'broadcast', size: 13, color: 'var(--cyan-dim)' })), 'Build a Campaign'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setDeskHub(false); setTab('audience'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'target', size: 13, color: 'currentColor' })), 'Audiences'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setDeskHub(false); setTab('journey'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'lightning', size: 13, color: 'currentColor' })), 'Triggers'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setDeskHub(false); setTab('creative'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'palette', size: 13, color: 'currentColor' })), 'Creatives'), false && /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => alert('From Drive integration coming in Phase 11'), role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'store', size: 13, color: 'currentColor' })), 'From Drive'))), /*#__PURE__*/React.createElement("div", {
+  })), /*#__PURE__*/React.createElement("div", { className: "v11-home-pills", style: { marginTop: 18, justifyContent: "center" } }, /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setBuilderMode(true); setDeskHub(false); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'broadcast', size: 13, color: 'var(--cyan-dim)' })), 'Build a Campaign'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setDeskHub(false); setTab('audience'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'target', size: 13, color: 'currentColor' })), 'Audiences'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setDeskHub(false); setTab('journey'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'lightning', size: 13, color: 'currentColor' })), 'Triggers'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setDeskHub(false); setTab('creative'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'palette', size: 13, color: 'currentColor' })), 'Creatives'), false && /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => alert('From Drive integration coming in Phase 11'), role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'store', size: 13, color: 'currentColor' })), 'From Drive'))), /*#__PURE__*/React.createElement("div", {
     className: "camp-hub-right"
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -9135,7 +9262,102 @@ Rules:
       color: 'rgba(255,255,255,0.65)',
       marginTop: 4
     }
-  }, "Identity resolved. Measurement proven. Activation powered by AI.")), /*#__PURE__*/React.createElement("div", {
+  }, "Identity resolved. Measurement proven. Activation powered by AI.")),
+
+  /* ── Chat-forward Campaign Builder ─────────────────────────────────── */
+  builderMode ? /*#__PURE__*/React.createElement("div", { style: { flex: 1, display: 'flex', minHeight: 0, overflow: 'hidden', background: 'var(--bg)' } },
+    /* LEFT: conversation */
+    /*#__PURE__*/React.createElement("div", { style: { flex: '0 0 58%', display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--bdr)', overflow: 'hidden' } },
+      /* Chat header */
+      /*#__PURE__*/React.createElement("div", { style: { padding: '12px 20px', background: 'var(--card-alt)', borderBottom: '1px solid var(--bdr)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 } },
+        /*#__PURE__*/React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 10 } },
+          /*#__PURE__*/React.createElement("div", { style: { width: 8, height: 8, borderRadius: '50%', background: 'var(--green)' } }),
+          /*#__PURE__*/React.createElement("div", null,
+            /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, fontWeight: 700 } }, "Campaign Builder \xB7 AI Concierge"),
+            /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: 'var(--slate)' } }, "Full LIG \xB7 Identity Graph \xB7 Measurement \xB7 Clean Room access")
+          )
+        ),
+        /*#__PURE__*/React.createElement("button", { className: "btn btn-secondary", style: { fontSize: 11, padding: '5px 10px', color: 'var(--amber)', borderColor: 'rgba(245,158,11,.3)' }, onClick: saveBuilderAsDraft }, "Save draft & exit")
+      ),
+      /* Messages */
+      /*#__PURE__*/React.createElement("div", { style: { flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: 14 } },
+        builderMessages.map((m, i) => /*#__PURE__*/React.createElement("div", { key: i, style: { display: 'flex', flexDirection: 'column', alignItems: m.role === 'user' ? 'flex-end' : 'flex-start', gap: 6 } },
+          /*#__PURE__*/React.createElement("div", { style: { maxWidth: '88%', padding: '12px 16px', borderRadius: m.role === 'user' ? '16px 16px 4px 16px' : '4px 16px 16px 16px', background: m.role === 'user' ? 'var(--cyan)' : 'rgba(22,22,58,.95)', border: m.role === 'user' ? 'none' : '1px solid rgba(99,102,241,.3)', fontSize: 14, lineHeight: 1.65, color: m.role === 'user' ? '#fff' : 'var(--text)', whiteSpace: 'pre-wrap' } }, m.text),
+          m.role === 'assistant' && m.options && i === builderMessages.length - 1 &&
+          /*#__PURE__*/React.createElement("div", { style: { display: 'flex', flexWrap: 'wrap', gap: 7 } },
+            m.options.map((opt, oi) => /*#__PURE__*/React.createElement("button", { key: oi, onClick: () => _builderSend(opt), style: { padding: '7px 13px', borderRadius: 7, fontSize: 12, fontWeight: 600, background: 'var(--card-alt)', border: '1px solid rgba(99,102,241,.28)', color: 'var(--text)', cursor: 'pointer', fontFamily: 'var(--font-b)', transition: 'all .15s' } }, opt))
+          )
+        )),
+        builderBusy && /*#__PURE__*/React.createElement("div", { style: { display: 'flex', alignItems: 'flex-start' } },
+          /*#__PURE__*/React.createElement("div", { style: { padding: '12px 16px', borderRadius: '4px 16px 16px 16px', background: 'rgba(22,22,58,.95)', border: '1px solid rgba(99,102,241,.3)', display: 'flex', gap: 5, alignItems: 'center' } },
+            [0,1,2].map(i => /*#__PURE__*/React.createElement("div", { key: i, style: { width: 7, height: 7, borderRadius: '50%', background: 'var(--cyan-dim)', animation: `typing-bounce 1.2s ease ${i*0.2}s infinite` } }))
+          )
+        )
+      ),
+      /* Input bar */
+      /*#__PURE__*/React.createElement("div", { style: { padding: '12px 16px 14px', borderTop: '1px solid var(--bdr-soft)', background: 'var(--card-alt)', flexShrink: 0 } },
+        /*#__PURE__*/React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg)', border: '1px solid var(--bdr-soft)', borderRadius: 10, padding: '9px 12px' } },
+          /*#__PURE__*/React.createElement("textarea", { rows: 1, value: builderInput, onChange: e => setBuilderInput(e.target.value), onKeyDown: e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); _builderSend(); } }, placeholder: 'Reply or override any suggestion\u2026', style: { flex: 1, background: 'none', border: 'none', outline: 'none', resize: 'none', fontSize: 13, color: 'var(--text)', fontFamily: 'var(--font-b)', lineHeight: 1.5 }, disabled: builderBusy }),
+          /*#__PURE__*/React.createElement("button", { onClick: () => _builderSend(), disabled: !builderInput.trim() || builderBusy, style: { width: 32, height: 32, borderRadius: 9, border: 'none', background: 'var(--indigo)', color: '#fff', cursor: builderInput.trim() && !builderBusy ? 'pointer' : 'not-allowed', opacity: builderInput.trim() && !builderBusy ? 1 : 0.5, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 } }, "\u2191")
+        )
+      )
+    ),
+    /* RIGHT: Progress + summary */
+    /*#__PURE__*/React.createElement("div", { style: { flex: '0 0 42%', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--card-alt2)' } },
+      /*#__PURE__*/React.createElement("div", { style: { padding: '14px 20px', borderBottom: '1px solid var(--bdr)', background: 'var(--card-alt)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 } },
+        /*#__PURE__*/React.createElement("div", null,
+          /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, fontWeight: 700 } }, "Campaign in Progress"),
+          /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2 } }, builderCampData.name || 'New Campaign')
+        ),
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, fontFamily: 'IBM Plex Mono, monospace', color: 'var(--cyan-dim)', fontWeight: 700 } }, 'Step ' + builderStep + ' of 6')
+      ),
+      /*#__PURE__*/React.createElement("div", { style: { flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 10 } },
+        /* Step list */
+        /*#__PURE__*/React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 6 } },
+          [['Setup',1],['Audiences',2],['Triggers',3],['Creatives',4],['Summary & Approval',5],['Activate',6]].map(([lbl,sn]) => {
+            const done = builderStep > sn, active = builderStep === sn;
+            return /*#__PURE__*/React.createElement("div", { key: sn, style: { display: 'flex', alignItems: 'flex-start', gap: 10 } },
+              /*#__PURE__*/React.createElement("div", { style: { width: 24, height: 24, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 800, fontFamily: 'IBM Plex Mono, monospace', flexShrink: 0, marginTop: 2, background: done ? 'var(--green)' : active ? 'var(--cyan-dim)' : 'var(--card-alt)', border: !done && !active ? '1px solid var(--bdr)' : 'none', color: done||active ? '#fff' : 'var(--slate)' } }, done ? '\u2713' : sn),
+              /*#__PURE__*/React.createElement("div", { style: { flex: 1 } },
+                /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, fontWeight: 700, color: done||active ? 'var(--text)' : 'var(--slate)', display: 'flex', alignItems: 'center', gap: 6 } }, lbl, active && /*#__PURE__*/React.createElement("span", { style: { fontSize: 9, color: 'var(--cyan-dim)', fontFamily: 'IBM Plex Mono, monospace' } }, "\u2190 in progress")),
+                /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2, opacity: done ? 1 : 0.5 } },
+                  sn===1 ? (builderCampData.objective||(done||active?'In progress':'Not started')) :
+                  sn===2 ? (builderCampData.audience||(done||active?'In progress':'Not started')) :
+                  sn===3 ? (builderCampData.trigger||(done||active?'In progress':'Not started')) :
+                  sn===4 ? (builderCampData.creative||(done||active?'In progress':'Not started')) :
+                  (done||active?'In progress':'Not started')
+                )
+              )
+            );
+          })
+        ),
+        /* Summary card */
+        /*#__PURE__*/React.createElement("div", { style: { background: 'var(--card)', border: '1px solid var(--bdr-soft)', borderRadius: 9, padding: '12px 14px' } },
+          /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginBottom: 8 } }, "Campaign Summary"),
+          [['Objective',builderCampData.objective],['Budget',builderCampData.budget],['Flight',builderCampData.flight],['Audience',builderCampData.audience],['Trigger',builderCampData.trigger],['Creative',builderCampData.creative]].map(([lbl,val]) =>
+            /*#__PURE__*/React.createElement("div", { key: lbl, style: { display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', borderBottom: '1px solid var(--bdr-soft)' } },
+              /*#__PURE__*/React.createElement("span", { style: { color: 'var(--slate)' } }, lbl),
+              /*#__PURE__*/React.createElement("span", { style: { fontWeight: 700, fontSize: 11, color: val ? (val.includes('\u2713') ? 'var(--green)' : 'var(--text)') : 'var(--slate)', fontStyle: val ? 'normal' : 'italic' } }, val || 'Pending')
+            )
+          )
+        ),
+        /* Progress bar */
+        /*#__PURE__*/React.createElement("div", { style: { background: 'rgba(99,102,241,.06)', border: '1px solid var(--bdr-soft)', borderRadius: 9, padding: '12px 14px' } },
+          /*#__PURE__*/React.createElement("div", { style: { height: 4, background: 'var(--card-alt)', borderRadius: 2, overflow: 'hidden' } },
+            /*#__PURE__*/React.createElement("div", { style: { width: Math.round((builderStep-1)/6*100)+'%', height: '100%', background: 'linear-gradient(90deg,var(--indigo),var(--cyan-dim))', borderRadius: 2, transition: 'width .4s ease' } })
+          ),
+          /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--slate)', marginTop: 5, fontFamily: 'IBM Plex Mono, monospace' } }, (builderStep-1) + ' of 6 steps complete')
+        )
+      ),
+      /* Exit bar */
+      /*#__PURE__*/React.createElement("div", { style: { padding: '12px 20px', borderTop: '1px solid var(--bdr)', display: 'flex', gap: 8, flexShrink: 0 } },
+        /*#__PURE__*/React.createElement("button", { className: 'btn btn-secondary', style: { flex: 1, justifyContent: 'center', fontSize: 12, color: 'var(--amber)', borderColor: 'rgba(245,158,11,.3)' }, onClick: saveBuilderAsDraft }, "Save as draft"),
+        /*#__PURE__*/React.createElement("button", { className: 'btn btn-ghost', style: { fontSize: 12 }, onClick: () => { setBuilderMode(false); setBuilderMessages([]); setBuilderStep(1); setBuilderCampData({name:'',objective:'',budget:'',flight:'',audience:'',trigger:'',creative:''}); setTab('campaigns'); } }, "Exit without saving")
+      )
+    )
+  ) :
+  /* ── Normal tab layout ───────────────────────────────────────────── */
+  /*#__PURE__*/React.createElement("div", {
     className: "desk-wrap"
   }, /*#__PURE__*/React.createElement("div", {
     className: "desk-sidebar"
@@ -9273,7 +9495,7 @@ Rules:
         /*#__PURE__*/React.createElement("div", { style: { width: 360, flexShrink: 0, background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 10, overflow: 'hidden', display: 'flex', flexDirection: 'column' } },
           /* New Campaign tile */
           /*#__PURE__*/React.createElement("div", {
-            onClick: () => setTab('setup'),
+            onClick: () => { setBuilderMode(true); },
             style: { padding: 14, background: 'var(--white)', borderBottom: '1px solid rgba(14,14,26,.08)', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', flexShrink: 0, transition: 'background .15s' },
             onMouseEnter: e => { e.currentTarget.style.background = '#FFFFFF'; e.currentTarget.style.boxShadow = '0 0 0 1px rgba(167,139,250,.55),0 2px 14px rgba(167,139,250,.25)'; },
             onMouseLeave: e => { e.currentTarget.style.background = 'var(--white)'; e.currentTarget.style.boxShadow = 'none'; }
@@ -9310,9 +9532,11 @@ Rules:
               const isSel = mkSelectedCampIdx === idx;
               return /*#__PURE__*/React.createElement("div", { key: camp.id, onClick: () => setMkSelectedCampIdx(idx), style: { padding: '12px 14px', borderBottom: '1px solid var(--bdr-soft)', cursor: 'pointer', background: isSel ? 'rgba(99,102,241,.1)' : 'transparent', borderLeft: isSel ? '2px solid var(--cyan-dim)' : '2px solid transparent', paddingLeft: isSel ? 12 : 14 } },
                 /*#__PURE__*/React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 } },
-                  /*#__PURE__*/React.createElement("span", { style: { width: 7, height: 7, borderRadius: '50%', background: camp.status === 'active' ? 'var(--green)' : 'var(--amber)', flexShrink: 0 } }),
+                  /*#__PURE__*/React.createElement("span", { style: { width: 7, height: 7, borderRadius: '50%', background: camp.status === 'active' ? 'var(--green)' : camp.status === 'draft' ? 'var(--amber)' : 'rgba(148,163,184,.5)', flexShrink: 0 } }),
                   /*#__PURE__*/React.createElement("span", { style: { fontSize: 13, fontWeight: 700, flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, camp.name),
-                  /*#__PURE__*/React.createElement("span", { style: { fontSize: 11, color: camp.status === 'active' ? 'var(--green)' : 'var(--amber)', fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace', flexShrink: 0 } }, camp.roas + "\xD7")
+                  camp.status === 'draft'
+                    ? /*#__PURE__*/React.createElement("span", { style: { fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: 'rgba(245,158,11,.1)', border: '1px solid rgba(245,158,11,.3)', color: 'var(--amber)', fontFamily: 'IBM Plex Mono, monospace', textTransform: 'uppercase', flexShrink: 0 } }, "Draft")
+                    : /*#__PURE__*/React.createElement("span", { style: { fontSize: 11, color: camp.status === 'active' ? 'var(--green)' : 'var(--slate)', fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace', flexShrink: 0 } }, camp.roas + "\xD7")
                 ),
                 /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', letterSpacing: '.04em' } }, camp.id + " \xB7 " + camp.creative),
                 /*#__PURE__*/React.createElement("div", { style: { height: 2, background: 'var(--card-alt2)', borderRadius: 1, marginTop: 7, overflow: 'hidden' } },
@@ -9329,13 +9553,13 @@ Rules:
             /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: 14, borderBottom: '1px solid var(--bdr-soft)' } },
               /*#__PURE__*/React.createElement("div", null,
                 /*#__PURE__*/React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 } },
-                  /*#__PURE__*/React.createElement("span", { style: { width: 10, height: 10, borderRadius: '50%', background: mkCamp.status === 'active' ? 'var(--green)' : 'var(--amber)', boxShadow: mkCamp.status === 'active' ? '0 0 0 3px rgba(74,222,128,.2)' : '0 0 0 3px rgba(245,158,11,.2)' } }),
+                  /*#__PURE__*/React.createElement("span", { style: { width: 10, height: 10, borderRadius: '50%', background: mkCamp.status === 'active' ? 'var(--green)' : mkCamp.status === 'draft' ? 'var(--amber)' : 'rgba(148,163,184,.5)', boxShadow: mkCamp.status === 'active' ? '0 0 0 3px rgba(74,222,128,.2)' : '0 0 0 3px rgba(245,158,11,.2)' } }),
                   /*#__PURE__*/React.createElement("div", { style: { fontSize: 20, fontWeight: 700 } }, mkCamp.name)
                 ),
                 /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace' } }, mkCamp.id + " \xB7 " + mkCamp.creative + " \xB7 " + mkCamp.segment + " \xB7 " + mkCamp.startDate + " \u2192 " + mkCamp.endDate + " \xB7 " + mkCamp.dmas)
               ),
               /*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 6 } },
-                /*#__PURE__*/React.createElement("button", { className: "btn btn-secondary", style: { fontSize: 12, fontWeight: 600 }, onClick: () => setMarketingCampaigns(prev => prev.map((c, i) => i === mkSelectedCampIdx ? { ...c, status: c.status === 'active' ? 'paused' : 'active' } : c)) }, mkCamp.status === 'active' ? 'Pause' : 'Resume'),
+                /*#__PURE__*/React.createElement("button", { className: "btn btn-secondary", style: { fontSize: 12, fontWeight: 600 }, onClick: () => { if (mkCamp.status === 'draft') { setBuilderExited(false); setTab('setup'); } else { setMarketingCampaigns(prev => prev.map((c, i) => i === mkSelectedCampIdx ? { ...c, status: c.status === 'active' ? 'paused' : 'active' } : c)); } } }, mkCamp.status === 'active' ? 'Pause' : mkCamp.status === 'draft' ? '▶ Resume Build' : 'Resume'),
                 /*#__PURE__*/React.createElement("button", { className: "btn btn-secondary", style: { fontSize: 12, fontWeight: 600 } }, "Edit \u270E"),
                 /*#__PURE__*/React.createElement("button", { className: "btn btn-secondary", style: { fontSize: 12, color: 'var(--cyan-dim)', fontWeight: 600, borderColor: 'rgba(99,102,241,.4)' } }, "Results \u2197")
               )
@@ -9388,6 +9612,33 @@ Rules:
       )
     );
   })()),
+  /* ── Builder nav bar — visible when in builder steps ── */
+  (tab === 'setup' || tab === 'summary' || tab === 'activate') && /*#__PURE__*/React.createElement("div", {
+    style: { display: 'flex', alignItems: 'center', padding: '8px 20px', borderBottom: '1px solid var(--bdr-soft)', background: 'var(--card-alt)', flexShrink: 0, gap: 12 }
+  },
+    /*#__PURE__*/React.createElement("button", {
+      onClick: () => setTab('campaigns'),
+      style: { display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: 'var(--slate)', fontSize: 12, cursor: 'pointer', padding: '4px 0', fontFamily: 'var(--font-b)', fontWeight: 600, transition: 'color .15s' },
+      onMouseEnter: e => { e.currentTarget.style.color = 'var(--text)'; },
+      onMouseLeave: e => { e.currentTarget.style.color = 'var(--slate)'; }
+    },
+      /*#__PURE__*/React.createElement("svg", { width: 14, height: 14, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2.2, strokeLinecap: "round" },
+        /*#__PURE__*/React.createElement("polyline", { points: "15 18 9 12 15 6" })
+      ),
+      "Campaigns"
+    ),
+    /*#__PURE__*/React.createElement("span", { style: { color: 'var(--bdr)', fontSize: 14 } }, "/"),
+    /*#__PURE__*/React.createElement("span", { style: { fontSize: 12, fontWeight: 700, color: 'var(--text)', fontFamily: 'IBM Plex Mono, monospace' } },
+      tab === 'setup' ? 'Step 1 of 6 · Setup' : tab === 'summary' ? 'Step 5 of 6 · Summary & Approval' : 'Step 6 of 6 · Activate'
+    ),
+    /*#__PURE__*/React.createElement("div", { style: { flex: 1 } }),
+    /*#__PURE__*/React.createElement("button", {
+      onClick: saveBuilderAsDraft,
+      style: { padding: '5px 12px', background: 'transparent', border: '1px solid var(--bdr-soft)', borderRadius: 6, color: 'var(--slate)', fontSize: 11, cursor: 'pointer', fontFamily: 'var(--font-b)', fontWeight: 600, transition: 'all .15s' },
+      onMouseEnter: e => { e.currentTarget.style.borderColor = 'rgba(245,158,11,.4)'; e.currentTarget.style.color = 'var(--amber)'; },
+      onMouseLeave: e => { e.currentTarget.style.borderColor = 'var(--bdr-soft)'; e.currentTarget.style.color = 'var(--slate)'; }
+    }, "Save draft & exit")
+  ),
   /*#__PURE__*/React.createElement("div", {
     className: `desk-cap overflow-y ${tab === 'setup' ? 'active' : ''}`
   }, /*#__PURE__*/React.createElement("div", {
