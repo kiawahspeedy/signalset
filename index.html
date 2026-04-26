@@ -9193,9 +9193,19 @@ RESPONSE FORMAT — always this exact structure:
   "text": "your conversational response — the only thing the user reads",
   "mode": "campaign" | "audience" | "journey" | "measurement" | "explore",
   "brief": { partial brief fields confirmed so far — null for unknown fields, only populate when mode is campaign },
+  "quick_replies": ["short clickable answer 1", "short clickable answer 2", "short clickable answer 3"],
   "ready": false,
   "exchange": N
 }
+
+QUICK REPLIES — CRITICAL:
+- ALWAYS include 2-4 quick_replies whenever you ask a question. They are short clickable answer suggestions (max 8 words each) that let the user respond by tapping instead of typing.
+- For OPEN-ENDED questions ("which audience are you targeting?"), give 3 distinct answer paths the user might choose ("Existing Meridian Air loyalists", "New travel-oriented prospects", "Both — broaden the funnel").
+- For CHOICE questions ("acquisition or activation?"), give the explicit choices as quick_replies.
+- For CONFIRMATION questions ("does $500K sound right?"), give ["Yes, that works", "Let's go higher", "Lower — closer to $250K"].
+- Even when the user has typed something specific, offer quick_replies that nudge them toward a likely next step.
+- ONLY OMIT quick_replies when you're delivering a final summary or the launch CTA — never when asking the user something.
+- Keep each quick_reply under 50 characters. Make them feel like natural answers a marketer would give.
 
 Be direct, analytical, and specific. This is a professional tool, not a consumer product.`;
 
@@ -9203,7 +9213,9 @@ Be direct, analytical, and specific. This is a professional tool, not a consumer
     const q = (text || ideaInput).trim();
     if (!q || ideaBusy) return;
     setIdeaInput('');
-    const newMsgs = [...ideaMessages, { role: 'user', text: q }];
+    // Clear any lingering quick_replies on previous assistant messages so they don't re-appear
+    const cleared = ideaMessages.map(m => m.role === 'assistant' ? { ...m, quickReplies: [] } : m);
+    const newMsgs = [...cleared, { role: 'user', text: q }];
     setIdeaMessages(newMsgs);
     setIdeaBusy(true);
     try {
@@ -9221,7 +9233,7 @@ Be direct, analytical, and specific. This is a professional tool, not a consumer
         setBuilderBrief(prev => ({ ...(prev || {}), ...Object.fromEntries(Object.entries(parsed.brief).filter(([,v]) => v !== null)) }));
       }
       if (parsed.ready) setBriefReady(true);
-      setIdeaMessages(prev => [...prev, { role: 'assistant', text: parsed.text || raw, ready: parsed.ready, launchCta: parsed.launch_cta }]);
+      setIdeaMessages(prev => [...prev, { role: 'assistant', text: parsed.text || raw, ready: parsed.ready, launchCta: parsed.launch_cta, quickReplies: Array.isArray(parsed.quick_replies) ? parsed.quick_replies.slice(0, 4) : [] }]);
     } catch(err) {
       setIdeaMessages(prev => [...prev, { role: 'assistant', text: 'Connection issue \u2014 please try again.' }]);
     }
@@ -9316,7 +9328,7 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
     style: { display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 20px 0', position: 'relative' }
   }, /*#__PURE__*/React.createElement("div", { className: "v11-home-kicker" },
     /*#__PURE__*/React.createElement("div", { className: "v11-home-kicker-dot" }),
-    "Flight Deck \xB7 In-House"
+    "Flight Deck"
   ), /*#__PURE__*/React.createElement("h1", { className: "v11-home-greeting" },
     "Hi Dio \u2014 ", /*#__PURE__*/React.createElement("span", null, "what would you like to do today?")
   )), /*#__PURE__*/React.createElement("div", {
@@ -9389,19 +9401,58 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
           ),
           /* Messages — visible only when chat-wrap-active (CSS hides when empty) */
           /*#__PURE__*/React.createElement("div", { className: "chat-messages" },
-            ideaMessages.map((m, i) => /*#__PURE__*/React.createElement("div", { key: i, className: 'msg ' + m.role },
-              /*#__PURE__*/React.createElement("div", { className: "bubble" }, m.text),
-              m.role === 'assistant' && m.ready && /*#__PURE__*/React.createElement("button", {
-                onClick: () => { setBuilderMode(true); setDeskHub(false); window.scrollTo(0,0); },
-                style: { alignSelf: 'flex-start', marginTop: 8, padding: '11px 22px', borderRadius: 10, background: 'var(--indigo)', color: '#fff', border: 'none', fontSize: 14, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'var(--font-b)', boxShadow: '0 4px 20px rgba(99,102,241,.4)', transition: 'all .15s' }
-              }, "\uD83D\uDE80 ", m.launchCta || "Launch Campaign Builder \u2192")
-            )),
+            ideaMessages.map((m, i) => {
+              const isLast = i === ideaMessages.length - 1;
+              const showQuickReplies = m.role === 'assistant' && !m.ready && Array.isArray(m.quickReplies) && m.quickReplies.length > 0 && isLast && !ideaBusy;
+              return /*#__PURE__*/React.createElement("div", { key: i, className: 'msg ' + m.role },
+                /*#__PURE__*/React.createElement("div", { className: "bubble" }, m.text),
+                showQuickReplies && /*#__PURE__*/React.createElement("div", {
+                  style: { display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10, alignSelf: 'flex-start', maxWidth: '88%' }
+                },
+                  m.quickReplies.map((qr, qi) => /*#__PURE__*/React.createElement("button", {
+                    key: qi,
+                    onClick: () => _ideaSend(qr),
+                    style: { fontSize: 12, color: 'var(--cyan-pale)', background: 'rgba(99,102,241,.08)', border: '1px solid var(--bdr)', padding: '6px 12px', borderRadius: 14, cursor: 'pointer', fontFamily: 'inherit', transition: 'all .15s' },
+                    onMouseEnter: e => { e.currentTarget.style.background = 'rgba(99,102,241,.18)'; e.currentTarget.style.borderColor = 'var(--cyan)'; },
+                    onMouseLeave: e => { e.currentTarget.style.background = 'rgba(99,102,241,.08)'; e.currentTarget.style.borderColor = 'var(--bdr)'; }
+                  }, qr))
+                ),
+                m.role === 'assistant' && m.ready && /*#__PURE__*/React.createElement("button", {
+                  onClick: () => { setBuilderMode(true); setDeskHub(false); window.scrollTo(0,0); },
+                  style: { alignSelf: 'flex-start', marginTop: 8, padding: '11px 22px', borderRadius: 10, background: 'var(--indigo)', color: '#fff', border: 'none', fontSize: 14, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'var(--font-b)', boxShadow: '0 4px 20px rgba(99,102,241,.4)', transition: 'all .15s' }
+                }, "\uD83D\uDE80 ", m.launchCta || "Launch Campaign Builder \u2192")
+              );
+            }),
             ideaBusy && /*#__PURE__*/React.createElement("div", { className: "msg assistant" },
               /*#__PURE__*/React.createElement("div", { className: "bubble" },
                 /*#__PURE__*/React.createElement("div", { className: "typing" },
                   /*#__PURE__*/React.createElement("div", { className: "typing-dot" }),
                   /*#__PURE__*/React.createElement("div", { className: "typing-dot" }),
                   /*#__PURE__*/React.createElement("div", { className: "typing-dot" })
+                )
+              )
+            ),
+            /* Brief progress strip — INSIDE messages so it sits with the conversation */
+            ideaMessages.length > 0 && builderBrief && Object.values(builderBrief).some(v => v) && /*#__PURE__*/React.createElement("div", {
+              style: { display: 'flex', gap: 6, flexWrap: 'wrap', padding: '6px 0 2px', justifyContent: 'flex-start', alignSelf: 'stretch' }
+            },
+              [
+                ['Objective', builderBrief.objective ? builderBrief.objective.replace(/_/g,' ').replace(/\b\w/g, c => c.toUpperCase()) : null],
+                ['Partner',   builderBrief.co_brand],
+                ['Audience',  builderBrief.audience_hint ? (builderBrief.audience_hint.length > 32 ? builderBrief.audience_hint.slice(0,32)+'\u2026' : builderBrief.audience_hint) : null],
+                ['Budget',    builderBrief.budget ? '$' + (builderBrief.budget/1000).toFixed(0) + 'K' : null],
+                ['Flight',    builderBrief.flight]
+              ].filter(([,v]) => v).map(([lbl, val]) =>
+                /*#__PURE__*/React.createElement("div", { key: lbl, style: {
+                  fontSize: 11, padding: '3px 9px', borderRadius: 5,
+                  background: 'rgba(74,222,128,.07)',
+                  border: '1px solid rgba(74,222,128,.25)',
+                  color: 'var(--green)',
+                  fontFamily: 'IBM Plex Mono, monospace',
+                  display: 'flex', gap: 5
+                } },
+                  /*#__PURE__*/React.createElement("span", { style: { color: 'var(--slate)' } }, lbl + ':'),
+                  /*#__PURE__*/React.createElement("span", { style: { fontWeight: 700 } }, val)
                 )
               )
             )
@@ -9426,33 +9477,6 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
           lbl
         )
       )
-    ),
-    /* Brief progress strip — only when at least one field has been confirmed */
-    builderBrief && Object.values(builderBrief).some(v => v) && /*#__PURE__*/React.createElement("div", {
-      style: { display: 'flex', gap: 6, flexWrap: 'wrap', padding: '14px 0 4px', justifyContent: 'center', maxWidth: 720 }
-    },
-      [
-        ['Objective', builderBrief.objective ? builderBrief.objective.replace(/_/g,' ').replace(/\b\w/g, c => c.toUpperCase()) : null],
-        ['Partner',   builderBrief.co_brand],
-        ['Audience',  builderBrief.audience_hint ? (builderBrief.audience_hint.length > 32 ? builderBrief.audience_hint.slice(0,32)+'\u2026' : builderBrief.audience_hint) : null],
-        ['Budget',    builderBrief.budget ? '$' + (builderBrief.budget/1000).toFixed(0) + 'K' : null],
-        ['Flight',    builderBrief.flight]
-      ].map(([lbl, val]) => {
-        const ok = !!val;
-        return /*#__PURE__*/React.createElement("div", { key: lbl, style: {
-          fontSize: 11, padding: '3px 9px', borderRadius: 5,
-          background: ok ? 'rgba(74,222,128,.07)' : 'transparent',
-          border: '1px solid ' + (ok ? 'rgba(74,222,128,.25)' : 'var(--bdr-soft)'),
-          color: ok ? 'var(--green)' : 'var(--slate)',
-          fontFamily: 'IBM Plex Mono, monospace',
-          display: 'flex', gap: 5,
-          opacity: ok ? 1 : 0.5,
-          transition: 'all .25s'
-        } },
-          /*#__PURE__*/React.createElement("span", { style: { color: 'var(--slate)' } }, lbl + ':'),
-          /*#__PURE__*/React.createElement("span", { style: { fontWeight: 700 } }, ok ? val : '\u2014')
-        );
-      })
     )
   ), /*#__PURE__*/React.createElement("div", {
     className: "camp-hub-right"
