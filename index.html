@@ -741,6 +741,8 @@ html:not(.screen-transitioning) body {
 .chat-plus-popover {
   position: absolute; bottom: calc(100% + 8px); left: 0;
   width: 260px;
+  max-height: min(340px, calc(100vh - 200px));
+  overflow-y: auto;
   background: var(--card); border: 1px solid rgba(99,102,241,.35);
   border-radius: 8px; padding: 6px;
   box-shadow: 0 12px 32px rgba(0,0,0,.6), 0 0 0 1px rgba(99,102,241,.08);
@@ -3904,6 +3906,210 @@ const DMA_DATA = [{
 // ═══════════════════════════════════════════════════════════════
 // AI SYSTEM PROMPTS
 // ═══════════════════════════════════════════════════════════════
+
+// ──────────────────────────────────────────────────────────────────────────
+// UNIFIED SYSTEM PROMPT (Phase 35) — replaces 9 separate Marketer/Identity/Measurement prompts
+// Adapts behavior based on `workspace` context injected at send-time.
+// Merchant prompts (CMN_ROUTER_SYS, CMN_CHATBOT_SYS) stay separate per Architecture A.
+// ──────────────────────────────────────────────────────────────────────────
+const UNIFIED_BASE_SYS = `You are the unified AI assistant inside Flight Deck — a marketing intelligence platform for a major US financial institution, powered by the Signalset Living Identity Graph (LIG).
+
+You serve marketers across Identity, Measurement, In-House Campaigns (Audiences, Triggers, Creatives, Campaign Builder), and Partner Campaigns. Your behavior adapts based on the workspace the user is currently in. The current workspace will be injected as "WORKSPACE" context at the top of each turn.
+
+CURRENT DATE: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}. When proposing flight dates or referencing the current period, use the current year or future. Never use a past year.
+
+══════════════════════════════════════════════════════════════════
+PLATFORM CONTEXT (use only when relevant to the workspace)
+══════════════════════════════════════════════════════════════════
+
+LIVING IDENTITY GRAPH:
+- 916 nodes, 8 customer nodes resolved via deterministic LiveRamp matching
+- 5 behavioral segments: Explorers (LTV $4,200 / 48.2K customers / 82% propensity / CAC $48), Revelers (LTV $5,100 / 31K / CAC $72), Luxuriates (LTV $6,800 / 22K / CAC $94), Bask & Chill (LTV $2,400 / 58K / CAC $31), Deal Seekers (LTV $1,800 / 62K / CAC $22)
+- 94% match rate, 7+ device resolution per household, ~8.2 average devices per Explorer household
+
+CARD PRODUCTS:
+- IN-HOUSE: premium rewards, cash back, standard, travel
+- CO-BRAND PARTNERS: Meridian Air (travel), Sova (lifestyle), Grove Coffee (everyday). NEVER assume these unless user names them or explicitly asks about co-brand work.
+
+ATTRIBUTION CHANNELS (90-day):
+- Email/SMS/Push: 248K imp / 3,210 conv / 100% confidence (deterministic hashed email)
+- Open Web TTD/Yahoo: 1.2M imp / 890 conv / 94% confidence (UID2)
+- Paid Search Google: 44K imp / 1,840 conv / 98% confidence
+- Meta/TikTok/YouTube: 3.4M imp / 4,200 conv / +18% lift (clean room modeled)
+
+══════════════════════════════════════════════════════════════════
+CRITICAL — BRAND NEUTRALITY
+══════════════════════════════════════════════════════════════════
+- NEVER assume a specific co-brand partner from a generic prompt. If the user says "build an acquisition campaign" without naming a partner, ASK about card type (in-house vs co-brand) before proposing anything.
+- Do not introduce specific brand names (Meridian Air, Sova, Grove Coffee) unless user names them first.
+
+══════════════════════════════════════════════════════════════════
+WORKSPACE-SPECIFIC BEHAVIOR
+══════════════════════════════════════════════════════════════════
+
+WORKSPACE = "home" (Home / landing chat — thin router):
+- 1-3 sentence responses MAX, plain prose. NO markdown lists, NO platform feature enumeration.
+- Detect intent and route. Available routes: identity | measurement | desk (In-House Campaigns) | cmn (Partner Campaigns).
+- DO NOT do brief extraction here. The receiving capability handles that.
+- Response shape: { "text": "...", "nav": "identity|measurement|desk|cmn"|null, "navLabel": "Identity Graph"|"Measurement"|"In-House Campaigns"|"Partner Campaigns"|null }
+- IMPORTANT: navLabel is JUST the destination name. The UI wraps it as "Open the [navLabel] view →".
+
+WORKSPACE = "flight_deck" (In-House Campaigns entry — campaign brief builder):
+- Adaptive marketing strategist. Build a complete campaign brief across 4-6 exchanges.
+- Ask ONE or TWO focused questions per turn, never more. Push back on vague answers.
+- For card acquisition: your FIRST follow-up MUST ask whether co-brand or in-house. Quick replies: "Co-brand partnership", "In-house premium card", "In-house cash back / standard", "Not sure — help me decide".
+- When brief is complete (objective + card_type/co_brand + audience + budget + flight), set ready: true and add launch_cta: "Launch Campaign Builder →".
+- Response shape: { "text": "...", "mode": "campaign|audience|journey|measurement|explore", "brief": { name, objective, card_type, co_brand, audience_hint, budget, flight, creative_direction, success_metric, notes }, "quick_replies": ["..."], "ready": false, "launch_cta": "Launch Campaign Builder →" }
+- Brief schema: card_type ∈ {co_brand, in_house_premium, in_house_standard, in_house_cash_back}.
+
+WORKSPACE = "audiences" (Smart Audience builder):
+- Help marketers define high-precision audience segments. Probe behavioral signals, eligibility rules, suppression criteria, destinations.
+- Response shape: { "audienceName": "...", "audienceSize": "48,200", "criteria": [...], "suppressions": [...], "conversionScore": 79, "shapFeatures": [...], "destinations": [...], "complianceFlags": [...] }
+- For follow-up questions during deeper work, you may emit { "text": "...", "quick_replies": [...] } instead.
+
+WORKSPACE = "triggers" (Smart Triggers / Auto-Journey builder):
+- Help design optimal conversion journeys. Probe entry conditions, decision points, channel mix, attribution model.
+- Response shape: { "journeyName": "...", "stages": [{stage, channel, timing, message}], "expectedCVR": "...", "fallbacks": [...] }
+
+WORKSPACE = "creatives" (Creative Intelligence Assistant):
+- Guide marketers through creative iteration. Suggest copy/format/visual variants. Run lint/compliance checks.
+- Response shape: { "text": "...", "suggestions": [...], "compliance": [...], "quick_replies": [...] }
+
+WORKSPACE = "measurement" (Measurement Intelligence — analytical):
+- Be specific, data-driven, actionable. Reference channel MTA weights, segment LTV/CAC, attribution confidence.
+- Response shape: { "text": "...", "followUps": ["...", "...", "..."] }
+- Live BQ data may be injected as additional CONTEXT below — use exact numbers from there over baseline figures.
+
+WORKSPACE = "identity" (Identity Graph exploration):
+- Answer questions about the LIG. Reference specific segments, household relationships, device resolution, deterministic vs probabilistic edges.
+- Response shape: { "text": "...", "quick_replies": [...] }
+
+══════════════════════════════════════════════════════════════════
+GENERAL RULES
+══════════════════════════════════════════════════════════════════
+- ALWAYS respond with valid JSON only. No markdown fences, no preamble, no other text outside the JSON object.
+- Quick replies (when present): 2-4 short clickable answers, max 8 words each.
+- Be direct, analytical, specific. This is a professional tool.
+- If the conversation has prior turns, treat them as continuous context — do not restart.`;
+
+// Build the per-turn system prompt by appending workspace-specific context
+// Preserves the dynamic-data-injection pattern from the original buildMzSystemPrompt
+async function buildUnifiedSystemPrompt(workspace, contextData) {
+  let prompt = `WORKSPACE: ${workspace}\n\n` + UNIFIED_BASE_SYS;
+  // Workspace-specific context decorators
+  if (workspace === 'measurement' && typeof buildMzSystemPrompt === 'function') {
+    // Reuse the dynamic BQ injection pattern by extracting just the data block
+    try {
+      const fullMzPrompt = await buildMzSystemPrompt();
+      // Extract the live data block (everything after the base prompt)
+      const dataIdx = fullMzPrompt.indexOf('LIVE DATA');
+      if (dataIdx > -1) {
+        prompt += '\n\n══════ LIVE BQ DATA ══════\n' + fullMzPrompt.slice(dataIdx);
+      }
+    } catch (e) { /* fall through with base prompt */ }
+  }
+  if (contextData && contextData.briefSoFar) {
+    prompt += '\n\n══════ BRIEF SO FAR ══════\n' + JSON.stringify(contextData.briefSoFar, null, 2);
+  }
+  return prompt;
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// CHAT CONTEXT (Phase 35) — single conversation thread shared across all
+// Marketer/Identity/Measurement workspaces. Merchant chats use their own
+// per-component state and do NOT consume this context.
+// ──────────────────────────────────────────────────────────────────────────
+const ChatContext = React.createContext(null);
+
+function ChatProvider({ children }) {
+  const [messages, setMessages] = useState([]);
+  const [busy, setBusy] = useState(false);
+  const [workspace, setWorkspace] = useState('home');
+  const [briefSoFar, setBriefSoFar] = useState(null);
+  // Map of workspace -> last assistant result (for per-workspace renderers)
+  const [lastResultByWorkspace, setLastResultByWorkspace] = useState({});
+
+  const sendMessage = React.useCallback(async (text, opts) => {
+    const ws = opts?.workspace || workspace;
+    const t = (text || '').trim();
+    if (!t || busy) return;
+    // Append user message
+    setMessages(prev => [
+      ...prev.map(m => m.role === 'assistant' ? { ...m, quickReplies: [] } : m),
+      { role: 'user', text: t, workspace: ws }
+    ]);
+    setBusy(true);
+    try {
+      // Build the workspace-aware system prompt (may include async BQ injection)
+      const sysPrompt = await buildUnifiedSystemPrompt(ws, { briefSoFar });
+      // Build API messages from full conversation history (cross-workspace continuity)
+      const apiMessages = [];
+      const allMsgs = messages.concat([{ role: 'user', text: t }]);
+      for (const m of allMsgs) {
+        const role = m.role === 'assistant' ? 'assistant' : 'user';
+        const content = typeof m.text === 'string' ? m.text : (m.content?.text || JSON.stringify(m.content || ''));
+        if (content) apiMessages.push({ role, content });
+      }
+      const res = await fetch('https://signalset-lig-api.tickersignals.workers.dev/api/claude', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, system: sysPrompt, messages: apiMessages })
+      });
+      const data = await res.json();
+      const raw = data.content?.[0]?.text || '';
+      let parsed;
+      try { parsed = JSON.parse(raw.replace(/```json|```/g, '').trim()); }
+      catch (e) {
+        const jm = raw.match(/\{[\s\S]*\}/);
+        try { parsed = JSON.parse(jm?.[0] || '{}'); }
+        catch (e2) { parsed = { text: raw }; }
+      }
+      // Brief extraction (only for flight_deck workspace)
+      if (ws === 'flight_deck' && parsed.brief && Object.keys(parsed.brief).some(k => parsed.brief[k] !== null)) {
+        setBriefSoFar(prev => ({ ...(prev || {}), ...Object.fromEntries(Object.entries(parsed.brief).filter(([, v]) => v !== null)) }));
+      }
+      const assistantMsg = {
+        role: 'assistant',
+        text: parsed.text || raw,
+        result: parsed,
+        workspace: ws,
+        quickReplies: Array.isArray(parsed.quick_replies) ? parsed.quick_replies.slice(0, 4)
+                    : Array.isArray(parsed.followUps) ? parsed.followUps.slice(0, 4)
+                    : [],
+        ready: parsed.ready,
+        launchCta: parsed.launch_cta,
+        nav: parsed.nav,
+        navLabel: parsed.navLabel
+      };
+      setMessages(prev => [...prev, assistantMsg]);
+      setLastResultByWorkspace(prev => ({ ...prev, [ws]: parsed }));
+    } catch (err) {
+      setMessages(prev => [...prev, { role: 'assistant', text: 'Connection issue — please try again.', workspace: ws, error: true }]);
+    }
+    setBusy(false);
+  }, [messages, workspace, briefSoFar, busy]);
+
+  const resetChat = React.useCallback(() => {
+    setMessages([]);
+    setBriefSoFar(null);
+    setLastResultByWorkspace({});
+  }, []);
+
+  const value = React.useMemo(() => ({
+    messages, busy, workspace, briefSoFar, lastResultByWorkspace,
+    setWorkspace, sendMessage, resetChat
+  }), [messages, busy, workspace, briefSoFar, lastResultByWorkspace, sendMessage, resetChat]);
+
+  return /*#__PURE__*/React.createElement(ChatContext.Provider, { value: value }, children);
+}
+
+function useChat() {
+  const ctx = React.useContext(ChatContext);
+  if (!ctx) {
+    // Defensive fallback — return no-op so components don't crash if mounted outside provider
+    return { messages: [], busy: false, workspace: 'home', briefSoFar: null, lastResultByWorkspace: {}, setWorkspace: () => {}, sendMessage: () => {}, resetChat: () => {} };
+  }
+  return ctx;
+}
 
 const AUDIENCE_SYS = `You are the Smart Audience Chatbot inside Flight Deck, built on the Living Identity Graph (LIG) at a major US financial institution. Primary use case: credit card acquisition and upgrade.
 
@@ -20357,6 +20563,24 @@ function App() {
   const [authTarget, setAuthTarget] = React.useState(null);
   const neo4jStatus = useNeo4jStatus();
 
+  // Phase 35 — sync screen to ChatContext workspace so unified chat adapts behavior
+  const _chat = useChat();
+  React.useEffect(() => {
+    // Map screen ids to workspace discriminators used by the unified system prompt
+    const screenToWorkspace = {
+      'home': 'home',
+      'identity': 'identity',
+      'measurement': 'measurement',
+      'desk': 'flight_deck',
+      'cmn': 'cmn_partner', // Merchant — uses separate chat, but track for completeness
+      'admin': 'home',
+      'general': 'home'
+    };
+    const ws = screenToWorkspace[screen] || 'home';
+    if (_chat.setWorkspace) _chat.setWorkspace(ws);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screen]);
+
   // Nav click handler — used by both splash and platform nav
   // Gate is on entering the platform at all — once in, no more gates
   function navigate(id, sub) {
@@ -20463,7 +20687,9 @@ function App() {
     className: `screen ${screen === 'general' ? 'active' : ''}`
   }, /*#__PURE__*/React.createElement(GeneralSettings, null))));
 }
-ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+ReactDOM.createRoot(document.getElementById('root')).render(
+  React.createElement(ChatProvider, null, React.createElement(App))
+);
 </script>
 </body>
 </html>
