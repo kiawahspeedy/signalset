@@ -1121,7 +1121,7 @@ div:has(> .ig-layout) > .hero { display: none; }
   .ig-cand-seg { display: block; margin-left: 0; margin-top: 1px; }
 }
 
-/* ── MARKETING DESK SCREEN ── */
+/* ── FLIGHT DECK SCREEN ── */
 .desk-wrap { display: flex; flex: 1; min-height: 0; overflow: hidden; flex-direction: column; }
 .desk-sidebar { display: none; }
 .desk-content { flex: 1; overflow: hidden; display: flex; flex-direction: column; background: var(--bg); }
@@ -3903,7 +3903,7 @@ const DMA_DATA = [{
 // AI SYSTEM PROMPTS
 // ═══════════════════════════════════════════════════════════════
 
-const AUDIENCE_SYS = `You are the Smart Audience Chatbot inside The Marketing Desk, built on the Living Identity Graph (LIG) at a major US financial institution. Primary use case: credit card acquisition and upgrade.
+const AUDIENCE_SYS = `You are the Smart Audience Chatbot inside Flight Deck, built on the Living Identity Graph (LIG) at a major US financial institution. Primary use case: credit card acquisition and upgrade.
 
 Respond ONLY with valid JSON (no markdown):
 {
@@ -3923,7 +3923,7 @@ Respond ONLY with valid JSON (no markdown):
   "summary": "One compelling sentence on why this segment has high acquisition potential."
 }
 Rules: audienceSize 12K–180K; conversionScore 60–92; ALWAYS include all 4 compliance checks as passing; return ONLY JSON.`;
-const JOURNEY_SYS = `You are the Auto-Journey Builder inside The Marketing Desk for credit card acquisition. Return ONLY valid JSON:
+const JOURNEY_SYS = `You are the Auto-Journey Builder inside Flight Deck for credit card acquisition. Return ONLY valid JSON:
 {
   "journeyName": "Descriptive name",
   "estimatedDays": 28,
@@ -3941,7 +3941,7 @@ const JOURNEY_SYS = `You are the Auto-Journey Builder inside The Marketing Desk 
   "rationale": "Two sentences: why this channel order, what attribution data supports it."
 }
 Rules: 4-6 channels + convert node; owned-first; realistic CC KPIs; return ONLY JSON.`;
-const MZ_CHATBOT_SYS = `You are the Measurement Intelligence assistant inside The Marketing Desk for a major US financial institution. Analyze cohort performance and attribution data with these specifics: 5 behavioral segments — Explorers (LTV $4,200, CAC $48, 48.2K customers, 82% propensity), Revelers (LTV $5,100, CAC $72, 31K), Luxuriates (LTV $6,800, CAC $94, 22K), Bask & Chill (LTV $2,400, CAC $31, 58K), Deal Seekers (LTV $1,800, CAC $22, 62K). Attribution channels: Email/SMS/Push (248K impressions, 3,210 conversions, 100% confidence, deterministic hashed email), Open Web TTD/Yahoo (1.2M impressions, 890 conversions, 94% confidence, UID2), Paid Search Google (44K impressions, 1,840 conversions, 98% confidence), Meta/TikTok/YouTube (3.4M impressions, 4,200 conversions, +18% lift, clean room modeled). Always reference specific segment names, LTV/CAC ratios, and channel attribution data. Keep responses 2-4 sentences, actionable, plain text.`;
+const MZ_CHATBOT_SYS = `You are the Measurement Intelligence assistant inside Flight Deck for a major US financial institution. Analyze cohort performance and attribution data with these specifics: 5 behavioral segments — Explorers (LTV $4,200, CAC $48, 48.2K customers, 82% propensity), Revelers (LTV $5,100, CAC $72, 31K), Luxuriates (LTV $6,800, CAC $94, 22K), Bask & Chill (LTV $2,400, CAC $31, 58K), Deal Seekers (LTV $1,800, CAC $22, 62K). Attribution channels: Email/SMS/Push (248K impressions, 3,210 conversions, 100% confidence, deterministic hashed email), Open Web TTD/Yahoo (1.2M impressions, 890 conversions, 94% confidence, UID2), Paid Search Google (44K impressions, 1,840 conversions, 98% confidence), Meta/TikTok/YouTube (3.4M impressions, 4,200 conversions, +18% lift, clean room modeled). Always reference specific segment names, LTV/CAC ratios, and channel attribution data. Keep responses 2-4 sentences, actionable, plain text.`;
 const CMN_CHATBOT_SYS = `You are the audience assistant inside the Signalset Partner Portal for Meridian Air, a premium travel rewards brand. Meridian Air reaches high-intent travelers among FI cardholders via privacy-safe audience matching — no raw PII and no cardholder-level financials ever leave the FI.
 
 AUDIENCE SOURCES
@@ -7478,7 +7478,7 @@ function CreativeBuilderLightbox({ open, onClose, context, onSave }) {
 // ═══════════════════════════════════════════════════════════════
 // AUDIENCE BUILDER SYSTEM PROMPT (conversational)
 // ═══════════════════════════════════════════════════════════════
-const AUDIENCE_BUILDER_SYS = `You are the Smart Audience Intelligence Agent inside The Marketing Desk, built on the Living Identity Graph (LIG) at a major US financial institution. You guide marketers through building high-precision audience segments conversationally.
+const AUDIENCE_BUILDER_SYS = `You are the Smart Audience Intelligence Agent inside Flight Deck, built on the Living Identity Graph (LIG) at a major US financial institution. You guide marketers through building high-precision audience segments conversationally.
 
 CONVERSATION FLOW — follow strictly, one question per turn:
 1. If the user describes an audience need, acknowledge and ask: what is the primary conversion goal for this segment? (e.g., new card acquisition, product upgrade, spend activation, reactivation). Return single text + options.
@@ -7505,7 +7505,7 @@ Each beat is a separate bubble that appears sequentially. Put refinement options
 // ═══════════════════════════════════════════════════════════════
 // JOURNEY BUILDER SYSTEM PROMPT (conversational + path optimization)
 // ═══════════════════════════════════════════════════════════════
-const JOURNEY_BUILDER_SYS = `You are the Smart Triggers Intelligence Agent inside The Marketing Desk for a major US financial institution. You help marketers design optimal conversion journeys conversationally, with a focus on path optimization.
+const JOURNEY_BUILDER_SYS = `You are the Smart Triggers Intelligence Agent inside Flight Deck for a major US financial institution. You help marketers design optimal conversion journeys conversationally, with a focus on path optimization.
 
 PATH OPTIMIZATION — you understand and respond to these intent signals:
 - "least number of steps" / "fewest touchpoints" → prioritize 2-3 channel journeys
@@ -8705,7 +8705,7 @@ function JourneyBuilderLightbox({ open, onClose, context, onSave }) {
 
 
 // ═══════════════════════════════════════════════════════════════
-// SCREEN 2 — MARKETING DESK
+// SCREEN 2 — FLIGHT DECK
 // ═══════════════════════════════════════════════════════════════
 
 function MarketingDesk({ jumpTab, onTabConsumed }) {
@@ -9158,7 +9158,7 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
   // want to build a campaign, refine an audience, plan a journey, or just explore.
   // Sample prompts (rendered when ideaMessages is empty) seed the conversation.
 
-  const HUB_IDEATION_SYS = `You are the marketing desk assistant at a financial institution, powered by the Signalset Living Identity Graph (LIG). Marketers come to you to build campaigns, refine audiences, plan journey triggers, review measurement, or just explore what's possible. Your job is to figure out which task they're on and help them well.
+  const HUB_IDEATION_SYS = `You are the Flight Deck assistant at a financial institution, powered by the Signalset Living Identity Graph (LIG). Marketers come to you to build campaigns, refine audiences, plan journey triggers, review measurement, or just explore what's possible. Your job is to figure out which task they're on and help them well.
 
 ROLE: Adaptive marketing strategist. You meet the marketer where they are. You never route them away with "click a button" — you do the thinking with them.
 
@@ -9316,155 +9316,127 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
     style: { display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 20px 0', position: 'relative' }
   }, /*#__PURE__*/React.createElement("div", { className: "v11-home-kicker" },
     /*#__PURE__*/React.createElement("div", { className: "v11-home-kicker-dot" }),
-    "The Marketing Desk \xB7 In-House"
+    "Flight Deck \xB7 In-House"
   ), /*#__PURE__*/React.createElement("h1", { className: "v11-home-greeting" },
     "Hi Dio \u2014 ", /*#__PURE__*/React.createElement("span", null, "what would you like to do today?")
-  ), /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, color: 'var(--slate)', marginTop: 10, marginBottom: 4, textAlign: 'center', lineHeight: 1.6 } },
-    "Build a campaign, refine an audience, plan a journey, or just explore the data."
   )), /*#__PURE__*/React.createElement("div", {
     className: "camp-hub-body"
   }, /*#__PURE__*/React.createElement("div", {
     className: "camp-hub-left"
-  }, false && /*#__PURE__*/React.createElement("div", {
-    style: {
-      padding: '12px 16px',
-      background: 'rgba(0,180,230,.05)',
-      border: '1px solid rgba(99,102,241,.25)',
-      borderRadius: 9,
-      marginBottom: 16,
-      display: 'flex',
-      gap: 10,
-      alignItems: 'center'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: 28,
-      height: 28,
-      borderRadius: 7,
-      background: 'var(--navy)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexShrink: 0
-    }
-  }, /*#__PURE__*/React.createElement(Ico, {
-    name: "target",
-    size: 15,
-    color: "var(--cyan)"
-  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 13,
-      fontWeight: 700,
-      color: 'var(--text)'
-    }
-  }, "Smart Audience Agent"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: 'var(--slate)'
-    }
-  }, "Generate an audience and launch your campaign summary in one session")), /*#__PURE__*/React.createElement("span", {
-    style: {
-      marginLeft: 'auto',
-      fontSize: 11,
-      padding: '2px 8px',
-      borderRadius: 6,
-      background: 'rgba(0,180,230,.1)',
-      color: 'var(--cyan-dim)',
-      border: '1px solid rgba(0,180,230,.25)',
-      fontWeight: 700,
-      flexShrink: 0
-    }
-  }, "AI")),
-  /* ── Ideation Chat — full-width canvas ── */
-  /*#__PURE__*/React.createElement("div", {
-    style: { width: '100%', maxWidth: 860, margin: '0 auto', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }
   },
-    /* Messages */
-    /*#__PURE__*/React.createElement("div", {
-      style: { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 14, padding: '4px 0 20px' }
-    },
-      /* Empty state — sample prompts before any messages exist */
-      ideaMessages.length === 0 && !ideaBusy && /*#__PURE__*/React.createElement("div", {
-        style: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, padding: '20px 0' }
-      },
+  /* ── Flight Deck chat — mirrors home/measurement Chatbot pattern ── */
+  /*#__PURE__*/React.createElement("div", {
+    style: { width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }
+  },
+    /* Chat wrap (sample chips when empty + chat shell + messages when active) */
+    /*#__PURE__*/React.createElement("div", { className: "v11-home-chat-wrap" },
+      /*#__PURE__*/React.createElement("div", { className: "home-chat-wrap" },
         /*#__PURE__*/React.createElement("div", {
-          style: { fontSize: 10, color: 'var(--slate)', opacity: .55, letterSpacing: '.08em', textTransform: 'uppercase', fontFamily: 'IBM Plex Mono, monospace', fontWeight: 600 }
-        }, "Try asking"),
-        /*#__PURE__*/React.createElement("div", { style: { display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center', maxWidth: 720 } },
-          [
-            "Build a new card acquisition campaign with Meridian Air",
-            "Refine an audience of high-value travel rewards prospects",
-            "Plan a triggered upgrade flow for Signature card eligibility",
-            "What\u2019s working in retention right now?"
-          ].map((p, i) => /*#__PURE__*/React.createElement("button", {
-            key: i,
-            onClick: () => _ideaSend(p),
-            style: {
-              padding: '8px 14px', borderRadius: 8,
-              background: 'var(--card-alt)',
-              border: '1px solid rgba(99,102,241,.22)',
-              color: 'var(--slate)',
-              fontSize: 13,
-              fontFamily: 'var(--font-b)',
-              cursor: 'pointer',
-              transition: 'all .15s',
-              textAlign: 'left'
-            },
-            onMouseEnter: e => { e.currentTarget.style.borderColor = 'rgba(99,102,241,.45)'; e.currentTarget.style.color = 'var(--text)'; e.currentTarget.style.background = 'rgba(99,102,241,.08)'; },
-            onMouseLeave: e => { e.currentTarget.style.borderColor = 'rgba(99,102,241,.22)'; e.currentTarget.style.color = 'var(--slate)'; e.currentTarget.style.background = 'var(--card-alt)'; }
-          }, p))
-        )
-      ),
-      ideaMessages.map((m, i) => /*#__PURE__*/React.createElement("div", { key: i, style: { display: 'flex', flexDirection: 'column', alignItems: m.role === 'user' ? 'flex-end' : 'flex-start', gap: 8 } },
-        /*#__PURE__*/React.createElement("div", {
-          style: { maxWidth: m.role === 'user' ? '72%' : '88%', padding: '13px 18px', borderRadius: m.role === 'user' ? '18px 18px 4px 18px' : '4px 18px 18px 18px', background: m.role === 'user' ? 'var(--cyan)' : 'var(--card-alt)', border: m.role === 'user' ? 'none' : '1px solid rgba(99,102,241,.25)', fontSize: 15, lineHeight: 1.7, color: m.role === 'user' ? '#fff' : 'var(--text)', whiteSpace: 'pre-wrap' }
-        }, m.text),
-        m.role === 'assistant' && m.ready && /*#__PURE__*/React.createElement("button", {
-          onClick: () => { setBuilderMode(true); setDeskHub(false); window.scrollTo(0,0); },
-          style: { alignSelf: 'flex-start', padding: '11px 22px', borderRadius: 10, background: 'var(--indigo)', color: '#fff', border: 'none', fontSize: 14, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'var(--font-b)', boxShadow: '0 4px 20px rgba(99,102,241,.4)', transition: 'all .15s' }
-        }, "\uD83D\uDE80 ", m.launchCta || "Launch Campaign Builder \u2192")
-      )),
-      ideaBusy && /*#__PURE__*/React.createElement("div", { style: { display: 'flex', alignItems: 'flex-start' } },
-        /*#__PURE__*/React.createElement("div", { style: { padding: '12px 16px', borderRadius: '4px 16px 16px 16px', background: 'var(--card-alt)', border: '1px solid rgba(99,102,241,.25)', display: 'flex', gap: 5, alignItems: 'center' } },
-          [0,1,2].map(i => /*#__PURE__*/React.createElement("div", { key: i, style: { width: 7, height: 7, borderRadius: '50%', background: 'var(--cyan-dim)', animation: 'typing-bounce 1.2s ease ' + (i*0.2) + 's infinite' } }))
-        )
-      )
-    ),
-    /* Input */
-    /*#__PURE__*/React.createElement("div", { style: { paddingTop: 10 } },
-      /*#__PURE__*/React.createElement("div", { style: { display: 'flex', alignItems: 'flex-end', gap: 8, background: 'var(--card-alt)', border: '1px solid rgba(99,102,241,.28)', borderRadius: 12, padding: '12px 14px', boxShadow: '0 0 0 1px rgba(99,102,241,.08), 0 4px 24px rgba(0,0,0,.3)' } },
-        /*#__PURE__*/React.createElement("textarea", {
-          rows: 2, value: ideaInput,
-          onChange: e => setIdeaInput(e.target.value),
-          onKeyDown: e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); _ideaSend(); } },
-          placeholder: 'Tell me what you\u2019d like to do\u2026',
-          disabled: ideaBusy,
-          style: { flex: 1, background: 'none', border: 'none', outline: 'none', resize: 'none', fontSize: 15, color: 'var(--text)', fontFamily: 'var(--font-b)', lineHeight: 1.6, minHeight: 44 }
-        }),
-        /*#__PURE__*/React.createElement("button", {
-          onClick: () => _ideaSend(), disabled: !ideaInput.trim() || ideaBusy,
-          style: { width: 36, height: 36, borderRadius: 9, border: 'none', background: ideaInput.trim() && !ideaBusy ? 'var(--indigo)' : 'rgba(99,102,241,.25)', color: '#fff', cursor: ideaInput.trim() && !ideaBusy ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 16, transition: 'all .15s' }
-        }, '\u2191')
-      ),
-      /*#__PURE__*/React.createElement("div", { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, padding: '0 2px' } },
-        /*#__PURE__*/React.createElement("span", { style: { fontSize: 11, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace' } }, 'Shift+Enter for new line \xB7 Sonnet 4'),
-        /*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 8 } },
-          [['Audiences', 'audience', 'target'], ['Triggers', 'journey', 'lightning'], ['Creatives', 'creative', 'palette']].map(([lbl, tabId]) =>
-            /*#__PURE__*/React.createElement("button", { key: lbl, onClick: () => { setDeskHub(false); setTab(tabId); window.scrollTo(0,0); }, style: { fontSize: 11, padding: '3px 10px', borderRadius: 6, background: 'transparent', border: '1px solid var(--bdr-soft)', color: 'var(--slate)', cursor: 'pointer', fontFamily: 'var(--font-b)', transition: 'all .15s' } }, lbl)
+          className: 'chat-wrap ' + (ideaMessages.length === 0 ? 'chat-wrap-empty' : 'chat-wrap-active')
+        },
+          /* Sample chips — only when empty + no input */
+          ideaMessages.length === 0 && ideaInput.trim().length === 0 && /*#__PURE__*/React.createElement("div", {
+            className: "sample-chips"
+          },
+            [
+              "Build a new card acquisition campaign with Meridian Air",
+              "Refine an audience of high-value travel rewards prospects",
+              "Plan a triggered upgrade flow for Signature card eligibility",
+              "What\u2019s working in retention right now?"
+            ].map(s => /*#__PURE__*/React.createElement("span", {
+              key: s,
+              className: "chip",
+              onClick: () => _ideaSend(s)
+            }, s.length > 60 ? s.slice(0, 60) + '\u2026' : s))
+          ),
+          /* Chat shell — input + bar */
+          /*#__PURE__*/React.createElement("div", { className: "chat-shell" },
+            /*#__PURE__*/React.createElement("textarea", {
+              className: "chat-input",
+              rows: 2,
+              placeholder: "Tell me what you\u2019d like to do\u2026",
+              value: ideaInput,
+              onChange: e => setIdeaInput(e.target.value),
+              onKeyDown: e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); _ideaSend(); } },
+              disabled: ideaBusy
+            }),
+            /*#__PURE__*/React.createElement("div", { className: "chat-bar" },
+              /*#__PURE__*/React.createElement(ChatPlusPopover, null),
+              /*#__PURE__*/React.createElement("div", { style: { flex: 1 } }),
+              /*#__PURE__*/React.createElement("div", { className: "chat-model-pill" },
+                "Sonnet 4 ",
+                /*#__PURE__*/React.createElement("svg", {
+                  width: 10, height: 10, viewBox: "0 0 24 24", fill: "none",
+                  stroke: "currentColor", strokeWidth: 2
+                }, /*#__PURE__*/React.createElement("polyline", { points: "6 9 12 15 18 9" }))
+              ),
+              /*#__PURE__*/React.createElement("button", {
+                className: "send-btn",
+                onClick: () => _ideaSend(),
+                disabled: ideaBusy || !ideaInput.trim()
+              },
+                ideaBusy
+                  ? '\u2026'
+                  : /*#__PURE__*/React.createElement("svg", {
+                      viewBox: "0 0 24 24", fill: "none", stroke: "currentColor",
+                      strokeWidth: 2.4, strokeLinecap: "round", strokeLinejoin: "round"
+                    },
+                      /*#__PURE__*/React.createElement("line", { x1: 12, y1: 19, x2: 12, y2: 5 }),
+                      /*#__PURE__*/React.createElement("polyline", { points: "5 12 12 5 19 12" })
+                    )
+              )
+            )
+          ),
+          /* Messages — visible only when chat-wrap-active (CSS hides when empty) */
+          /*#__PURE__*/React.createElement("div", { className: "chat-messages" },
+            ideaMessages.map((m, i) => /*#__PURE__*/React.createElement("div", { key: i, className: 'msg ' + m.role },
+              /*#__PURE__*/React.createElement("div", { className: "bubble" }, m.text),
+              m.role === 'assistant' && m.ready && /*#__PURE__*/React.createElement("button", {
+                onClick: () => { setBuilderMode(true); setDeskHub(false); window.scrollTo(0,0); },
+                style: { alignSelf: 'flex-start', marginTop: 8, padding: '11px 22px', borderRadius: 10, background: 'var(--indigo)', color: '#fff', border: 'none', fontSize: 14, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'var(--font-b)', boxShadow: '0 4px 20px rgba(99,102,241,.4)', transition: 'all .15s' }
+              }, "\uD83D\uDE80 ", m.launchCta || "Launch Campaign Builder \u2192")
+            )),
+            ideaBusy && /*#__PURE__*/React.createElement("div", { className: "msg assistant" },
+              /*#__PURE__*/React.createElement("div", { className: "bubble" },
+                /*#__PURE__*/React.createElement("div", { className: "typing" },
+                  /*#__PURE__*/React.createElement("div", { className: "typing-dot" }),
+                  /*#__PURE__*/React.createElement("div", { className: "typing-dot" }),
+                  /*#__PURE__*/React.createElement("div", { className: "typing-dot" })
+                )
+              )
+            )
           )
         )
       )
     ),
-    /* Brief progress strip — confirmed (green) + pending (dim) */
-    /*#__PURE__*/React.createElement("div", {
-      style: { display: 'flex', gap: 6, flexWrap: 'wrap', padding: '12px 0 4px', justifyContent: 'center' }
+    /* Nav pills — matches home/measurement v11-home-pills row */
+    /*#__PURE__*/React.createElement("div", { className: "v11-home-pills" },
+      [['audience', 'Audiences', 'target'], ['journey', 'Triggers', 'lightning'], ['creative', 'Creatives', 'palette']].map(([tabId, lbl, iconName]) =>
+        /*#__PURE__*/React.createElement("div", {
+          key: tabId,
+          className: "v11-home-pill section-marketers",
+          onClick: () => { setDeskHub(false); setTab(tabId); window.scrollTo(0,0); },
+          role: "button",
+          tabIndex: 0,
+          onKeyDown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDeskHub(false); setTab(tabId); window.scrollTo(0,0); } }
+        },
+          /*#__PURE__*/React.createElement("span", { className: "v11-home-pill-ico" },
+            /*#__PURE__*/React.createElement(Ico, { name: iconName, size: 13, color: 'currentColor' })
+          ),
+          lbl
+        )
+      )
+    ),
+    /* Brief progress strip — only when at least one field has been confirmed */
+    builderBrief && Object.values(builderBrief).some(v => v) && /*#__PURE__*/React.createElement("div", {
+      style: { display: 'flex', gap: 6, flexWrap: 'wrap', padding: '14px 0 4px', justifyContent: 'center', maxWidth: 720 }
     },
       [
-        ['Objective', builderBrief && builderBrief.objective ? builderBrief.objective.replace(/_/g,' ').replace(/\b\w/g, c => c.toUpperCase()) : null],
-        ['Partner',   builderBrief && builderBrief.co_brand],
-        ['Audience',  builderBrief && builderBrief.audience_hint ? (builderBrief.audience_hint.length > 32 ? builderBrief.audience_hint.slice(0,32)+'\u2026' : builderBrief.audience_hint) : null],
-        ['Budget',    builderBrief && builderBrief.budget ? '$' + (builderBrief.budget/1000).toFixed(0) + 'K' : null],
-        ['Flight',    builderBrief && builderBrief.flight]
+        ['Objective', builderBrief.objective ? builderBrief.objective.replace(/_/g,' ').replace(/\b\w/g, c => c.toUpperCase()) : null],
+        ['Partner',   builderBrief.co_brand],
+        ['Audience',  builderBrief.audience_hint ? (builderBrief.audience_hint.length > 32 ? builderBrief.audience_hint.slice(0,32)+'\u2026' : builderBrief.audience_hint) : null],
+        ['Budget',    builderBrief.budget ? '$' + (builderBrief.budget/1000).toFixed(0) + 'K' : null],
+        ['Flight',    builderBrief.flight]
       ].map(([lbl, val]) => {
         const ok = !!val;
         return /*#__PURE__*/React.createElement("div", { key: lbl, style: {
@@ -10517,7 +10489,7 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
     onClick: e => {
       e.stopPropagation();
       setSelectedAudCard(i);
-      alert(`✓ "${a.name}" activated — audience is now live in The Marketing Desk. Navigate to Summary & Approval to finalize.`);
+      alert(`✓ "${a.name}" activated — audience is now live in Flight Deck. Navigate to Summary & Approval to finalize.`);
     }
   }, "Activate"))), selectedAudCard === i && /*#__PURE__*/React.createElement("div", {
     style: {
@@ -11700,7 +11672,7 @@ function StackedBar({
 
 // ── US Choropleth Map — proper Albers-like layout ──────────
 // Real approximate state positions and sizes
-const CREATIVE_SYS = `You are the Creative Intelligence Assistant inside The Marketing Desk — a financial institution's AI-powered marketing platform. You guide marketers through building high-performing creatives for credit card campaigns.
+const CREATIVE_SYS = `You are the Creative Intelligence Assistant inside Flight Deck — a financial institution's AI-powered marketing platform. You guide marketers through building high-performing creatives for credit card campaigns.
 
 CONVERSATION FLOW — follow strictly:
 1. User selects an objective via pill (CVR Lift, Improve ROAS, Boost VTR, Increase CTR) or types their goal. Go IMMEDIATELY to beats analysis — skip any acknowledgment-only turn. Return a BEATS response — 4 beats showing the 90-day analysis arriving: (a) "Analyzing 90 days of travel rewards creative performance for [objective]…", (b) "📊 **Format finding:** [Top format] outperforms [other format] by [X]% [metric] for this segment — [specific data point].", (c) "🎯 **Audience insight:** [Segment] responds [X]% better to [message style] vs. [alternative] — [supporting data].", (d) "✅ **Projected lift:** [X–Y]% [metric] with optimized format + message direction. Which format do you want to build?" Put format options in the options field.
@@ -15988,7 +15960,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     className: "camp-hub-wrap"
   }, /*#__PURE__*/React.createElement("div", {
     className: "hero"
-  }, /*#__PURE__*/React.createElement("div", {className: "hero-eyebrow"}, "The Marketing Desk \xB7 Marketers"), /*#__PURE__*/React.createElement("h1", null, "Partner ", /*#__PURE__*/React.createElement("span", null, "Campaign"), " Portal"), /*#__PURE__*/React.createElement("p", null, "Access FI cardholder segments through a clean room, activate geo and lifestyle targeting, and measure closed-loop ROAS \u2014 zero PII exposure."), /*#__PURE__*/React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("div", {className: "hero-eyebrow"}, "Flight Deck \xB7 Marketers"), /*#__PURE__*/React.createElement("h1", null, "Partner ", /*#__PURE__*/React.createElement("span", null, "Campaign"), " Portal"), /*#__PURE__*/React.createElement("p", null, "Access FI cardholder segments through a clean room, activate geo and lifestyle targeting, and measure closed-loop ROAS \u2014 zero PII exposure."), /*#__PURE__*/React.createElement("button", {
     onClick: () => { setCmnHub(false); window.scrollTo(0,0); },
     style: {
       padding: '11px 24px',
@@ -18921,7 +18893,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
 // ═══════════════════════════════════════════════════════════════
 
 // ══ HOME SCREEN ══════════════════════════════════════════════════════════════════
-const HOME_SYS = `You are The Marketing Desk, an AI-powered marketing intelligence platform for a major US financial institution. Built on the Living Identity Graph (LIG) which resolves 8 customer nodes across 5 behavioral segments: Explorers (LTV $4,200 avg, 48.2K customers), Revelers (LTV $5,100, 31K), Luxuriates (LTV $6,800, 22K), Bask & Chill (LTV $2,400, 58K), Deal Seekers (LTV $1,800, 62K). Platform serves campaigns for Meridian Air, Sova, and Grove Coffee. Four modules: Identity (LIG graph, 94% match rate, 7+ device resolution), Measurement (LTV vs CAC bubble chart, clean-room attribution), In-House Campaigns (Smart Audience, Smart Triggers, Creative Selector), Partner Campaigns (clean-room partner portal). ALWAYS answer using these specific segment names, LTV figures, and brand names. Return ONLY valid JSON: { "text": "...", "nav": "identity|measurement|desk|cmn", "navLabel": "..." }`;
+const HOME_SYS = `You are Flight Deck, an AI-powered marketing intelligence platform for a major US financial institution. Built on the Living Identity Graph (LIG) which resolves 8 customer nodes across 5 behavioral segments: Explorers (LTV $4,200 avg, 48.2K customers), Revelers (LTV $5,100, 31K), Luxuriates (LTV $6,800, 22K), Bask & Chill (LTV $2,400, 58K), Deal Seekers (LTV $1,800, 62K). Platform serves campaigns for Meridian Air, Sova, and Grove Coffee. Four modules: Identity (LIG graph, 94% match rate, 7+ device resolution), Measurement (LTV vs CAC bubble chart, clean-room attribution), In-House Campaigns (Smart Audience, Smart Triggers, Creative Selector), Partner Campaigns (clean-room partner portal). ALWAYS answer using these specific segment names, LTV figures, and brand names. Return ONLY valid JSON: { "text": "...", "nav": "identity|measurement|desk|cmn", "navLabel": "..." }`;
 const HOME_MOCKS = [{
   text: 'Your Living Identity Graph resolves cardholder identities across 7+ devices and household members using deterministic LiveRamp matching at 94-99% confidence. The Explorers cluster shows 8.2 average devices per household; Luxuriates index on Apple ecosystem cohesion. Probabilistic edges on hover reveal cross-cluster purchase correlations that power lookalike expansion. See your full identity graph in action.',
   nav: 'identity',
