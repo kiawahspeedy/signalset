@@ -19204,7 +19204,9 @@ RESPONSE RULES — CRITICAL:
 - Never produce markdown lists or multi-paragraph responses. Plain prose only.
 - When routing: acknowledge intent in one sentence, then offer the route via "nav" + "navLabel".
 
-Return ONLY valid JSON: { "text": "your 1-2 sentence response", "nav": "identity|measurement|desk|cmn"|null, "navLabel": "Open the In-House Campaigns view"|null }`;
+Return ONLY valid JSON: { "text": "your 1-2 sentence response", "nav": "identity|measurement|desk|cmn"|null, "navLabel": "In-House Campaigns"|"Identity Graph"|"Measurement"|"Partner Campaigns"|null }
+
+CRITICAL: navLabel is JUST the destination name (e.g. "In-House Campaigns") — the UI wraps it with "Open the [navLabel] view →" automatically. Do NOT include "Open" or "view" in your navLabel value.`;
 const HOME_MOCKS = [{
   text: 'Your Living Identity Graph resolves cardholder identities across 7+ devices and household members using deterministic LiveRamp matching at 94-99% confidence. The Explorers cluster shows 8.2 average devices per household; Luxuriates index on Apple ecosystem cohesion. Probabilistic edges on hover reveal cross-cluster purchase correlations that power lookalike expansion. See your full identity graph in action.',
   nav: 'identity',
