@@ -467,24 +467,14 @@ body.v11-sidebar-open .v11-sidebar { transform: translateX(0); }
   position: relative; z-index: 1;
 }
 .v11-home-pills::before {
-  content: "Jump to";
-  display: block;
-  font-family: var(--font-m);
-  font-size: 9.5px;
-  color: var(--slate);
-  opacity: .55;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  width: 100%;
-  text-align: center;
-  margin-bottom: 4px;
+  display: none;
 }
 .v11-home-pill {
   display: inline-flex; align-items: center; gap: 5px;
-  padding: 7px 12px; border-radius: 7px;
+  padding: 6px 11px; border-radius: 7px;
   background: transparent;
   border: 1px solid rgba(99,102,241,.22);
-  font-family: var(--font-b); font-size: 12px; font-weight: 500;
+  font-family: var(--font-b); font-size: 11px; font-weight: 600;
   color: var(--slate); cursor: pointer; transition: all .15s;
 }
 .v11-home-pill:hover {
@@ -1207,7 +1197,7 @@ div:has(> .ig-layout) > .hero { display: none; }
 .chat-prompt-btn { text-align: left; background: rgba(99,102,241,.1); border: 1px solid rgba(99,102,241,.3); border-left: 3px solid var(--cyan); border-radius: 8px; padding: 10px 14px; font-size: 13px; color: var(--tevy); cursor: pointer; line-height: 1.45; transition: background .12s, border-color .12s; font-family: inherit; }
 .chat-prompt-btn:hover { background: rgba(0,180,230,.04); border-left-color: var(--cyan-dim); }
 .chat-input-wrap { padding: 10px 16px 14px; border-top: 1px solid rgba(99,102,241,.3); display: flex; gap: 8px; align-items: flex-end; background: rgba(22,22,58,.9); }
-.chat-textarea { flex: 1; padding: 10px 14px; border-radius: 9px; border: 1px solid var(--bdr); font-size: 13px; color: var(--text); background: var(--bg); outline: none; resize: none; min-height: 44px; max-height: 120px; line-height: 1.5; font-family: inherit; }
+.chat-textarea { flex: 1; padding: 11px 14px; border-radius: 9px; border: 1px solid var(--bdr); font-size: 15px; color: var(--text); background: var(--bg); outline: none; resize: none; min-height: 48px; max-height: 140px; line-height: 1.6; font-family: inherit; }
 .chat-textarea:focus { border-color: var(--cyan); }
 .chat-send-btn { width: 40px; height: 40px; border-radius: 9px; background: var(--cyan); color: #fff; border: none; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: opacity .12s; }
 .chat-send-btn:hover { opacity: .85; }
@@ -9164,25 +9154,32 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
     }, 600 + Math.random()*350);
   };
   // ── Ideation chat init ─────────────────────────────────────────────
-  useEffect(() => {
-    if (!deskHub || ideaMessages.length > 0) return;
-    setIdeaMessages([{ role: 'assistant', text: "Let\u2019s talk through your next campaign before we start building.\n\nWhat partner or product are you focused on? And what\u2019s the primary outcome you\u2019re trying to drive \u2014 new card acquisition, spend activation, product upgrade, or retention?" }]);
-  }, [deskHub]);
+  // No auto-greeting. The marketers entry is a generic assistant — the user might
+  // want to build a campaign, refine an audience, plan a journey, or just explore.
+  // Sample prompts (rendered when ideaMessages is empty) seed the conversation.
 
-  const HUB_IDEATION_SYS = `You are a senior campaign strategist at a financial institution's marketing desk powered by the Signalset Living Identity Graph (LIG). Your job is to conduct a rigorous ideation interview before the marketer enters the structured campaign builder.
+  const HUB_IDEATION_SYS = `You are the marketing desk assistant at a financial institution, powered by the Signalset Living Identity Graph (LIG). Marketers come to you to build campaigns, refine audiences, plan journey triggers, review measurement, or just explore what's possible. Your job is to figure out which task they're on and help them well.
 
-ROLE: Strategist. You extract a complete campaign brief through conversation. You never route, never say "click a button," never rush.
+ROLE: Adaptive marketing strategist. You meet the marketer where they are. You never route them away with "click a button" — you do the thinking with them.
 
-RULES:
+INTENT DETECTION (first turn):
+- If the user describes a CAMPAIGN (acquisition, activation, retention drives, product launches, co-brand promos): switch to campaign brief mode and use the BRIEF FIELDS below.
+- If the user describes an AUDIENCE (segment definition, propensity targeting, cohort building): switch to audience definition mode. Probe for behavioral signals, eligibility rules, suppression criteria, destination platforms.
+- If the user describes a JOURNEY or TRIGGER (multi-touch sequences, attribution-driven flows): switch to journey mode. Probe for entry conditions, decision points, channel mix, attribution model.
+- If the user wants to ANALYZE or MEASURE (cohort performance, LTV/CAC, attribution, lift): respond with relevant questions and gently suggest the Measurement zone for the deeper analytical view.
+- If the user is exploring or unclear: ask one clarifying question to figure out which mode fits.
+
+CAMPAIGN BRIEF MODE — RULES:
 - Ask ONE or TWO focused questions per turn. Never more.
 - Push back on vague answers. If they say "something for travel," ask which partner, which product, which audience.
 - Build the brief across 4-6 exchanges minimum. Do not declare ready before exchange 4.
-- When you have confirmed: objective + co-brand partner + audience description + budget + flight timing, set ready: true.
-- ALWAYS respond with valid JSON only. No markdown fences, no preamble, no other text outside the JSON object.
+- When you have confirmed: objective + co-brand partner + audience description + budget + flight timing, set ready: true and add launch_cta: "Launch Campaign Builder \u2192" to the response.
 
-BRIEF FIELDS:
+ALWAYS respond with valid JSON only. No markdown fences, no preamble, no other text outside the JSON object.
+
+BRIEF FIELDS (populate the ones you have, leave others null):
 - name: suggested campaign name based on partner + objective
-- objective: "new_card_acquisition" | "spend_activation" | "product_upgrade" | "retention"
+- objective: "new_card_acquisition" | "spend_activation" | "product_upgrade" | "retention" | null
 - co_brand: partner brand name (e.g. "Meridian Air") or null
 - audience_hint: plain language description of the target audience with specific behavioral signals if mentioned
 - budget: number in dollars or null
@@ -9194,12 +9191,12 @@ BRIEF FIELDS:
 RESPONSE FORMAT — always this exact structure:
 {
   "text": "your conversational response — the only thing the user reads",
-  "brief": { partial brief fields confirmed so far — null for unknown fields },
+  "mode": "campaign" | "audience" | "journey" | "measurement" | "explore",
+  "brief": { partial brief fields confirmed so far — null for unknown fields, only populate when mode is campaign },
   "ready": false,
   "exchange": N
 }
 
-When ready becomes true, set "launch_cta": "Launch Campaign Builder \u2192" in the response.
 Be direct, analytical, and specific. This is a professional tool, not a consumer product.`;
 
   const _ideaSend = async (text) => {
@@ -9323,7 +9320,7 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
   ), /*#__PURE__*/React.createElement("h1", { className: "v11-home-greeting" },
     "Hi Dio \u2014 ", /*#__PURE__*/React.createElement("span", null, "what would you like to do today?")
   ), /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, color: 'var(--slate)', marginTop: 10, marginBottom: 4, textAlign: 'center', lineHeight: 1.6 } },
-    "Describe the campaign you want to build. The more detail you give, the smarter the builder gets."
+    "Build a campaign, refine an audience, plan a journey, or just explore the data."
   )), /*#__PURE__*/React.createElement("div", {
     className: "camp-hub-body"
   }, /*#__PURE__*/React.createElement("div", {
@@ -9386,6 +9383,38 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
     /*#__PURE__*/React.createElement("div", {
       style: { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 14, padding: '4px 0 20px' }
     },
+      /* Empty state — sample prompts before any messages exist */
+      ideaMessages.length === 0 && !ideaBusy && /*#__PURE__*/React.createElement("div", {
+        style: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, padding: '20px 0' }
+      },
+        /*#__PURE__*/React.createElement("div", {
+          style: { fontSize: 10, color: 'var(--slate)', opacity: .55, letterSpacing: '.08em', textTransform: 'uppercase', fontFamily: 'IBM Plex Mono, monospace', fontWeight: 600 }
+        }, "Try asking"),
+        /*#__PURE__*/React.createElement("div", { style: { display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center', maxWidth: 720 } },
+          [
+            "Build a new card acquisition campaign with Meridian Air",
+            "Refine an audience of high-value travel rewards prospects",
+            "Plan a triggered upgrade flow for Signature card eligibility",
+            "What\u2019s working in retention right now?"
+          ].map((p, i) => /*#__PURE__*/React.createElement("button", {
+            key: i,
+            onClick: () => _ideaSend(p),
+            style: {
+              padding: '8px 14px', borderRadius: 8,
+              background: 'var(--card-alt)',
+              border: '1px solid rgba(99,102,241,.22)',
+              color: 'var(--slate)',
+              fontSize: 13,
+              fontFamily: 'var(--font-b)',
+              cursor: 'pointer',
+              transition: 'all .15s',
+              textAlign: 'left'
+            },
+            onMouseEnter: e => { e.currentTarget.style.borderColor = 'rgba(99,102,241,.45)'; e.currentTarget.style.color = 'var(--text)'; e.currentTarget.style.background = 'rgba(99,102,241,.08)'; },
+            onMouseLeave: e => { e.currentTarget.style.borderColor = 'rgba(99,102,241,.22)'; e.currentTarget.style.color = 'var(--slate)'; e.currentTarget.style.background = 'var(--card-alt)'; }
+          }, p))
+        )
+      ),
       ideaMessages.map((m, i) => /*#__PURE__*/React.createElement("div", { key: i, style: { display: 'flex', flexDirection: 'column', alignItems: m.role === 'user' ? 'flex-end' : 'flex-start', gap: 8 } },
         /*#__PURE__*/React.createElement("div", {
           style: { maxWidth: m.role === 'user' ? '72%' : '88%', padding: '13px 18px', borderRadius: m.role === 'user' ? '18px 18px 4px 18px' : '4px 18px 18px 18px', background: m.role === 'user' ? 'var(--cyan)' : 'var(--card-alt)', border: m.role === 'user' ? 'none' : '1px solid rgba(99,102,241,.25)', fontSize: 15, lineHeight: 1.7, color: m.role === 'user' ? '#fff' : 'var(--text)', whiteSpace: 'pre-wrap' }
@@ -9408,7 +9437,7 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
           rows: 2, value: ideaInput,
           onChange: e => setIdeaInput(e.target.value),
           onKeyDown: e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); _ideaSend(); } },
-          placeholder: 'Tell me about the campaign you want to build\u2026',
+          placeholder: 'Tell me what you\u2019d like to do\u2026',
           disabled: ideaBusy,
           style: { flex: 1, background: 'none', border: 'none', outline: 'none', resize: 'none', fontSize: 15, color: 'var(--text)', fontFamily: 'var(--font-b)', lineHeight: 1.6, minHeight: 44 }
         }),
@@ -9431,7 +9460,7 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
       style: { display: 'flex', gap: 6, flexWrap: 'wrap', padding: '12px 0 4px', justifyContent: 'center' }
     },
       [
-        ['Objective', builderBrief && builderBrief.objective ? builderBrief.objective.replace(/_/g,' ') : null],
+        ['Objective', builderBrief && builderBrief.objective ? builderBrief.objective.replace(/_/g,' ').replace(/\b\w/g, c => c.toUpperCase()) : null],
         ['Partner',   builderBrief && builderBrief.co_brand],
         ['Audience',  builderBrief && builderBrief.audience_hint ? (builderBrief.audience_hint.length > 32 ? builderBrief.audience_hint.slice(0,32)+'\u2026' : builderBrief.audience_hint) : null],
         ['Budget',    builderBrief && builderBrief.budget ? '$' + (builderBrief.budget/1000).toFixed(0) + 'K' : null],
