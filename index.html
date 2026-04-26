@@ -3947,12 +3947,26 @@ CRITICAL — BRAND NEUTRALITY
 WORKSPACE-SPECIFIC BEHAVIOR
 ══════════════════════════════════════════════════════════════════
 
-WORKSPACE = "home" (Home / landing chat — thin router):
-- 1-3 sentence responses MAX, plain prose. NO markdown lists, NO platform feature enumeration.
-- Detect intent and route. Available routes: identity | measurement | desk (In-House Campaigns) | cmn (Partner Campaigns).
-- DO NOT do brief extraction here. The receiving capability handles that.
-- Response shape: { "text": "...", "nav": "identity|measurement|desk|cmn"|null, "navLabel": "Identity Graph"|"Measurement"|"In-House Campaigns"|"Partner Campaigns"|null }
-- IMPORTANT: navLabel is JUST the destination name. The UI wraps it as "Open the [navLabel] view →".
+WORKSPACE = "home" (Home / landing chat — STRICT ROUTER ONLY):
+- You are a ROUTER. You do not do work. You route the user to the correct workspace.
+- HARD LIMITS:
+  • Response text MUST be 1-2 sentences MAXIMUM.
+  • You MUST NOT ask follow-up questions. You MUST NOT ask "in-house or co-brand". You MUST NOT ask anything.
+  • You MUST NOT discuss card types, partners, audiences, segments, or any platform feature.
+  • You MUST NOT extract any brief fields. The receiving workspace handles that.
+  • You MUST always include "nav" and "navLabel" when intent is clear.
+- ROUTING DECISIONS:
+  • Campaign/audience/trigger/creative work → nav: "desk", navLabel: "In-House Campaigns"
+  • Identity/segment/household/device questions → nav: "identity", navLabel: "Identity Graph"
+  • Attribution/LTV/CAC/cohort/lift/MTA → nav: "measurement", navLabel: "Measurement"
+  • Partner/co-brand/clean-room portal → nav: "cmn", navLabel: "Partner Campaigns"
+- Response shape: { "text": "Acknowledgment in 1-2 sentences.", "nav": "identity|measurement|desk|cmn"|null, "navLabel": "..."|null }
+- EXAMPLES (follow this exact terseness):
+  • User: "Build me a card acquisition campaign" → { "text": "Routing to the campaign builder where I can dig into the details with you.", "nav": "desk", "navLabel": "In-House Campaigns" }
+  • User: "What's our LTV/CAC across segments?" → { "text": "Pulling up the cohort attribution view.", "nav": "measurement", "navLabel": "Measurement" }
+  • User: "Show me my identity graph" → { "text": "Opening the Living Identity Graph.", "nav": "identity", "navLabel": "Identity Graph" }
+  • User: "What can a partner do?" → { "text": "Opening the partner campaigns view.", "nav": "cmn", "navLabel": "Partner Campaigns" }
+- IMPORTANT: navLabel is JUST the destination name. The UI wraps it as "Open the [navLabel] view →". Do not include "Open" or "view" in navLabel.
 
 WORKSPACE = "flight_deck" (In-House Campaigns entry — campaign brief builder):
 - Adaptive marketing strategist. Build a complete campaign brief across 4-6 exchanges.
@@ -4508,6 +4522,7 @@ function buildActionRenderer(opts) {
 function ChatPlusPopover({ onUpload, onDrive }) {
   const [plusOpen, setPlusOpen] = useState(false);
   const [direction, setDirection] = useState('up'); // 'up' = pop above, 'down' = drop below
+  const [maxH, setMaxH] = useState(360); // dynamically capped to available space at open time
   const btnRef = React.useRef(null);
   React.useEffect(() => {
     if (!plusOpen) return;
@@ -4522,9 +4537,16 @@ function ChatPlusPopover({ onUpload, onDrive }) {
     if (!plusOpen && btnRef.current) {
       const rect = btnRef.current.getBoundingClientRect();
       const vh = window.innerHeight || document.documentElement.clientHeight;
-      // Top 40% of viewport → drop down. Otherwise pop up. Asymmetric threshold because popover
-      // content (~340px) needs more room to grow upward than downward in typical layouts.
-      setDirection(rect.top < vh * 0.4 ? 'down' : 'up');
+      // Top 40% of viewport → drop down. Otherwise pop up.
+      const dir = rect.top < vh * 0.4 ? 'down' : 'up';
+      setDirection(dir);
+      // Cap popover height based on available space in chosen direction (with safety margin)
+      const safetyMargin = 24;
+      const availableSpace = dir === 'down'
+        ? (vh - rect.bottom - safetyMargin)
+        : (rect.top - safetyMargin);
+      // Hard ceiling at 360px so on tall viewports it doesn't sprawl
+      setMaxH(Math.min(360, Math.max(120, availableSpace)));
     }
     setPlusOpen(v => !v);
   };
@@ -4532,8 +4554,8 @@ function ChatPlusPopover({ onUpload, onDrive }) {
   const _doDrive  = () => { if (onDrive)  onDrive();  else alert('Google Drive — coming in Phase 11'); setPlusOpen(false); };
   // Inline positioning override per direction — overrides the CSS default (bottom: calc(100% + 8px))
   const popoverStyle = direction === 'down'
-    ? { top: 'calc(100% + 8px)', bottom: 'auto' }
-    : { bottom: 'calc(100% + 8px)', top: 'auto' };
+    ? { top: 'calc(100% + 8px)', bottom: 'auto', maxHeight: maxH + 'px', overflowY: 'auto' }
+    : { bottom: 'calc(100% + 8px)', top: 'auto', maxHeight: maxH + 'px', overflowY: 'auto' };
   return /*#__PURE__*/React.createElement("div", {
     className: "chat-plus-wrap",
     style: { position: 'relative' }
