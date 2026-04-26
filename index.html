@@ -8949,11 +8949,38 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
   };
 
   // ── Builder initialization — greet the user when entering builder mode ─
+  // Robust budget parser: handles "$450K", "$250K-500K", "350,000", 450000, etc.
+  // Returns a single dollar amount (midpoint for ranges) or null if unparseable.
+  const _parseBudgetToNumber = (raw) => {
+    if (raw == null) return null;
+    if (typeof raw === 'number' && isFinite(raw)) return raw;
+    const s = String(raw).replace(/[,\s]/g, '').toLowerCase();
+    const re = /\$?(\d+(?:\.\d+)?)([km])?/g;
+    const matches = [];
+    let m;
+    while ((m = re.exec(s)) !== null) {
+      const n = parseFloat(m[1]);
+      if (!isFinite(n)) continue;
+      const mult = m[2] === 'm' ? 1_000_000 : m[2] === 'k' ? 1_000 : 1;
+      matches.push(n * mult);
+    }
+    if (matches.length === 0) return null;
+    if (matches.length === 1) return matches[0];
+    // Range — take the midpoint
+    return Math.round((matches[0] + matches[matches.length - 1]) / 2);
+  };
+  const _formatBudget = (num) => {
+    if (num == null || !isFinite(num)) return null;
+    if (num >= 1_000_000) return '$' + (num / 1_000_000).toFixed(num % 1_000_000 === 0 ? 0 : 1) + 'M';
+    if (num >= 1_000) return '$' + Math.round(num / 1_000) + 'K';
+    return '$' + Math.round(num);
+  };
   useEffect(() => {
     if (!builderMode || builderMessages.length > 0) return;
     if (builderBrief && builderBrief.objective) {
       const campName = builderBrief.name || (builderBrief.co_brand ? builderBrief.co_brand + ' Campaign' : 'New Campaign');
-      const budStr = builderBrief.budget ? '$' + (builderBrief.budget/1000).toFixed(0) + 'K' : 'TBD';
+      const budNum = _parseBudgetToNumber(builderBrief.budget);
+      const budStr = _formatBudget(budNum) || (builderBrief.budget ? String(builderBrief.budget) : 'TBD');
       setBuilderCampData({ name: campName, objective: (builderBrief.objective||'').replace(/_/g,' '), budget: budStr + (builderBrief.flight ? ' \xB7 ' + builderBrief.flight : ''), flight: builderBrief.flight||'', audience: '', trigger: '', creative: '' });
       setBuilderStep(2);
       setBuilderMessages([{ role: 'assistant', text: '\u2713 Brief loaded from your ideation session.\n\nPre-filled:\n\u2022 ' + campName + '\n\u2022 ' + (builderBrief.objective||'').replace(/_/g,' ') + ' \xB7 ' + budStr + (builderBrief.flight ? ' \xB7 ' + builderBrief.flight : '') + (builderBrief.creative_direction ? '\n\u2022 Creative direction: ' + builderBrief.creative_direction : '') + '\n\nSkipping to Step 2 \xB7 Audiences \u2014 querying the LIG with your target profile' + (builderBrief.audience_hint ? ': ' + builderBrief.audience_hint : '') + '\u2026',
@@ -9103,14 +9130,62 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
     }
     // STEP 4 — Creative selection/build
     if (step === 4 && !data.creative) {
-      let crvName = 'CRV-001 Premium Rewards \u2014 Travel Hero';
-      if (text.toLowerCase().includes('crv-002') || text.toLowerCase().includes('first-class')) crvName = 'CRV-002 First-Class Upgrade Offer';
-      if (text.toLowerCase().includes('crv-003') || text.toLowerCase().includes('push') || text.toLowerCase().includes('accelerator')) crvName = 'CRV-003 Miles Accelerator Push';
-      const sumLines = [data.name||'Campaign', data.objective||'New card acquisition', data.budget||'\$450K', data.flight||'May 1\u201331', data.audience||'Audience', data.trigger||'Trigger', crvName].join(' \xB7 ');
+      const t = text.toLowerCase();
+      // Modify with AI — open the modify flow, do NOT lock or advance
+      if (t.includes('modify with ai') || t.includes('modify')) {
+        const cur = BUILDER_CREATIVES[builderCreativeIdx] || BUILDER_CREATIVES[0];
+        return {
+          text: 'AI modification ready for ' + cur.id + ' \u2014 ' + cur.name + '.\n\nWhat would you like me to change? Options below, or describe a custom edit.',
+          options: ['Refresh the headline', 'Try a different palette', 'Adjust the CTA copy', 'Reframe the offer angle']
+        };
+      }
+      // Upload — guidance, do NOT lock or advance
+      if (t.includes('upload')) {
+        return {
+          text: 'Upload flow opened. Drop an image in the right panel or paste a URL. Once uploaded, I\u2019ll auto-lint it against compliance and rank it against AUD-001 fit.\n\nIn this demo, the upload UI isn\u2019t wired \u2014 select one of the library creatives or modify with AI to continue.',
+          options: ['Use CRV-001', 'Use CRV-002', 'Use CRV-003', 'Modify with AI']
+        };
+      }
+      // User responded to a "Modify with AI" follow-up — synthesize the edit, still don't lock yet
+      if (t.includes('headline') || t.includes('palette') || t.includes('cta') || t.includes('offer angle') || t.includes('reframe')) {
+        const cur = BUILDER_CREATIVES[builderCreativeIdx] || BUILDER_CREATIVES[0];
+        return {
+          text: '\u2713 AI edit applied to ' + cur.id + '. Preview updated in the right panel \u2014 audience fit and CTR projection re-scored.\n\nKeep iterating, or lock this version in.',
+          options: ['Lock ' + cur.id + ' \u2192', 'Try another edit', 'Use a different creative']
+        };
+      }
+      // "Use CRV-XXX" — lock and advance
+      if (t.includes('crv-001') || (t.includes('use') && t.includes('travel hero')) || t.includes('lock crv-001') || t.includes('premium rewards')) {
+        const crvName = 'CRV-001 Premium Rewards \u2014 Travel Hero';
+        const sumLines = [data.name||'Campaign', data.objective||'New card acquisition', data.budget||'\$450K', data.flight||'Spring 2026', data.audience||'Audience', data.trigger||'Trigger', crvName].join(' \xB7 ');
+        return {
+          text: '\u2713 Creative locked: ' + crvName + ' \xB7 auto-lint clear\n\nStep 5 \xB7 Summary & Approval\nAuto-compliance ran \u2014 16/16 checks passed, 2 issues auto-fixed by AI.\n\n' + sumLines + '\n\nI need your sign-off. Compliance review triggers automatically after you approve.',
+          options: ['\u2713 I approve \u2014 send to compliance', 'View compliance report \u2192', 'Request changes'],
+          stepComplete: true, dataUpdate: { creative: crvName + ' \u2713' }
+        };
+      }
+      if (t.includes('crv-002') || t.includes('first-class') || t.includes('upgrade offer')) {
+        const crvName = 'CRV-002 First-Class Upgrade Offer';
+        const sumLines = [data.name||'Campaign', data.objective||'New card acquisition', data.budget||'\$450K', data.flight||'Spring 2026', data.audience||'Audience', data.trigger||'Trigger', crvName].join(' \xB7 ');
+        return {
+          text: '\u2713 Creative locked: ' + crvName + ' \xB7 auto-lint clear\n\nStep 5 \xB7 Summary & Approval\nAuto-compliance ran \u2014 16/16 checks passed, 2 issues auto-fixed by AI.\n\n' + sumLines + '\n\nI need your sign-off. Compliance review triggers automatically after you approve.',
+          options: ['\u2713 I approve \u2014 send to compliance', 'View compliance report \u2192', 'Request changes'],
+          stepComplete: true, dataUpdate: { creative: crvName + ' \u2713' }
+        };
+      }
+      if (t.includes('crv-003') || t.includes('accelerator') || t.includes('miles')) {
+        const crvName = 'CRV-003 Miles Accelerator Push';
+        const sumLines = [data.name||'Campaign', data.objective||'New card acquisition', data.budget||'\$450K', data.flight||'Spring 2026', data.audience||'Audience', data.trigger||'Trigger', crvName].join(' \xB7 ');
+        return {
+          text: '\u2713 Creative locked: ' + crvName + ' \xB7 auto-lint clear\n\nStep 5 \xB7 Summary & Approval\nAuto-compliance ran \u2014 16/16 checks passed, 2 issues auto-fixed by AI.\n\n' + sumLines + '\n\nI need your sign-off. Compliance review triggers automatically after you approve.',
+          options: ['\u2713 I approve \u2014 send to compliance', 'View compliance report \u2192', 'Request changes'],
+          stepComplete: true, dataUpdate: { creative: crvName + ' \u2713' }
+        };
+      }
+      // Catch-all — re-prompt rather than silently locking the default
       return {
-        text: '\u2713 Creative locked: ' + crvName + ' \xB7 auto-lint clear\n\nStep 5 \xB7 Summary & Approval\nAuto-compliance ran \u2014 16/16 checks passed, 2 issues auto-fixed by AI.\n\n' + sumLines + '\n\nI need your sign-off. Compliance review triggers automatically after you approve.',
-        options: ['\u2713 I approve \u2014 send to compliance', 'View compliance report \u2192', 'Request changes'],
-        stepComplete: true, dataUpdate: { creative: crvName + ' \u2713' }
+        text: 'I want to make sure I lock the right creative. Pick one of the library options or modify with AI.',
+        options: ['Use CRV-001 \u2014 Travel Hero', 'Use CRV-002 \u2014 First-Class Upgrade', 'Use CRV-003 \u2014 Miles Accelerator', 'Modify with AI']
       };
     }
     // STEP 5 — Approval (final step, auto-activate)
@@ -9159,6 +9234,8 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
   // Sample prompts (rendered when ideaMessages is empty) seed the conversation.
 
   const HUB_IDEATION_SYS = `You are the Flight Deck assistant at a financial institution, powered by the Signalset Living Identity Graph (LIG). Marketers come to you to build campaigns, refine audiences, plan journey triggers, review measurement, or just explore what's possible. Your job is to figure out which task they're on and help them well.
+
+CURRENT DATE: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}. When proposing flight dates, ALWAYS use the current year or a future year. Never use a past year.
 
 ROLE: Adaptive marketing strategist. You meet the marketer where they are. You never route them away with "click a button" — you do the thinking with them.
 
@@ -9444,7 +9521,7 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
                 ['Objective', builderBrief.objective ? builderBrief.objective.replace(/_/g,' ').replace(/\b\w/g, c => c.toUpperCase()) : null],
                 ['Partner',   builderBrief.co_brand],
                 ['Audience',  builderBrief.audience_hint ? (builderBrief.audience_hint.length > 32 ? builderBrief.audience_hint.slice(0,32)+'\u2026' : builderBrief.audience_hint) : null],
-                ['Budget',    builderBrief.budget ? '$' + (builderBrief.budget/1000).toFixed(0) + 'K' : null],
+                ['Budget',    builderBrief.budget ? (_formatBudget(_parseBudgetToNumber(builderBrief.budget)) || String(builderBrief.budget)) : null],
                 ['Flight',    builderBrief.flight]
               ].filter(([,v]) => v).map(([lbl, val]) =>
                 /*#__PURE__*/React.createElement("div", { key: lbl, style: {
@@ -9618,7 +9695,7 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
       /* Messages */
       /*#__PURE__*/React.createElement("div", { style: { flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: 14, borderRight: '1px solid var(--bdr)' } },
         builderMessages.map((m, i) => /*#__PURE__*/React.createElement("div", { key: i, style: { display: 'flex', flexDirection: 'column', alignItems: m.role === 'user' ? 'flex-end' : 'flex-start', gap: 6 } },
-          /*#__PURE__*/React.createElement("div", { style: { maxWidth: '88%', padding: '12px 16px', borderRadius: m.role === 'user' ? '16px 16px 4px 16px' : '4px 16px 16px 16px', background: m.role === 'user' ? 'var(--cyan)' : 'rgba(22,22,58,.95)', border: m.role === 'user' ? 'none' : '1px solid rgba(99,102,241,.3)', fontSize: 13, lineHeight: 1.65, color: m.role === 'user' ? '#fff' : 'var(--text)', whiteSpace: 'pre-wrap' } }, m.text),
+          /*#__PURE__*/React.createElement("div", { style: { maxWidth: '88%', padding: '12px 16px', borderRadius: m.role === 'user' ? '16px 16px 4px 16px' : '4px 16px 16px 16px', background: m.role === 'user' ? 'var(--cyan)' : 'rgba(30,33,76,.98)', border: m.role === 'user' ? 'none' : '1px solid rgba(129,140,248,.4)', fontSize: 14, lineHeight: 1.65, color: m.role === 'user' ? '#fff' : '#F1F5F9', whiteSpace: 'pre-wrap' } }, m.text),
           m.role === 'assistant' && m.cards && _renderBuilderCards(m.cards),
           m.role === 'assistant' && m.options && i === builderMessages.length - 1 &&
           /*#__PURE__*/React.createElement("div", { style: { display: 'flex', flexWrap: 'wrap', gap: 7 } },
