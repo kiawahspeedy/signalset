@@ -4507,6 +4507,8 @@ function buildActionRenderer(opts) {
 // Adding more + options? Do it here once — all chatbots inherit automatically.
 function ChatPlusPopover({ onUpload, onDrive }) {
   const [plusOpen, setPlusOpen] = useState(false);
+  const [direction, setDirection] = useState('up'); // 'up' = pop above, 'down' = drop below
+  const btnRef = React.useRef(null);
   React.useEffect(() => {
     if (!plusOpen) return;
     const close = (e) => {
@@ -4516,17 +4518,32 @@ function ChatPlusPopover({ onUpload, onDrive }) {
     document.addEventListener('mousedown', close);
     return () => document.removeEventListener('mousedown', close);
   }, [plusOpen]);
+  const _doToggle = () => {
+    if (!plusOpen && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      const vh = window.innerHeight || document.documentElement.clientHeight;
+      // Top 40% of viewport → drop down. Otherwise pop up. Asymmetric threshold because popover
+      // content (~340px) needs more room to grow upward than downward in typical layouts.
+      setDirection(rect.top < vh * 0.4 ? 'down' : 'up');
+    }
+    setPlusOpen(v => !v);
+  };
   const _doUpload = () => { if (onUpload) onUpload(); else alert('File upload — coming in Phase 11'); setPlusOpen(false); };
   const _doDrive  = () => { if (onDrive)  onDrive();  else alert('Google Drive — coming in Phase 11'); setPlusOpen(false); };
+  // Inline positioning override per direction — overrides the CSS default (bottom: calc(100% + 8px))
+  const popoverStyle = direction === 'down'
+    ? { top: 'calc(100% + 8px)', bottom: 'auto' }
+    : { bottom: 'calc(100% + 8px)', top: 'auto' };
   return /*#__PURE__*/React.createElement("div", {
     className: "chat-plus-wrap",
     style: { position: 'relative' }
   },
     /*#__PURE__*/React.createElement("button", {
+      ref: btnRef,
       className: "chat-plus-btn",
       type: "button",
       title: "Attach",
-      onClick: () => setPlusOpen(v => !v),
+      onClick: _doToggle,
       "aria-haspopup": "menu",
       "aria-expanded": plusOpen ? "true" : "false"
     },
@@ -4542,6 +4559,7 @@ function ChatPlusPopover({ onUpload, onDrive }) {
     plusOpen && /*#__PURE__*/React.createElement("div", {
       className: "chat-plus-popover",
       role: "menu",
+      style: popoverStyle,
       onClick: (e) => e.stopPropagation()
     },
       /*#__PURE__*/React.createElement("button", {
@@ -4634,11 +4652,39 @@ function Chatbot({
   exploreScreen,
   onSaveResult,
   sendRef,
-  messagesRef
+  messagesRef,
+  unifiedWorkspace
 }) {
-  const [msgs, setMsgs] = useState([]);
+  // ── UNIFIED MODE (Phase 35) ─────────────────────────────────────────────
+  // When unifiedWorkspace is set, this Chatbot instance reads/writes from
+  // the shared ChatContext. messages are filtered to this workspace, sends
+  // route through context.sendMessage. Local state for input only.
+  // When unifiedWorkspace is NOT set, the component behaves exactly as before
+  // (local state, single-turn send) — preserves Merchant chat behavior.
+  // ────────────────────────────────────────────────────────────────────────
+  const _chatCtx = useChat();
+  const isUnified = !!unifiedWorkspace;
+  const _localMsgs = useState([]);
+  const _localLoading = useState(false);
+  const localMsgs = _localMsgs[0];
+  const setLocalMsgs = _localMsgs[1];
+  const localLoading = _localLoading[0];
+  const setLocalLoading = _localLoading[1];
+  // Filter unified messages to this workspace and adapt to the shape Chatbot expects
+  const unifiedMsgs = React.useMemo(() => {
+    if (!isUnified) return [];
+    return _chatCtx.messages
+      .filter(m => m.workspace === unifiedWorkspace)
+      .map(m => m.role === 'user'
+        ? { role: 'user', content: m.text }
+        : { role: 'assistant', content: m.result || { text: m.text }, loading: false });
+  }, [isUnified, unifiedWorkspace, _chatCtx.messages]);
+  const msgs = isUnified ? unifiedMsgs : localMsgs;
+  const setMsgs = isUnified ? (() => {}) : setLocalMsgs;  // no-op in unified — context owns state
+  const loading = isUnified ? _chatCtx.busy : localLoading;
+  const setLoading = isUnified ? (() => {}) : setLocalLoading;
+
   const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
   const [popout, setPopout] = useState(null);
   const endRef = useRef(null);
   // Expose msgs externally for cross-surface handoffs (e.g. home → Flight Deck transcript continuation)
@@ -4650,7 +4696,7 @@ function Chatbot({
     });
   }, [msgs]);
   const reset = () => {
-    setMsgs([]);
+    if (!isUnified) setLocalMsgs([]);
     setInput('');
     if (onResult) onResult(null);
   };
@@ -4658,12 +4704,19 @@ function Chatbot({
     const q = text || input;
     if (!q.trim() || loading) return;
     setInput('');
-    setMsgs(m => [...m, {
+    // ── UNIFIED PATH ──
+    if (isUnified) {
+      await _chatCtx.sendMessage(q, { workspace: unifiedWorkspace });
+      // onResult fires from a separate effect that watches lastResultByWorkspace
+      return;
+    }
+    // ── LOCAL PATH (legacy single-turn for Merchant chats) ──
+    setLocalMsgs(m => [...m, {
       role: 'user',
       content: q
     }]);
-    setLoading(true);
-    setMsgs(m => [...m, {
+    setLocalLoading(true);
+    setLocalMsgs(m => [...m, {
       role: 'assistant',
       content: null,
       loading: true
@@ -4696,18 +4749,24 @@ function Chatbot({
           text: raw
         };
       }
-      setMsgs(m => m.slice(0, -1).concat({
+      setLocalMsgs(m => m.slice(0, -1).concat({
         role: 'assistant',
         content: parsed
       }));
       if (onResult) onResult(parsed);
     } catch (e) {
       const errMsg = { text: 'Something went wrong — please try again.', error: true };
-      setMsgs(m => m.slice(0, -1).concat({ role: 'assistant', content: errMsg }));
+      setLocalMsgs(m => m.slice(0, -1).concat({ role: 'assistant', content: errMsg }));
       if (onResult) onResult(errMsg);
     }
-    setLoading(false);
-  }, [input, loading, systemPrompt, onResult]);
+    setLocalLoading(false);
+  }, [input, loading, systemPrompt, onResult, isUnified, _chatCtx, unifiedWorkspace]);
+  // In unified mode, watch for new assistant results in the workspace and fire onResult
+  React.useEffect(() => {
+    if (!isUnified || !onResult) return;
+    const last = _chatCtx.lastResultByWorkspace?.[unifiedWorkspace];
+    if (last) onResult(last);
+  }, [isUnified, onResult, _chatCtx.lastResultByWorkspace, unifiedWorkspace]);
   // Expose send externally (used by followUp pills)
   React.useEffect(() => { if (sendRef) sendRef.current = send; }, [send, sendRef]);
   return /*#__PURE__*/React.createElement("div", {
@@ -8921,6 +8980,8 @@ function JourneyBuilderLightbox({ open, onClose, context, onSave }) {
 
 function MarketingDesk({ jumpTab, onTabConsumed }) {
   const neo4jStatus = useNeo4jStatus();
+  // Phase 35 — consume unified chat context for the Flight Deck ideation chat (workspace='flight_deck')
+  const _chatCtx = useChat();
   const [tab, setTab] = useState('campaigns');
   // v11 · 10C — new 6-step flow: setup → audience → journey → creative → summary → activate
   // Legacy slugs remapped so old deep-links keep working
@@ -9597,33 +9658,10 @@ Be direct, analytical, and specific. This is a professional tool, not a consumer
 
   const _ideaSend = async (text) => {
     const q = (text || ideaInput).trim();
-    if (!q || ideaBusy) return;
+    if (!q || _chatCtx.busy) return;
     setIdeaInput('');
-    // Clear any lingering quick_replies on previous assistant messages so they don't re-appear
-    const cleared = ideaMessages.map(m => m.role === 'assistant' ? { ...m, quickReplies: [] } : m);
-    const newMsgs = [...cleared, { role: 'user', text: q }];
-    setIdeaMessages(newMsgs);
-    setIdeaBusy(true);
-    try {
-      const apiMessages = newMsgs.map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.text }));
-      const res = await fetch('https://signalset-lig-api.tickersignals.workers.dev/api/claude', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, system: HUB_IDEATION_SYS, messages: apiMessages })
-      });
-      const data = await res.json();
-      const raw = data.content?.[0]?.text || '';
-      let parsed;
-      try { parsed = JSON.parse(raw.replace(/```json|```/g, '').trim()); }
-      catch(e) { const jm = raw.match(/\{[\s\S]*\}/); try { parsed = JSON.parse(jm?.[0]||'{}'); } catch(e2) { parsed = { text: raw }; } }
-      if (parsed.brief && Object.keys(parsed.brief).some(k => parsed.brief[k] !== null)) {
-        setBuilderBrief(prev => ({ ...(prev || {}), ...Object.fromEntries(Object.entries(parsed.brief).filter(([,v]) => v !== null)) }));
-      }
-      if (parsed.ready) setBriefReady(true);
-      setIdeaMessages(prev => [...prev, { role: 'assistant', text: parsed.text || raw, ready: parsed.ready, launchCta: parsed.launch_cta, quickReplies: Array.isArray(parsed.quick_replies) ? parsed.quick_replies.slice(0, 4) : [] }]);
-    } catch(err) {
-      setIdeaMessages(prev => [...prev, { role: 'assistant', text: 'Connection issue \u2014 please try again.' }]);
-    }
-    setIdeaBusy(false);
+    // Delegate to unified chat context — single-conversation thread, brief extraction handled in context
+    await _chatCtx.sendMessage(q, { workspace: 'flight_deck' });
   };
 
   const AUDIENCE_SAMPLES = ['I want to build a new card acquisition campaign', 'Help me plan a spend activation campaign for existing cardholders who are underleveraging rewards', 'I need to design a product upgrade campaign targeting high-LTV customers ready to move to a premium tier'];
@@ -9655,31 +9693,44 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
 
   const [builderBrief, setBuilderBrief] = useState(null);
   const [briefReady, setBriefReady] = useState(false);
-  const [ideaMessages, setIdeaMessages] = useState([]);
   const [ideaInput, setIdeaInput] = useState('');
-  const [ideaBusy, setIdeaBusy] = useState(false);
   const [hubBriefReady, setHubBriefReady] = useState(false);
-  // Cross-surface transcript handoff — seed ideaMessages from home chat if user routed here
-  // with active conversation context. Drains the cache after consuming.
+  // Phase 35 — derive ideaMessages from unified chat context (workspace='flight_deck')
+  // Filters cross-workspace messages but keeps full thread continuity since context owns the
+  // conversation state (no more window._signalsetHomeToDesk cache).
+  const ideaMessages = React.useMemo(() => {
+    return _chatCtx.messages
+      .filter(m => m.workspace === 'flight_deck' || m.workspace === 'home')
+      .map(m => ({
+        role: m.role,
+        text: m.text,
+        ready: m.ready,
+        launchCta: m.launchCta,
+        quickReplies: m.quickReplies || [],
+        // Mark home-originated messages so we can render a subtle "from Home" hint if needed later
+        fromHome: m.workspace === 'home'
+      }));
+  }, [_chatCtx.messages]);
+  const ideaBusy = _chatCtx.busy;
+  // Sync brief extraction from context to local builderBrief (drives the campaign builder pre-fill)
+  React.useEffect(() => {
+    if (_chatCtx.briefSoFar) {
+      setBuilderBrief(_chatCtx.briefSoFar);
+      // If the AI has signaled ready (via launch_cta on most recent flight_deck message), set briefReady
+      const lastFD = [..._chatCtx.messages].reverse().find(m => m.workspace === 'flight_deck' && m.role === 'assistant');
+      if (lastFD?.ready) setBriefReady(true);
+    }
+  }, [_chatCtx.briefSoFar, _chatCtx.messages]);
+  // Legacy seed effect (no longer needed — context provides continuity natively) but kept harmless
+  // for migration safety. Will be removed in Batch 2.
   React.useEffect(() => {
     try {
       const stash = window._signalsetHomeToDesk;
-      if (Array.isArray(stash) && stash.length > 0 && ideaMessages.length === 0) {
-        // Seed transcript with the prior home messages, plus a bridge marker
-        const seeded = stash.map(m => ({ role: m.role, text: m.text }));
-        // Add a system bridge message and an AI continuation prompt — the bridge is visible to the user,
-        // but the AI on the next turn should pick up acknowledging the prior thread.
-        seeded.push({
-          role: 'assistant',
-          text: 'Picking up from where we left off on Home. I have the context \u2014 what would you like to focus on first? I can help refine an audience, plan a journey, build a campaign brief, or dig into measurement.',
-          quickReplies: ['Build a campaign brief', 'Refine an audience', 'Plan a journey trigger', 'Look at measurement']
-        });
-        setIdeaMessages(seeded);
-        // Drain the cache so a later return doesn't re-seed
+      if (stash) {
+        // Cache is now obsolete — drain it silently
         try { delete window._signalsetHomeToDesk; } catch (e) { window._signalsetHomeToDesk = null; }
       }
     } catch (e) { /* non-fatal */ }
-    // run once on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const JOURNEY_SAMPLES = ['Build an AI-optimized conversion path for High-Intent Travelers — maximize CVR within a 14-day window', 'What trigger sequence drives the fastest path to Signature card application for mobile-first Explorers?'];
@@ -14724,6 +14775,7 @@ function MeasurementIntro({
     }
   }, /*#__PURE__*/React.createElement(Chatbot, {
     systemPrompt: liveMzSys,
+    unifiedWorkspace: "measurement",
     samples: MZ_INTRO_SAMPLES,
     exploreLabel: "Cohort Analysis",
     exploreScreen: () => { setMzIntro(false); window.scrollTo(0,0); },
@@ -15362,6 +15414,7 @@ function MeasurementZone({
     }
   }, /*#__PURE__*/React.createElement(Chatbot, {
     systemPrompt: liveMzSys,
+    unifiedWorkspace: "measurement",
     samples: MZ_CHATBOT_SAMPLES,
     placeholder: "Ask about cohort performance, attribution, or optimization\u2026",
     resultRenderer: d => /*#__PURE__*/React.createElement("div", {
@@ -19585,6 +19638,7 @@ function HomeScreen({
       /*#__PURE__*/React.createElement("div", { className: "home-chat-wrap" },
         /*#__PURE__*/React.createElement(Chatbot, {
           systemPrompt: HOME_SYS,
+          unifiedWorkspace: "home",
           exploreLabel: "Identity Graph",
           exploreScreen: () => { setScreen('identity'); window.scrollTo(0, 0); },
           samples: HOME_SAMPLES,
