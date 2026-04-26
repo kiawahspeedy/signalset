@@ -8920,22 +8920,41 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
   }, [activationState, builderExited]);
 
   const saveBuilderAsDraft = () => {
+    // In chat-forward builder, fields live on builderCampData; legacy form-based builder uses campSetup.
+    const useChat = builderMode && builderCampData && (builderCampData.name || builderCampData.objective || builderCampData.audience);
+    const flightStr = useChat
+      ? (builderCampData.flight || '')
+      : ((campSetup.flightStart ? campSetup.flightStart.slice(5) : '') + (campSetup.flightEnd ? ' \u2013 ' + campSetup.flightEnd.slice(5) : ''));
+    const budgetNum = useChat
+      ? (() => {
+          const m = String(builderCampData.budget || '').match(/\$?([\d,.]+)\s*([KkMm])?/);
+          if (!m) return 0;
+          const n = parseFloat(m[1].replace(/,/g,''));
+          if (!m[2]) return n;
+          return m[2].toLowerCase() === 'k' ? n : n * 1000;
+        })()
+      : (campSetup.budget || 0);
     const draftCamp = {
       id: 'MK-' + Math.random().toString(36).slice(2,6).toUpperCase(),
-      name: campSetup.name || 'Untitled Campaign',
-      creative: '—',
-      segment: campSetup.audience || '—',
-      dmas: '—',
-      startDate: campSetup.flightStart ? campSetup.flightStart.slice(5) : '—',
-      endDate: campSetup.flightEnd ? campSetup.flightEnd.slice(5) : '—',
+      name: (useChat ? builderCampData.name : campSetup.name) || 'Untitled Campaign',
+      creative: useChat ? ((builderCampData.creative || '\u2014').replace(' \u2713','')) : '\u2014',
+      segment: useChat ? ((builderCampData.audience || '\u2014').replace(/AUD-\d+\s*/,'').replace(' \u2713','')) : (campSetup.audience || '\u2014'),
+      dmas: '\u2014',
+      startDate: useChat ? (flightStr.split('\u2013')[0].trim() || '\u2014') : (campSetup.flightStart ? campSetup.flightStart.slice(5) : '\u2014'),
+      endDate:   useChat ? ((flightStr.split('\u2013')[1] || '').trim() || '\u2014') : (campSetup.flightEnd ? campSetup.flightEnd.slice(5) : '\u2014'),
       status: 'draft',
-      budget: campSetup.budget || 0,
+      budget: budgetNum,
       spent: 0, impressions: 0, clicks: 0, conversions: 0, roas: 0, lift: 0
     };
     setMarketingCampaigns(prev => [draftCamp, ...prev]);
     setMkSelectedCampIdx(0);
     setBuilderExited(true);
     setActivationState('idle');
+    if (builderMode) {
+      setBuilderMode(false); setBuilderMessages([]); setBuilderStep(1); setBuilderCreativeIdx(0);
+      setBuilderCampData({ name:'', objective:'', budget:'', flight:'', audience:'', trigger:'', creative:'' });
+      setHubBriefReady(false);
+    }
     setTab('campaigns');
   };
 
@@ -9382,17 +9401,6 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
         )
       )
     ),
-    /* Brief progress strip */
-    builderBrief && Object.values(builderBrief).some(v => v) && /*#__PURE__*/React.createElement("div", {
-      style: { display: 'flex', gap: 6, flexWrap: 'wrap', padding: '10px 0', borderTop: '1px solid var(--bdr-soft)', marginTop: 4 }
-    },
-      [['Objective', builderBrief.objective], ['Partner', builderBrief.co_brand], ['Audience', builderBrief.audience_hint ? builderBrief.audience_hint.slice(0,40)+'\u2026' : null], ['Budget', builderBrief.budget ? '$' + (builderBrief.budget/1000).toFixed(0) + 'K' : null], ['Flight', builderBrief.flight]].filter(([,v]) => v).map(([lbl, val]) =>
-        /*#__PURE__*/React.createElement("div", { key: lbl, style: { fontSize: 11, padding: '3px 9px', borderRadius: 5, background: 'rgba(74,222,128,.07)', border: '1px solid rgba(74,222,128,.2)', color: 'var(--green)', fontFamily: 'IBM Plex Mono, monospace', display: 'flex', gap: 5 } },
-          /*#__PURE__*/React.createElement("span", { style: { color: 'var(--slate)' } }, lbl + ':'),
-          /*#__PURE__*/React.createElement("span", { style: { fontWeight: 700 } }, val)
-        )
-      )
-    ),
     /* Input */
     /*#__PURE__*/React.createElement("div", { style: { paddingTop: 10 } },
       /*#__PURE__*/React.createElement("div", { style: { display: 'flex', alignItems: 'flex-end', gap: 8, background: 'var(--card-alt)', border: '1px solid rgba(99,102,241,.28)', borderRadius: 12, padding: '12px 14px', boxShadow: '0 0 0 1px rgba(99,102,241,.08), 0 4px 24px rgba(0,0,0,.3)' } },
@@ -9417,6 +9425,33 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
           )
         )
       )
+    ),
+    /* Brief progress strip — confirmed (green) + pending (dim) */
+    /*#__PURE__*/React.createElement("div", {
+      style: { display: 'flex', gap: 6, flexWrap: 'wrap', padding: '12px 0 4px', justifyContent: 'center' }
+    },
+      [
+        ['Objective', builderBrief && builderBrief.objective ? builderBrief.objective.replace(/_/g,' ') : null],
+        ['Partner',   builderBrief && builderBrief.co_brand],
+        ['Audience',  builderBrief && builderBrief.audience_hint ? (builderBrief.audience_hint.length > 32 ? builderBrief.audience_hint.slice(0,32)+'\u2026' : builderBrief.audience_hint) : null],
+        ['Budget',    builderBrief && builderBrief.budget ? '$' + (builderBrief.budget/1000).toFixed(0) + 'K' : null],
+        ['Flight',    builderBrief && builderBrief.flight]
+      ].map(([lbl, val]) => {
+        const ok = !!val;
+        return /*#__PURE__*/React.createElement("div", { key: lbl, style: {
+          fontSize: 11, padding: '3px 9px', borderRadius: 5,
+          background: ok ? 'rgba(74,222,128,.07)' : 'transparent',
+          border: '1px solid ' + (ok ? 'rgba(74,222,128,.25)' : 'var(--bdr-soft)'),
+          color: ok ? 'var(--green)' : 'var(--slate)',
+          fontFamily: 'IBM Plex Mono, monospace',
+          display: 'flex', gap: 5,
+          opacity: ok ? 1 : 0.5,
+          transition: 'all .25s'
+        } },
+          /*#__PURE__*/React.createElement("span", { style: { color: 'var(--slate)' } }, lbl + ':'),
+          /*#__PURE__*/React.createElement("span", { style: { fontWeight: 700 } }, ok ? val : '\u2014')
+        );
+      })
     )
   ), /*#__PURE__*/React.createElement("div", {
     className: "camp-hub-right"
@@ -9540,7 +9575,7 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
   /* ── Chat-forward Campaign Builder ─────────────────────────────────── */
   builderMode ? /*#__PURE__*/React.createElement("div", { style: { flex: 1, display: 'flex', minHeight: 0, overflow: 'hidden', background: 'var(--bg)' } },
     /* LEFT: conversation */
-    /*#__PURE__*/React.createElement("div", { style: { flex: '0 0 58%', display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--bdr)', overflow: 'hidden' } },
+    /*#__PURE__*/React.createElement("div", { style: { flex: '0 0 58%', display: 'flex', flexDirection: 'column', overflow: 'hidden' } },
       /* Chat header */
       /*#__PURE__*/React.createElement("div", { style: { height: 56, padding: '0 20px', background: 'var(--card-alt)', borderBottom: '1px solid var(--bdr)', display: 'flex', alignItems: 'center', flexShrink: 0, boxSizing: 'border-box' } },
         /*#__PURE__*/React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 10 } },
@@ -9552,7 +9587,7 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
         )
       ),
       /* Messages */
-      /*#__PURE__*/React.createElement("div", { style: { flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: 14 } },
+      /*#__PURE__*/React.createElement("div", { style: { flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: 14, borderRight: '1px solid var(--bdr)' } },
         builderMessages.map((m, i) => /*#__PURE__*/React.createElement("div", { key: i, style: { display: 'flex', flexDirection: 'column', alignItems: m.role === 'user' ? 'flex-end' : 'flex-start', gap: 6 } },
           /*#__PURE__*/React.createElement("div", { style: { maxWidth: '88%', padding: '12px 16px', borderRadius: m.role === 'user' ? '16px 16px 4px 16px' : '4px 16px 16px 16px', background: m.role === 'user' ? 'var(--cyan)' : 'rgba(22,22,58,.95)', border: m.role === 'user' ? 'none' : '1px solid rgba(99,102,241,.3)', fontSize: 13, lineHeight: 1.65, color: m.role === 'user' ? '#fff' : 'var(--text)', whiteSpace: 'pre-wrap' } }, m.text),
           m.role === 'assistant' && m.cards && _renderBuilderCards(m.cards),
@@ -9568,7 +9603,7 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
         )
       ),
       /* Input bar */
-      /*#__PURE__*/React.createElement("div", { style: { padding: '12px 16px 14px', borderTop: '1px solid var(--bdr-soft)', background: 'var(--card-alt)', flexShrink: 0 } },
+      /*#__PURE__*/React.createElement("div", { style: { padding: '12px 16px 14px', borderTop: '1px solid var(--bdr-soft)', borderRight: '1px solid var(--bdr)', background: 'var(--card-alt)', flexShrink: 0 } },
         /*#__PURE__*/React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg)', border: '1px solid var(--bdr-soft)', borderRadius: 10, padding: '9px 12px' } },
           /*#__PURE__*/React.createElement("textarea", { rows: 1, value: builderInput, onChange: e => setBuilderInput(e.target.value), onKeyDown: e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); _builderSend(); } }, placeholder: 'Reply or override any suggestion\u2026', style: { flex: 1, background: 'none', border: 'none', outline: 'none', resize: 'none', fontSize: 13, color: 'var(--text)', fontFamily: 'var(--font-b)', lineHeight: 1.5 }, disabled: builderBusy }),
           /*#__PURE__*/React.createElement("button", { onClick: () => _builderSend(), disabled: !builderInput.trim() || builderBusy, style: { width: 32, height: 32, borderRadius: 9, border: 'none', background: 'var(--indigo)', color: '#fff', cursor: builderInput.trim() && !builderBusy ? 'pointer' : 'not-allowed', opacity: builderInput.trim() && !builderBusy ? 1 : 0.5, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 } }, "\u2191")
@@ -9624,7 +9659,8 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
           [['Use ' + BUILDER_CREATIVES[builderCreativeIdx].id + ' \u2014 ' + BUILDER_CREATIVES[builderCreativeIdx].name, true], ['Modify with AI \u2192', false], ['Upload an image \u2192', false]].map(([lbl, isPrimary], ai) =>
             /*#__PURE__*/React.createElement("button", { key: ai, onClick: () => _builderSend(lbl), style: { padding: '8px 14px', borderRadius: 7, fontSize: 12, fontWeight: 600, background: isPrimary ? 'rgba(74,222,128,.08)' : 'var(--card)', border: '1px solid ' + (isPrimary ? 'rgba(74,222,128,.3)' : 'var(--bdr-soft)'), color: isPrimary ? 'var(--green)' : 'var(--text)', cursor: 'pointer', fontFamily: 'var(--font-b)', textAlign: 'left' } }, lbl)
           )
-        ),
+        )
+      ),
       builderStep !== 4 && /*#__PURE__*/React.createElement("div", { style: { flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 10 } },
         /* Step list */
         /*#__PURE__*/React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 6 } },
@@ -9662,7 +9698,6 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
           ),
           /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--slate)', marginTop: 5, fontFamily: 'IBM Plex Mono, monospace' } }, Math.min(builderStep-1, 5) + ' of 5 steps complete')
         )
-      )
       ),
       /* Exit bar */
       /*#__PURE__*/React.createElement("div", { style: { padding: '12px 20px', borderTop: '1px solid var(--bdr)', display: 'flex', gap: 8, flexShrink: 0 } },
