@@ -4540,13 +4540,16 @@ function ChatPlusPopover({ onUpload, onDrive }) {
       // Top 40% of viewport → drop down. Otherwise pop up.
       const dir = rect.top < vh * 0.4 ? 'down' : 'up';
       setDirection(dir);
-      // Cap popover height based on available space in chosen direction (with safety margin)
-      const safetyMargin = 24;
+      // Cap popover height based on available space in chosen direction.
+      // Safety margin of 80px keeps it well clear of the eyebrow / page header zone.
+      // Account for popover's own 12px (6×2) padding so internal content fits cleanly.
+      const safetyMargin = 80;
+      const padBudget = 12;
       const availableSpace = dir === 'down'
         ? (vh - rect.bottom - safetyMargin)
         : (rect.top - safetyMargin);
-      // Hard ceiling at 360px so on tall viewports it doesn't sprawl
-      setMaxH(Math.min(360, Math.max(120, availableSpace)));
+      // Hard ceiling at 320px (was 360 — tighter on tall viewports). Floor at 120px so it's always usable.
+      setMaxH(Math.min(320, Math.max(120, availableSpace - padBudget)));
     }
     setPlusOpen(v => !v);
   };
