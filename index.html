@@ -4427,13 +4427,16 @@ function Chatbot({
   exploreLabel,
   exploreScreen,
   onSaveResult,
-  sendRef
+  sendRef,
+  messagesRef
 }) {
   const [msgs, setMsgs] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [popout, setPopout] = useState(null);
   const endRef = useRef(null);
+  // Expose msgs externally for cross-surface handoffs (e.g. home → Flight Deck transcript continuation)
+  React.useEffect(() => { if (messagesRef) messagesRef.current = msgs; }, [msgs, messagesRef]);
   useEffect(() => {
     if (msgs.length > 0) endRef.current?.scrollIntoView({
       behavior: 'smooth',
@@ -8992,16 +8995,32 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
       const budNum = _parseBudgetToNumber(builderBrief.budget);
       const budStr = _formatBudget(budNum) || (builderBrief.budget ? String(builderBrief.budget) : 'TBD');
       setBuilderCampData({ name: campName, objective: (builderBrief.objective||'').replace(/_/g,' '), budget: budStr + (builderBrief.flight ? ' \xB7 ' + builderBrief.flight : ''), flight: builderBrief.flight||'', audience: '', trigger: '', creative: '' });
-      setBuilderStep(2);
-      setBuilderMessages([{ role: 'assistant', text: '\u2713 Brief loaded from your ideation session.\n\nPre-filled:\n\u2022 ' + campName + '\n\u2022 ' + (builderBrief.objective||'').replace(/_/g,' ') + ' \xB7 ' + budStr + (builderBrief.flight ? ' \xB7 ' + builderBrief.flight : '') + (builderBrief.creative_direction ? '\n\u2022 Creative direction: ' + builderBrief.creative_direction : '') + '\n\nSkipping to Step 2 \xB7 Audiences \u2014 querying the LIG with your target profile' + (builderBrief.audience_hint ? ': ' + builderBrief.audience_hint : '') + '\u2026',
-        cards: [
-          { type: 'audience', id: 'AUD-001', name: 'High-Intent Travel Rewards', taxonomy: 'Explorers \xB7 Revelers \xB7 CR-matched', size: '52,400', sizeLabel: 'qualified prospects', criteria: ['\u22654 flight/hotel transactions / 90d', 'Mobile sessions \u226510/wk \xB7 HHI proxy \u2265\$140K', 'No current Signature card \xB7 Consent: email + push'], features: [{ label: 'Travel spend', pct: 87 }, { label: 'Mobile sessions', pct: 73 }, { label: 'Email open rate', pct: 68 }], propensity: 84, dests: ['SFMC / Email', 'TTD (UID2)', 'AJO Journeys'], compliance: ['Fair Lending \u2713', 'GLBA \u2713', 'TCPA \u2713'], recommended: true },
-          { type: 'audience', id: 'AUD-002', name: 'Affluent Mobile-First Upgraders', taxonomy: 'Luxuriates \xB7 IAB-matched', size: '38,700', sizeLabel: 'upgrade targets', criteria: ['Monthly spend \$5K+ \xB7 3 consecutive months', 'Mobile primary >80%'], features: [{ label: 'Monthly spend', pct: 81 }, { label: 'Mobile primary', pct: 74 }], propensity: 79, dests: ['Adobe RTCDP', 'SFMC / Email', 'Clean Room (LR)'], compliance: ['Fair Lending \u2713', 'UDAAP \u2713'], recommended: false }
-        ],
-        options: ['Use AUD-001 \u2014 High-Intent Travel Rewards', 'Use AUD-002 instead', 'Build a custom segment \u2192']
+      // Land at STEP 1 with a confirmation card — agent confirms before advancing.
+      // The agent makes every decision in the builder; the brief informs but does not pre-decide.
+      setBuilderStep(1);
+      const cardTypeLabel = builderBrief.card_type === 'co_brand' ? 'Co-brand'
+        : builderBrief.card_type === 'in_house_premium' ? 'In-house premium'
+        : builderBrief.card_type === 'in_house_standard' ? 'In-house standard'
+        : builderBrief.card_type === 'in_house_cash_back' ? 'In-house cash back'
+        : null;
+      const partnerLine = builderBrief.co_brand ? '\u2022 Co-brand partner: ' + builderBrief.co_brand : (cardTypeLabel ? '\u2022 Card type: ' + cardTypeLabel : null);
+      const lines = [
+        '\u2022 Campaign name: ' + campName,
+        '\u2022 Objective: ' + (builderBrief.objective||'').replace(/_/g,' '),
+        partnerLine,
+        builderBrief.audience_hint ? '\u2022 Audience direction: ' + builderBrief.audience_hint : null,
+        '\u2022 Budget: ' + budStr,
+        builderBrief.flight ? '\u2022 Flight: ' + builderBrief.flight : null,
+        builderBrief.success_metric ? '\u2022 Success metric: ' + builderBrief.success_metric : null,
+        builderBrief.creative_direction ? '\u2022 Creative direction: ' + builderBrief.creative_direction : null
+      ].filter(Boolean).join('\n');
+      setBuilderMessages([{
+        role: 'assistant',
+        text: 'Picking up from your brief. Here\u2019s what I have so far:\n\n' + lines + '\n\nStep 1 \xB7 Setup — confirm to lock these in, or override any field. I\u2019ll handle audiences, triggers, creatives, and approval together with you in the next steps.',
+        options: ['\u2713 Confirm and proceed to audiences', 'Edit campaign name', 'Adjust budget or flight', 'Restart from scratch']
       }]);
     } else {
-      setBuilderMessages([{ role: 'assistant', text: "Let\u2019s build your campaign. I\u2019ll pull live data from the LIG at each step \u2014 audiences from real propensity scores, triggers from 90-day MTA, creatives ranked by audience fit with auto-lint.\n\nStep 1 of 5 \xB7 Setup\nWhat\u2019s the campaign name?", options: ['Meridian Air Q2 Acquisition', 'Custom name \u2192'] }]);
+      setBuilderMessages([{ role: 'assistant', text: "Let\u2019s build your campaign. I\u2019ll pull live data from the LIG at each step \u2014 audiences from real propensity scores, triggers from 90-day MTA, creatives ranked by audience fit with auto-lint.\n\nStep 1 of 5 \xB7 Setup\nWhat\u2019s the campaign name?", options: ['New Card Acquisition Q3', 'Custom name \u2192'] }]);
     }
   }, [builderMode]);
 
@@ -9093,6 +9112,36 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
 
   // ── Rewritten _builderGetResponse with rich data cards ────────────
   const _builderGetResponse = (text, step, data) => {
+    // STEP 1 — BRIEF CONFIRMATION (when builder was launched from a brief — data.name already set)
+    if (step === 1 && data.name && data.objective) {
+      const t = text.toLowerCase();
+      // Confirm — advance to Step 2 (audiences) with the agent making the recommendation
+      if (t.includes('\u2713') || t.includes('confirm') || t.includes('proceed')) {
+        return {
+          text: '\u2713 Setup confirmed.\n\nStep 2 \xB7 Audiences \u2014 ranking LIG segments against your brief. My recommendation is AUD-001 because the propensity score (84%) and audience size align with your budget. AUD-002 is the safer alternative if you want a tighter, higher-LTV pool. Which works for you?',
+          cards: [
+            { type: 'audience', id: 'AUD-001', name: 'High-Intent Travel Rewards', taxonomy: 'Explorers \xB7 Revelers \xB7 CR-matched', size: '52,400', sizeLabel: 'qualified prospects', criteria: ['\u22654 flight/hotel transactions / 90d', 'Mobile sessions \u226510/wk \xB7 HHI proxy \u2265\$140K', 'No current Signature card \xB7 Consent: email + push'], features: [{ label: 'Travel spend', pct: 87 }, { label: 'Mobile sessions', pct: 73 }, { label: 'Email open rate', pct: 68 }], propensity: 84, dests: ['SFMC / Email', 'TTD (UID2)', 'AJO Journeys'], compliance: ['Fair Lending \u2713', 'GLBA \u2713', 'TCPA \u2713'], recommended: true },
+            { type: 'audience', id: 'AUD-002', name: 'Affluent Mobile-First Upgraders', taxonomy: 'Luxuriates \xB7 IAB-matched', size: '38,700', sizeLabel: 'upgrade targets', criteria: ['Monthly spend \$5K+ \xB7 3 consecutive months', 'Mobile primary >80%'], features: [{ label: 'Monthly spend', pct: 81 }, { label: 'Mobile primary', pct: 74 }], propensity: 79, dests: ['Adobe RTCDP', 'SFMC / Email', 'Clean Room (LR)'], compliance: ['Fair Lending \u2713', 'UDAAP \u2713'], recommended: false }
+          ],
+          options: ['Use AUD-001 \u2014 High-Intent Travel Rewards', 'Use AUD-002 instead', 'Build a custom segment \u2192'],
+          stepComplete: true
+        };
+      }
+      // Edit campaign name
+      if (t.includes('edit') && t.includes('name')) {
+        return { text: 'Sure \u2014 what should we call this campaign instead?', options: [data.name + ' (keep)', 'Q3 New Acquisition', 'Custom name \u2192'] };
+      }
+      // Edit budget / flight
+      if (t.includes('budget') || t.includes('flight') || t.includes('adjust')) {
+        return { text: 'Got it. What budget and flight window should we run with?', options: [data.budget || '\$450K \xB7 May 1\u201331', '\$250K \xB7 Faster sprint', '\$750K \xB7 Extended flight', 'Custom \u2192'] };
+      }
+      // Restart
+      if (t.includes('restart') || t.includes('scratch')) {
+        return { text: 'Starting fresh. What\u2019s the campaign name?', options: ['New Card Acquisition Q3', 'Custom name \u2192'], dataUpdate: { name: '', objective: '', budget: '', flight: '' } };
+      }
+      // User typed a custom answer — treat as a name override
+      return { text: '\u201c' + text + '\u201d \u2014 noted as the campaign name. Confirm to proceed, or adjust other fields.', options: ['\u2713 Confirm and proceed to audiences', 'Adjust budget or flight', 'Restart from scratch'], dataUpdate: { name: text } };
+    }
     // STEP 1a — Name captured from first chip/input, ask objective
     if (step === 1 && !data.name) {
       const nm = text.includes('Custom') ? 'New Campaign' : text;
@@ -9281,8 +9330,18 @@ CURRENT DATE: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month:
 
 ROLE: Adaptive marketing strategist. You meet the marketer where they are. You never route them away with "click a button" — you do the thinking with them.
 
-INTENT DETECTION (first turn):
-- If the user describes a CAMPAIGN (acquisition, activation, retention drives, product launches, co-brand promos): switch to campaign brief mode and use the BRIEF FIELDS below.
+CRITICAL — BRAND NEUTRALITY:
+- The institution operates BOTH in-house cards (their own proprietary products like premium rewards, cash back, travel cards) AND co-brand partnerships (with travel, retail, hospitality partners).
+- NEVER assume a specific co-brand partner from a generic prompt. If the user says "build a card acquisition campaign" without naming a partner or product, you must ASK what type of card before proposing anything.
+- Do not introduce specific brand names (Meridian Air, Sova, Grove Coffee, etc.) unless the user names them first OR the conversation explicitly establishes co-brand context.
+
+CONTEXT CONTINUATION:
+- If you see prior messages in this conversation, the user is continuing from elsewhere on the platform — do NOT restart from scratch.
+- Acknowledge the prior thread briefly ("Picking up from where we left off — ...") and advance to the next probing question or summary based on what's already been established.
+- Use prior messages to populate the brief fields you already have. Only ask about fields still missing.
+
+INTENT DETECTION (first turn, only when no prior context exists):
+- If the user describes a CAMPAIGN (acquisition, activation, retention, product launches): switch to campaign brief mode and use the BRIEF FIELDS below.
 - If the user describes an AUDIENCE (segment definition, propensity targeting, cohort building): switch to audience definition mode. Probe for behavioral signals, eligibility rules, suppression criteria, destination platforms.
 - If the user describes a JOURNEY or TRIGGER (multi-touch sequences, attribution-driven flows): switch to journey mode. Probe for entry conditions, decision points, channel mix, attribution model.
 - If the user wants to ANALYZE or MEASURE (cohort performance, LTV/CAC, attribution, lift): respond with relevant questions and gently suggest the Measurement zone for the deeper analytical view.
@@ -9290,21 +9349,24 @@ INTENT DETECTION (first turn):
 
 CAMPAIGN BRIEF MODE — RULES:
 - Ask ONE or TWO focused questions per turn. Never more.
-- Push back on vague answers. If they say "something for travel," ask which partner, which product, which audience.
+- Push back on vague answers. If they say "something for travel," ask which audience, which product type, which performance goal.
+- For CARD ACQUISITION specifically: your FIRST follow-up MUST ask whether this is a co-brand campaign (with a named partner) or an in-house card campaign (proprietary product). The flow downstream depends on this. Use quick_replies like "Co-brand partnership", "In-house premium card", "In-house cash back / standard", "Not sure — help me decide".
+- Only after the in-house vs co-brand decision is made do you start asking about partner names (co-brand path) or card product positioning (in-house path).
 - Build the brief across 4-6 exchanges minimum. Do not declare ready before exchange 4.
-- When you have confirmed: objective + co-brand partner + audience description + budget + flight timing, set ready: true and add launch_cta: "Launch Campaign Builder \u2192" to the response.
+- When you have confirmed: objective + (co-brand partner OR in-house card type) + audience description + budget + flight timing, set ready: true and add launch_cta: "Launch Campaign Builder \u2192" to the response.
 
 ALWAYS respond with valid JSON only. No markdown fences, no preamble, no other text outside the JSON object.
 
 BRIEF FIELDS (populate the ones you have, leave others null):
-- name: suggested campaign name based on partner + objective
+- name: suggested campaign name based on card_type + objective (avoid putting a brand name unless co_brand is set)
 - objective: "new_card_acquisition" | "spend_activation" | "product_upgrade" | "retention" | null
-- co_brand: partner brand name (e.g. "Meridian Air") or null
+- card_type: "co_brand" | "in_house_premium" | "in_house_standard" | "in_house_cash_back" | null  (REQUIRED for acquisition campaigns before progressing)
+- co_brand: partner brand name (only when card_type is co_brand) or null
 - audience_hint: plain language description of the target audience with specific behavioral signals if mentioned
 - budget: number in dollars or null
 - flight: date range string or null
 - creative_direction: tone, visual style, key message, any brand constraints
-- success_metric: what defines campaign success to this marketer
+- success_metric: what defines campaign success to this marketer (CPA target, total conversions, first-year spend, etc.)
 - notes: suppression rules, channel preferences, compliance flags, anything else
 
 RESPONSE FORMAT — always this exact structure:
@@ -9319,12 +9381,11 @@ RESPONSE FORMAT — always this exact structure:
 
 QUICK REPLIES — CRITICAL:
 - ALWAYS include 2-4 quick_replies whenever you ask a question. They are short clickable answer suggestions (max 8 words each) that let the user respond by tapping instead of typing.
-- For OPEN-ENDED questions ("which audience are you targeting?"), give 3 distinct answer paths the user might choose ("Existing Meridian Air loyalists", "New travel-oriented prospects", "Both — broaden the funnel").
-- For CHOICE questions ("acquisition or activation?"), give the explicit choices as quick_replies.
-- For CONFIRMATION questions ("does $500K sound right?"), give ["Yes, that works", "Let's go higher", "Lower — closer to $250K"].
-- Even when the user has typed something specific, offer quick_replies that nudge them toward a likely next step.
-- ONLY OMIT quick_replies when you're delivering a final summary or the launch CTA — never when asking the user something.
-- Keep each quick_reply under 50 characters. Make them feel like natural answers a marketer would give.
+- For OPEN-ENDED questions, give 3 distinct answer paths the user might choose.
+- For CHOICE questions, give the explicit choices as quick_replies.
+- For CONFIRMATION questions, give ["Yes, that works", "Adjust higher", "Adjust lower"] or similar.
+- ONLY OMIT quick_replies when you're delivering a final summary or the launch CTA.
+- Keep each quick_reply under 50 characters.
 
 Be direct, analytical, and specific. This is a professional tool, not a consumer product.`;
 
@@ -9359,7 +9420,7 @@ Be direct, analytical, and specific. This is a professional tool, not a consumer
     setIdeaBusy(false);
   };
 
-  const AUDIENCE_SAMPLES = ['I want to build a card acquisition campaign for Meridian Air targeting affluent frequent travelers', 'Help me plan a spend activation campaign for existing cardholders who are underleveraging rewards', 'I need to design a product upgrade campaign targeting high-LTV customers ready to move to Signature'];
+  const AUDIENCE_SAMPLES = ['I want to build a new card acquisition campaign', 'Help me plan a spend activation campaign for existing cardholders who are underleveraging rewards', 'I need to design a product upgrade campaign targeting high-LTV customers ready to move to a premium tier'];
   const DESK_CONCIERGE_SYS = `You are the Signalset Campaign Strategist — an AI embedded in a financial institution's marketing platform. Your job is to have a genuine strategic conversation with the marketer to build a complete campaign brief before they enter the campaign builder.
 
 You are NOT a router. Never say "click a button" or "use the pill." You ARE the starting point of the campaign build.
@@ -9392,6 +9453,29 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
   const [ideaInput, setIdeaInput] = useState('');
   const [ideaBusy, setIdeaBusy] = useState(false);
   const [hubBriefReady, setHubBriefReady] = useState(false);
+  // Cross-surface transcript handoff — seed ideaMessages from home chat if user routed here
+  // with active conversation context. Drains the cache after consuming.
+  React.useEffect(() => {
+    try {
+      const stash = window._signalsetHomeToDesk;
+      if (Array.isArray(stash) && stash.length > 0 && ideaMessages.length === 0) {
+        // Seed transcript with the prior home messages, plus a bridge marker
+        const seeded = stash.map(m => ({ role: m.role, text: m.text }));
+        // Add a system bridge message and an AI continuation prompt — the bridge is visible to the user,
+        // but the AI on the next turn should pick up acknowledging the prior thread.
+        seeded.push({
+          role: 'assistant',
+          text: 'Picking up from where we left off on Home. I have the context \u2014 what would you like to focus on first? I can help refine an audience, plan a journey, build a campaign brief, or dig into measurement.',
+          quickReplies: ['Build a campaign brief', 'Refine an audience', 'Plan a journey trigger', 'Look at measurement']
+        });
+        setIdeaMessages(seeded);
+        // Drain the cache so a later return doesn't re-seed
+        try { delete window._signalsetHomeToDesk; } catch (e) { window._signalsetHomeToDesk = null; }
+      }
+    } catch (e) { /* non-fatal */ }
+    // run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const JOURNEY_SAMPLES = ['Build an AI-optimized conversion path for High-Intent Travelers — maximize CVR within a 14-day window', 'What trigger sequence drives the fastest path to Signature card application for mobile-first Explorers?'];
   const SMART_TRIGGERS_HEADER = /*#__PURE__*/React.createElement("div", {
     style: {
@@ -19099,7 +19183,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
 // ═══════════════════════════════════════════════════════════════
 
 // ══ HOME SCREEN ══════════════════════════════════════════════════════════════════
-const HOME_SYS = `You are Flight Deck, an AI-powered marketing intelligence platform for a major US financial institution. Built on the Living Identity Graph (LIG) which resolves 8 customer nodes across 5 behavioral segments: Explorers (LTV $4,200 avg, 48.2K customers), Revelers (LTV $5,100, 31K), Luxuriates (LTV $6,800, 22K), Bask & Chill (LTV $2,400, 58K), Deal Seekers (LTV $1,800, 62K). Platform serves campaigns for Meridian Air, Sova, and Grove Coffee. Four modules: Identity (LIG graph, 94% match rate, 7+ device resolution), Measurement (LTV vs CAC bubble chart, clean-room attribution), In-House Campaigns (Smart Audience, Smart Triggers, Creative Selector), Partner Campaigns (clean-room partner portal). ALWAYS answer using these specific segment names, LTV figures, and brand names. Return ONLY valid JSON: { "text": "...", "nav": "identity|measurement|desk|cmn", "navLabel": "..." }`;
+const HOME_SYS = `You are Flight Deck, an AI-powered marketing intelligence platform for a major US financial institution. Built on the Living Identity Graph (LIG) which resolves 8 customer nodes across 5 behavioral segments: Explorers (LTV $4,200 avg, 48.2K customers), Revelers (LTV $5,100, 31K), Luxuriates (LTV $6,800, 22K), Bask & Chill (LTV $2,400, 58K), Deal Seekers (LTV $1,800, 62K). The platform supports BOTH in-house card products (premium rewards, cash back, standard, travel) AND co-brand partnerships (Meridian Air, Sova, Grove Coffee are example partners). Four modules: Identity (LIG graph, 94% match rate, 7+ device resolution), Measurement (LTV vs CAC bubble chart, clean-room attribution), In-House Campaigns (Smart Audience, Smart Triggers, Creative Selector), Partner Campaigns (clean-room partner portal). Use specific segment names and LTV figures when relevant, but DO NOT lead with co-brand partner names unless the user names them or explicitly mentions co-brand work. For acquisition or campaign questions where partner is not specified, ask whether they want in-house or co-brand. Return ONLY valid JSON: { "text": "...", "nav": "identity|measurement|desk|cmn", "navLabel": "..." }`;
 const HOME_MOCKS = [{
   text: 'Your Living Identity Graph resolves cardholder identities across 7+ devices and household members using deterministic LiveRamp matching at 94-99% confidence. The Explorers cluster shows 8.2 average devices per household; Luxuriates index on Apple ecosystem cohesion. Probabilistic edges on hover reveal cross-cluster purchase correlations that power lookalike expansion. See your full identity graph in action.',
   nav: 'identity',
@@ -19120,6 +19204,22 @@ const HOME_MOCKS = [{
 function HomeScreen({
   setScreen
 }) {
+  const homeMsgsRef = React.useRef([]);
+  // Stash home-chat messages into a window-level cache for cross-surface transcript handoff.
+  // Read by Flight Deck on mount when the user routed there with active conversation context.
+  // Transitional pattern — Session 2 refactor will replace with proper lifted state.
+  const stashHomeChatToFlightDeck = () => {
+    try {
+      const m = homeMsgsRef.current || [];
+      if (m.length > 0) {
+        window._signalsetHomeToDesk = m.map(x => ({
+          role: x.role,
+          // Flatten content to string — handle both string and object response shapes
+          text: typeof x.content === 'string' ? x.content : (x.content?.text || '')
+        })).filter(x => x.text);
+      }
+    } catch (e) { /* non-fatal */ }
+  };
   const HOME_SAMPLES = ['Show me the household relationship in my identity graph', 'Run attribution — which cohorts have the best LTV/CAC ratio?', 'Walk me through the in-house campaign builder', 'What can a partner do with the platform?'];
   const FEAT_TILES = [{
     id: 'identity',
@@ -19164,6 +19264,8 @@ function HomeScreen({
       : (nav && navLabel ? [{ label: 'Open the ' + navLabel + ' view \u2192', nav: nav }] : []);
     const handleChip = (fu, ev) => {
       if (fu.nav) {
+        // Stash home chat for cross-surface transcript handoff when routing to Flight Deck (desk)
+        if (fu.nav === 'desk') stashHomeChatToFlightDeck();
         // brief transitional feedback so navigation reads as a narrated action, not a teleport
         if (ev && ev.currentTarget) {
           ev.currentTarget.style.opacity = '0.55';
@@ -19258,6 +19360,7 @@ function HomeScreen({
           exploreScreen: () => { setScreen('identity'); window.scrollTo(0, 0); },
           samples: HOME_SAMPLES,
           placeholder: "Ask about identity, measurement, campaigns, or partner activation…",
+          messagesRef: homeMsgsRef,
           resultRenderer: (d, send) => HomeResultRenderer(d, send)
         })
       )
@@ -19268,10 +19371,11 @@ function HomeScreen({
         className: "v11-home-pill section-" + p.section,
         onClick: () => {
           if (p.id === 'drive') { alert('From Drive integration coming in Phase 11'); return; }
+          if (p.id === 'desk') stashHomeChatToFlightDeck();
           setScreen(p.id); window.scrollTo(0, 0);
         },
         role: "button", tabIndex: 0,
-        onKeyDown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (p.id !== 'drive') { setScreen(p.id); window.scrollTo(0, 0); } else { alert('From Drive integration coming in Phase 11'); } } }
+        onKeyDown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (p.id !== 'drive') { if (p.id === 'desk') stashHomeChatToFlightDeck(); setScreen(p.id); window.scrollTo(0, 0); } else { alert('From Drive integration coming in Phase 11'); } } }
       },
         /*#__PURE__*/React.createElement("span", { className: "v11-home-pill-ico" }, p.icon),
         p.label
