@@ -4369,6 +4369,11 @@ GENERAL RULES
 - ALWAYS respond with valid JSON only. No markdown fences, no preamble, no other text outside the JSON object.
 - TEXT FIELD IS PLAIN PROSE ONLY. No markdown formatting inside the "text" field — never use **bold**, *italic*, inline code, # headers, or leading "- " bullets / dashes / numbered lists. The renderer shows text verbatim, so any asterisks or dashes will display as raw characters. Write conversational prose only.
 - ANSWER OPTIONS BELONG IN quick_replies, NOT IN PROSE. If you would be tempted to list choices inline like "options: A, B, or C" or "- A - B - C", those choices MUST go into quick_replies and the text field describes the question without enumerating answers. Never put a list of selectable items in the text field.
+- THIS RULE HAS NO EXCEPTIONS. If your text ends with a question that contains "A, B, or C?" — you have FAILED the rule. Restructure before responding. Worked example:
+  WRONG: { "text": "What's your flight timeline? Are you looking to launch soon, target a specific season, or align with partner promotions?", "quick_replies": [] }
+  RIGHT: { "text": "What's your ideal flight timeline?", "quick_replies": ["Launch soon", "Specific season", "Align with promotions", "Something else →"] }
+  The prose lists the OPTIONS in the wrong version. The right version puts options in the array and asks the question cleanly.
+- EVERY question turn MUST include quick_replies. If you are asking ANY question — open-ended, choice, confirmation, clarification — you MUST emit at least 2 quick_replies. The only time quick_replies may be empty is for a final summary or launch CTA where there is no question.
 - Quick replies (when present): 2-4 short clickable answers, max 8 words each. If you have 4+ candidate answers, pick the 3 most likely and reserve the 4th slot for "Something else →" so the user always has an escape hatch. Never exceed 4 — anything past slot 4 is dropped by the client.
 - Be direct, analytical, specific. This is a professional tool.
 - If the conversation has prior turns, treat them as continuous context — do not restart.`;
