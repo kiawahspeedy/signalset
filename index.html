@@ -1973,6 +1973,13 @@ div:has(> .ig-layout) > .hero { display: none; }
 /* ── AUDIENCE / TRIGGER PRESET CARDS ── */
 
 .aud-card { background: var(--card); border: 1.5px solid rgba(99,102,241,.32); border-radius: 12px; padding: 14px 16px; cursor: pointer; transition: all .2s; box-shadow: 0 2px 16px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.04); position: relative; overflow: hidden; }
+.aud-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  padding: 0 28px 28px;
+  align-content: start;
+}
 .aud-card:hover { border-color: var(--cyan); box-shadow: 0 4px 20px rgba(0,180,230,.12); transform: translateY(-1px); }
 .aud-card.selected { border-color: var(--cyan); background: rgba(0,180,230,.03); }
 .aud-card-accent { position: absolute; top: 0; left: 0; width: 3px; height: 100%; border-radius: 12px 0 0 12px; }
@@ -4461,9 +4468,13 @@ function ChatProvider({ children }) {
         const syntheticPrompt = handoffNote || `[Workspace handoff — the user just routed here from the home screen. Take your first turn on this workspace, picking up the conversation above. Do NOT re-introduce yourself, do NOT re-confirm what they want — just take the next concrete step. For example, if the user asked to build a campaign, your first turn here should ask the very next strategic question (e.g., card type) with quick replies, not "what would you like to build?"]`;
         apiMessages.push({ role: 'user', content: syntheticPrompt });
       }
+      // Model selection: short-answer Q&A workspaces use Haiku (faster); builders that need
+      // stronger reasoning + reliable JSON-shaped output stay on Sonnet.
+      const fastWorkspaces = new Set(['home', 'measurement', 'identity']);
+      const model = fastWorkspaces.has(ws) ? 'claude-haiku-4-5-20251001' : 'claude-sonnet-4-20250514';
       const res = await fetch('https://signalset-lig-api.tickersignals.workers.dev/api/claude', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, system: sysPrompt, messages: apiMessages })
+        body: JSON.stringify({ model, max_tokens: 1000, system: sysPrompt, messages: apiMessages })
       });
       const data = await res.json();
       const raw = data.content?.[0]?.text || '';
@@ -9553,7 +9564,7 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
   const [builderStep, setBuilderStep] = useState(1);
   const [builderBusy, setBuilderBusy] = useState(false);
   const [builderInput, setBuilderInput] = useState('');
-  const [builderCampData, setBuilderCampData] = useState({ name: '', objective: '', budget: '', flight: '', audience: '', trigger: '', creative: '' });
+  const [builderCampData, setBuilderCampData] = useState({ name: '', objective: '', card: '', partner: '', budget: '', flight: '', audience: '', trigger: '', creative: '' });
   const builderChatRef = React.useRef(null);
   // Auto-scroll builder chat to bottom on every new message or while AI is typing
   useEffect(() => {
@@ -9624,7 +9635,7 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
     setActivationState('idle');
     if (builderMode) {
       setBuilderMode(false); setBuilderMessages([]); setBuilderStep(1); setBuilderCreativeIdx(0);
-      setBuilderCampData({ name:'', objective:'', budget:'', flight:'', audience:'', trigger:'', creative:'' });
+      setBuilderCampData({ name:'', objective:'', card:'', partner:'', budget:'', flight:'', audience:'', trigger:'', creative:'' });
       setHubBriefReady(false);
     }
     setTab('campaigns');
@@ -9707,6 +9718,38 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
     if (!cards || !cards.length) return null;
     return /*#__PURE__*/React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8, maxWidth: '95%' } },
       cards.map((card, ci) => {
+        if (card.type === 'card') {
+          // Show a soft section divider before the first co-brand card if we're transitioning groups
+          const prev = ci > 0 ? cards[ci - 1] : null;
+          const showCoBrandDivider = prev && prev.type === 'card' && prev.group === 'in-house' && card.group === 'co-brand';
+          return /*#__PURE__*/React.createElement(React.Fragment, { key: ci },
+            showCoBrandDivider && /*#__PURE__*/React.createElement("div", { style: { fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 6, paddingLeft: 4 } }, '\u2014 Co-brand cards'),
+            ci === 0 && card.group === 'in-house' && /*#__PURE__*/React.createElement("div", { style: { fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', paddingLeft: 4 } }, '\u2014 In-house cards'),
+            /*#__PURE__*/React.createElement("div", { style: { background: 'rgba(8,8,15,.7)', border: '1px solid rgba(99,102,241,.25)', borderRadius: 9, padding: 14, opacity: card.recommended ? 1 : 0.82 } },
+              /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 } },
+                /*#__PURE__*/React.createElement("div", null,
+                  card.recommended && /*#__PURE__*/React.createElement("div", { style: { fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--cyan-dim)', fontFamily: 'IBM Plex Mono, monospace', marginBottom: 4 } }, '\u2605 Recommended'),
+                  /*#__PURE__*/React.createElement("div", { style: { fontSize: 14, fontWeight: 700 } }, card.name),
+                  /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2 } }, card.id + ' \xB7 ' + card.taxonomy)
+                ),
+                /*#__PURE__*/React.createElement("div", { style: { textAlign: 'right' } },
+                  /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: 'var(--cyan-dim)', fontFamily: 'IBM Plex Mono, monospace', textTransform: 'uppercase', letterSpacing: '.06em' } }, card.tier)
+                )
+              ),
+              /*#__PURE__*/React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 3, marginBottom: 10 } },
+                card.criteria.map((c, i) => /*#__PURE__*/React.createElement("div", { key: i, style: { fontSize: 11, color: 'var(--slate)', display: 'flex', alignItems: 'center', gap: 6 } },
+                  /*#__PURE__*/React.createElement("span", { style: { color: 'var(--cyan-dim)', fontWeight: 700 } }, '\xB7'), c
+                ))
+              ),
+              /*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 3, borderTop: '1px solid rgba(99,102,241,.15)', paddingTop: 8, flexWrap: 'wrap' } },
+                card.compliance.map((c, i) => {
+                  const isWarn = /\u26A0/.test(c);
+                  return /*#__PURE__*/React.createElement("span", { key: i, style: { fontSize: 9, padding: '2px 6px', borderRadius: 4, background: isWarn ? 'rgba(251,191,36,.08)' : 'rgba(74,222,128,.07)', border: '1px solid ' + (isWarn ? 'rgba(251,191,36,.25)' : 'rgba(74,222,128,.2)'), color: isWarn ? 'var(--amber)' : 'var(--green)', fontFamily: 'IBM Plex Mono, monospace' } }, c);
+                })
+              )
+            )
+          );
+        }
         if (card.type === 'audience') return /*#__PURE__*/React.createElement("div", { key: ci, style: { background: 'rgba(8,8,15,.7)', border: '1px solid rgba(99,102,241,.25)', borderRadius: 9, padding: 14, opacity: card.recommended ? 1 : 0.75 } },
           /* Header */
           /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 } },
@@ -9814,17 +9857,70 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
     // STEP 1a — No name yet — capture name from first input
     if (step === 1 && !data.name) {
       const nm = text.includes('Custom') ? 'New Campaign' : text;
-      return { text: '\u201c' + nm + '\u201d \u2014 noted.\n\nObjective?', options: ['New card acquisition', 'Product upgrade', 'Spend activation', 'Retention'], dataUpdate: { name: nm } };
+      return { text: '\u201c' + nm + '\u201d \u2014 noted.\n\nObjective?', options: ['New card acquisition', 'Co-brand marketing', 'Offer & promotion', 'Retention', 'Something else \u2192'], dataUpdate: { name: nm } };
     }
-    // STEP 1b — Name set, no objective — capture objective, ask budget
+    // STEP 1b — Name set, no objective — capture objective.
+    //          For all objectives EXCEPT "Something else", branch to Card type next.
+    //          "Something else" is open-ended → straight to budget.
     if (step === 1 && data.name && !data.objective) {
-      return { text: '\u2713 Objective: ' + text + '\n\nBudget and flight? Defaulting to Q2 run rate:', options: ['\$450K \xB7 May 1 \u2192 May 31', '\$250K \xB7 Faster sprint', '\$750K \xB7 Extended flight', 'Override budget / dates'], dataUpdate: { objective: text } };
+      const isSomethingElse = /something else/i.test(text);
+      if (isSomethingElse) {
+        return { text: 'Got it \u2014 tell me a bit more about the goal, and I\u2019ll pick the right defaults for budget, audience, and channels.\n\nWhat are you trying to do?', options: ['Cross-sell to existing cardholders', 'Win-back lapsed cardholders', 'Brand awareness lift', 'Custom \u2192'], dataUpdate: { objective: text, skipCardType: true } };
+      }
+      return {
+        text: '\u2713 Objective: ' + text + '\n\nWhich card is this campaign for? I\u2019m showing your portfolio \u2014 in-house first, then co-brand. Pick one and I\u2019ll tailor budget and audience defaults to that card\u2019s profile.',
+        cards: [
+          { type: 'card', id: 'CARD-IH-1', name: 'Signature Travel', taxonomy: 'In-house \xB7 Travel rewards', tier: 'Premium', criteria: ['1.2M cardholders', 'Avg LTV \$4,200', 'Travel & dining 3\xD7'], compliance: ['Fair Lending \u2713', 'GLBA \u2713'], group: 'in-house', recommended: text.toLowerCase().includes('acquisition') },
+          { type: 'card', id: 'CARD-IH-2', name: 'Signature Reserve', taxonomy: 'In-house \xB7 Premium travel', tier: 'Top-tier', criteria: ['340K cardholders', 'Avg LTV \$8,400', 'Lounge access \xB7 Concierge'], compliance: ['Fair Lending \u2713', 'GLBA \u2713'], group: 'in-house' },
+          { type: 'card', id: 'CARD-IH-3', name: 'Cash Back Plus', taxonomy: 'In-house \xB7 Cash back', tier: 'Standard', criteria: ['2.1M cardholders', 'Avg LTV \$1,800', 'Flat 2% cash back'], compliance: ['Fair Lending \u2713', 'GLBA \u2713'], group: 'in-house' },
+          { type: 'card', id: 'CARD-IH-4', name: 'Business Plus', taxonomy: 'In-house \xB7 Small business', tier: 'Business', criteria: ['180K cardholders', 'Avg LTV \$6,200', 'Office \xB7 Travel categories'], compliance: ['Fair Lending \u2713', 'GLBA \u2713'], group: 'in-house' },
+          { type: 'card', id: 'CARD-CB-1', name: 'Sova Air Signature', taxonomy: 'Co-brand \xB7 Sova Air', tier: 'Co-brand premium', criteria: ['480K cardholders', 'Active co-brand since 2024', 'LiveRamp clean-room ready'], compliance: ['Co-brand DPA \u2713', 'Clean-room (LR) \u2713'], group: 'co-brand', partner: 'Sova Air', recommended: /co.?brand/i.test(text) },
+          { type: 'card', id: 'CARD-CB-2', name: 'Meridian Air Premier', taxonomy: 'Co-brand \xB7 Meridian Air', tier: 'Co-brand premium', criteria: ['210K cardholders', 'Pilot 6 months', 'InfoSum clean-room ready'], compliance: ['Co-brand DPA \u2713', 'Clean-room (InfoSum) \u2713'], group: 'co-brand', partner: 'Meridian Air' },
+          { type: 'card', id: 'CARD-CB-3', name: 'Grove Coffee Rewards', taxonomy: 'Co-brand \xB7 Grove Coffee', tier: 'Co-brand standard', criteria: ['New launch Mar 2026', 'Clean-room provisioning', '70K early cardholders'], compliance: ['Co-brand DPA \u2713', 'Clean-room pending \u26A0'], group: 'co-brand', partner: 'Grove Coffee' },
+          { type: 'card', id: 'CARD-CB-4', name: 'Pinnacle Hotels World', taxonomy: 'Co-brand \xB7 Pinnacle Hotels', tier: 'Co-brand premium', criteria: ['390K cardholders', 'Active co-brand since 2022', 'Clean-room ready'], compliance: ['Co-brand DPA \u2713', 'Clean-room (LR) \u2713'], group: 'co-brand', partner: 'Pinnacle Hotels' }
+        ],
+        options: ['Use Signature Travel', 'Use Sova Air Signature', 'Use Cash Back Plus', 'Show all cards \u2192'],
+        dataUpdate: { objective: text }
+      };
     }
-    // STEP 1c — Name + objective set, no budget — capture budget, advance to Step 2
+    // STEP 1c — Card type captured (or skipped via "Something else"), advance to budget
+    if (step === 1 && data.name && data.objective && !data.card && !data.budget && !data.skipCardType) {
+      // Parse the card name from "Use X" or just X. Match against known cards to set partner.
+      const cleaned = text.replace(/^Use\s+/i, '').replace(/\s*\(recommended\)\s*$/i, '').trim();
+      const CARD_LOOKUP = {
+        'Signature Travel': { partner: null, group: 'in-house' },
+        'Signature Reserve': { partner: null, group: 'in-house' },
+        'Cash Back Plus': { partner: null, group: 'in-house' },
+        'Business Plus': { partner: null, group: 'in-house' },
+        'Sova Air Signature': { partner: 'Sova Air', group: 'co-brand' },
+        'Meridian Air Premier': { partner: 'Meridian Air', group: 'co-brand' },
+        'Grove Coffee Rewards': { partner: 'Grove Coffee', group: 'co-brand' },
+        'Pinnacle Hotels World': { partner: 'Pinnacle Hotels', group: 'co-brand' }
+      };
+      const cardMeta = CARD_LOOKUP[cleaned] || { partner: null, group: cleaned.toLowerCase().includes('co-brand') ? 'co-brand' : 'in-house' };
+      const isCoBrand = cardMeta.group === 'co-brand';
+      return {
+        text: '\u2713 Card locked: ' + cleaned + (cardMeta.partner ? ' (' + cardMeta.partner + ' co-brand)' : '') + '\n\nBudget and flight? ' + (isCoBrand ? 'Co-brand campaigns typically run a 6-week flight to align with partner inventory cycles.' : 'Defaulting to Q2 run rate:'),
+        options: isCoBrand
+          ? ['\$300K \xB7 May 1 \u2192 Jun 12 (6wk co-brand)', '\$500K \xB7 Extended co-brand flight', '\$200K \xB7 Test sprint', 'Override budget / dates']
+          : ['\$450K \xB7 May 1 \u2192 May 31', '\$250K \xB7 Faster sprint', '\$750K \xB7 Extended flight', 'Override budget / dates'],
+        dataUpdate: { card: cleaned, partner: cardMeta.partner || '', isCoBrand: isCoBrand }
+      };
+    }
+    // STEP 1c-skip — "Something else" objective skips card-type, captures custom objective detail, asks budget
+    if (step === 1 && data.name && data.objective && data.skipCardType && !data.budget) {
+      return {
+        text: '\u2713 Goal: ' + text + '\n\nBudget and flight?',
+        options: ['\$450K \xB7 May 1 \u2192 May 31', '\$250K \xB7 Faster sprint', '\$750K \xB7 Extended flight', 'Override budget / dates'],
+        dataUpdate: { objective_detail: text }
+      };
+    }
+    // STEP 1d — Budget captured, advance to Step 2
     if (step === 1 && data.name && data.objective && !data.budget) {
       const bud = text.includes('Override') || text.includes('Custom') ? '\$350K \xB7 Custom dates' : text;
+      const audSuffix = data.isCoBrand && data.partner ? ' Cross-referencing ' + data.partner + ' clean-room overlap.' : '';
       return {
-        text: '\u2713 Setup complete.\n\nStep 2 \xB7 Audiences \u2014 querying the LIG for acquisition-intent segments with active consent and no existing Signature card\u2026',
+        text: '\u2713 Setup complete.\n\nStep 2 \xB7 Audiences \u2014 querying the LIG for acquisition-intent segments with active consent and no existing Signature card\u2026' + audSuffix,
         cards: [
           { type: 'audience', id: 'AUD-001', name: 'High-Intent Travel Rewards', taxonomy: 'Explorers \xB7 Revelers \xB7 CR-matched', size: '52,400', sizeLabel: 'qualified prospects', criteria: ['\u22654 flight/hotel transactions / 90d', 'Mobile sessions \u226510/wk \xB7 HHI proxy \u2265\$140K', 'No current Signature card \xB7 Consent: email + push'], features: [{ label: 'Travel spend', pct: 87 }, { label: 'Mobile sessions', pct: 73 }, { label: 'Email open rate', pct: 68 }], propensity: 84, dests: ['SFMC / Email', 'TTD (UID2)', 'AJO Journeys'], compliance: ['Fair Lending \u2713', 'GLBA \u2713', 'TCPA \u2713'], recommended: true },
           { type: 'audience', id: 'AUD-002', name: 'Affluent Mobile-First Upgraders', taxonomy: 'Luxuriates \xB7 IAB-matched', size: '38,700', sizeLabel: 'upgrade targets', criteria: ['Monthly spend \$5K+ \xB7 3 consecutive months', 'Mobile primary >80% \xB7 No premium card in wallet'], features: [{ label: 'Monthly spend', pct: 81 }, { label: 'Mobile primary', pct: 74 }], propensity: 79, dests: ['Adobe RTCDP', 'SFMC / Email', 'Clean Room (LR)'], compliance: ['Fair Lending \u2713', 'UDAAP \u2713'], recommended: false }
@@ -9972,7 +10068,7 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
       if (resp.navigate) {
         setTimeout(() => {
           setBuilderMode(false); setBuilderMessages([]); setBuilderStep(1); setBuilderCreativeIdx(0);
-          setBuilderCampData({ name:'', objective:'', budget:'', flight:'', audience:'', trigger:'', creative:'' });
+          setBuilderCampData({ name:'', objective:'', card:'', partner:'', budget:'', flight:'', audience:'', trigger:'', creative:'' });
           setBuilderExited(true); setActivationState('idle'); setHubBriefReady(false);
           if (resp.navigate === 'campaigns') setTab('campaigns');
           else { setDeskHub(true); setTab(resp.navigate); }
@@ -9983,7 +10079,7 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
         setTimeout(() => {
           setBuilderMessages([{ role: 'assistant', text: 'Fresh start \u2014 what campaign would you like to build?', options: ['New card acquisition', 'Spend activation', 'Product upgrade', 'Retention'] }]);
           setBuilderStep(1); setBuilderCreativeIdx(0);
-          setBuilderCampData({ name:'', objective:'', budget:'', flight:'', audience:'', trigger:'', creative:'' });
+          setBuilderCampData({ name:'', objective:'', card:'', partner:'', budget:'', flight:'', audience:'', trigger:'', creative:'' });
         }, 500);
       }
     }, 600 + Math.random()*350);
@@ -10623,7 +10719,7 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
         /* Summary card */
         /*#__PURE__*/React.createElement("div", { style: { background: 'var(--card)', border: '1px solid var(--bdr-soft)', borderRadius: 9, padding: '12px 14px' } },
           /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginBottom: 8 } }, "Campaign Summary"),
-          [['Name', builderCampData.name], ['Objective',builderCampData.objective],['Budget',builderCampData.budget],['Flight',builderCampData.flight],['Audience',builderCampData.audience],['Trigger',builderCampData.trigger],['Creative',builderCampData.creative]].map(([lbl,val]) =>
+          [['Name', builderCampData.name], ['Objective',builderCampData.objective], ['Card', builderCampData.card + (builderCampData.partner ? ' (' + builderCampData.partner + ')' : '')], ['Budget',builderCampData.budget],['Flight',builderCampData.flight],['Audience',builderCampData.audience],['Trigger',builderCampData.trigger],['Creative',builderCampData.creative]].map(([lbl,val]) =>
             /*#__PURE__*/React.createElement("div", { key: lbl, style: { display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', borderBottom: '1px solid var(--bdr-soft)' } },
               /*#__PURE__*/React.createElement("span", { style: { color: 'var(--slate)', flexShrink: 0 } }, lbl),
               /*#__PURE__*/React.createElement("span", { style: { fontWeight: 700, fontSize: 10, color: val ? (val.includes('\u2713') ? 'var(--green)' : 'var(--text)') : 'var(--slate)', fontStyle: val ? 'normal' : 'italic', textAlign: 'right', maxWidth: '55%' } }, val || 'Pending')
@@ -10641,7 +10737,7 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
       /* Exit bar */
       /*#__PURE__*/React.createElement("div", { style: { padding: '12px 20px', borderTop: '1px solid var(--bdr)', display: 'flex', gap: 8, flexShrink: 0 } },
         /*#__PURE__*/React.createElement("button", { className: 'btn btn-secondary', style: { flex: 1, justifyContent: 'center', fontSize: 12, color: 'var(--amber)', borderColor: 'rgba(245,158,11,.3)' }, onClick: saveBuilderAsDraft }, "Save as draft"),
-        /*#__PURE__*/React.createElement("button", { className: 'btn btn-ghost', style: { fontSize: 12 }, onClick: () => { setBuilderMode(false); setBuilderMessages([]); setBuilderStep(1); setBuilderCreativeIdx(0); setHubBriefReady(false); setBuilderCampData({name:'',objective:'',budget:'',flight:'',audience:'',trigger:'',creative:''}); setTab('campaigns'); } }, "Exit without saving")
+        /*#__PURE__*/React.createElement("button", { className: 'btn btn-ghost', style: { fontSize: 12 }, onClick: () => { setBuilderMode(false); setBuilderMessages([]); setBuilderStep(1); setBuilderCreativeIdx(0); setHubBriefReady(false); setBuilderCampData({name:'',objective:'',card:'',partner:'',budget:'',flight:'',audience:'',trigger:'',creative:''}); setTab('campaigns'); } }, "Exit without saving")
       )
     )
   ) :
@@ -20138,7 +20234,7 @@ ${JSON.stringify({
         const res = await fetch('https://signalset-lig-api.tickersignals.workers.dev/api/claude', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 600, system: sysPrompt, messages: [{ role: 'user', content: q }] })
+          body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 600, system: sysPrompt, messages: [{ role: 'user', content: q }] })
         });
         const data = await res.json();
         const raw = data.content?.[0]?.text || '';
