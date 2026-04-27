@@ -9391,6 +9391,63 @@ function JourneyBuilderLightbox({ open, onClose, context, onSave }) {
 // SCREEN 2 — FLIGHT DECK
 // ═══════════════════════════════════════════════════════════════
 
+// ── renderRichText ─────────────────────────────────────────────────
+// Belt-and-suspenders renderer for AI-generated chat text. The model
+// is instructed not to emit markdown, but Sonnet/Haiku will sometimes
+// sneak **bold** or leading-dash bullets through anyway. This helper
+// converts those into proper React elements so they display cleanly
+// instead of as raw asterisks/dashes. Cheap path: if no markdown
+// indicators, return the string unchanged.
+function renderRichText(text) {
+  if (typeof text !== 'string' || !text) return text;
+  // Cheap path: no markdown indicators → return unchanged (string passes through React fine).
+  var hasBold = text.indexOf('**') !== -1;
+  var hasBullet = /(^|\n)\s*[-•]\s+/.test(text);
+  if (!hasBold && !hasBullet) return text;
+  // Parse inline **bold** within a single line. Returns an array of strings/elements.
+  function parseInline(line, keyPrefix) {
+    if (line.indexOf('**') === -1) return [line];
+    var parts = line.split(/(\*\*[^*]+\*\*)/g);
+    return parts.filter(function (p) { return p !== ''; }).map(function (p, i) {
+      if (p.length >= 4 && p.slice(0, 2) === '**' && p.slice(-2) === '**') {
+        return /*#__PURE__*/React.createElement('strong', { key: keyPrefix + '-b' + i, style: { fontWeight: 600 } }, p.slice(2, -2));
+      }
+      return p;
+    });
+  }
+  // Walk lines, group consecutive bullet lines into a <ul>.
+  var lines = text.split('\n');
+  var nodes = [];
+  var bulletBuf = [];
+  function flushBullets() {
+    if (bulletBuf.length === 0) return;
+    var items = bulletBuf.map(function (b, i) {
+      return /*#__PURE__*/React.createElement('li', { key: 'li-' + nodes.length + '-' + i, style: { marginBottom: 4 } }, parseInline(b, 'li' + nodes.length + i));
+    });
+    nodes.push(/*#__PURE__*/React.createElement('ul', { key: 'ul-' + nodes.length, style: { margin: '6px 0 6px 0', paddingLeft: 20, listStyle: 'disc' } }, items));
+    bulletBuf = [];
+  }
+  for (var i = 0; i < lines.length; i++) {
+    var raw = lines[i];
+    var bm = raw.match(/^\s*[-•]\s+(.*)$/);
+    if (bm) {
+      bulletBuf.push(bm[1]);
+      continue;
+    }
+    flushBullets();
+    if (raw === '') {
+      // Preserve paragraph break with a small spacer (only if not at start/end)
+      if (nodes.length > 0 && i < lines.length - 1) {
+        nodes.push(/*#__PURE__*/React.createElement('div', { key: 'br-' + i, style: { height: 6 } }));
+      }
+      continue;
+    }
+    nodes.push(/*#__PURE__*/React.createElement('div', { key: 'p-' + i }, parseInline(raw, 'p' + i)));
+  }
+  flushBullets();
+  return nodes;
+}
+
 // ── ComplianceRunner ───────────────────────────────────────────────
 // Animated sequential compliance check display. Each check transitions
 // pending \u2192 running \u2192 (passed | autofixed) on a stagger.
@@ -10546,7 +10603,7 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
                 /*#__PURE__*/React.createElement("div", {
                   style: { display: 'flex', flexDirection: 'column', gap: 10, flex: m.role === 'assistant' ? 1 : '0 1 auto', minWidth: 0, alignItems: m.role === 'user' ? 'flex-end' : 'stretch' }
                 },
-                  /*#__PURE__*/React.createElement("div", { className: "bubble" }, m.text),
+                  /*#__PURE__*/React.createElement("div", { className: "bubble" }, m.role === 'assistant' ? renderRichText(m.text) : m.text),
                   showQuickReplies && /*#__PURE__*/React.createElement("div", {
                     style: { display: 'flex', flexWrap: 'wrap', gap: 6 }
                   },
