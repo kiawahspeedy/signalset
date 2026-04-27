@@ -533,6 +533,621 @@ html:not(.screen-transitioning) body {
   .v11-home-pill { padding: 8px 14px; font-size: 12px; }
 }
 
+/* ─────────────────────────────────────────────────────────────────
+   DASHBOARD HOME (Phase 38) — replaces v11 router-style home
+   Layout: greeting → workspaces tile row → briefing → watching →
+   data tiles → fixed bottom ask bar.
+   ───────────────────────────────────────────────────────────────── */
+.dash-home {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 24px 28px 180px; /* extra bottom for fixed ask bar */
+}
+.dash-greeting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 22px;
+}
+.dash-greeting {
+  font-family: var(--font-b);
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  color: var(--text);
+}
+.dash-greeting span { color: var(--indigo-lt, #818CF8); }
+.dash-greeting-meta {
+  font-family: var(--font-m);
+  font-size: 11px;
+  color: var(--slate);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.dash-refresh-btn {
+  background: transparent;
+  border: 1px solid var(--bdr);
+  color: var(--slate);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-family: var(--font-m);
+  font-size: 11px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all .12s;
+}
+.dash-refresh-btn:hover { border-color: var(--cyan); color: var(--cyan-pale); }
+.dash-section-label {
+  font-family: var(--font-m);
+  font-size: 11px;
+  color: var(--slate);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  margin-top: 24px;
+}
+
+/* WORKSPACES — first tile row above the fold */
+.dash-ws-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.dash-ws-tile {
+  background: var(--card);
+  border: 1px solid var(--bdr);
+  border-radius: 10px;
+  padding: 18px;
+  cursor: pointer;
+  transition: all .15s;
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+}
+.dash-ws-tile:hover {
+  border-color: rgba(99,102,241,.4);
+  background: var(--card-alt, #131a2c);
+  transform: translateY(-1px);
+}
+.dash-ws-icon {
+  width: 28px; height: 28px;
+  background: rgba(99,102,241,.12);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--indigo-lt, #818CF8);
+  margin-bottom: 12px;
+}
+.dash-ws-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.dash-ws-stats {
+  font-family: var(--font-m);
+  font-size: 11px;
+  color: var(--slate);
+  line-height: 1.6;
+  flex: 1;
+}
+.dash-ws-stats b { color: var(--text); font-weight: 500; }
+.dash-ws-stats .green { color: var(--green); }
+.dash-ws-stats .amber { color: var(--amber); }
+.dash-ws-arrow {
+  margin-top: 10px;
+  font-family: var(--font-m);
+  font-size: 11px;
+  color: var(--slate);
+  letter-spacing: .04em;
+  transition: color .12s;
+}
+.dash-ws-tile:hover .dash-ws-arrow { color: var(--cyan-pale); }
+
+/* BRIEFING CARD */
+.dash-briefing {
+  background: linear-gradient(135deg, var(--card) 0%, var(--card-alt, #131a2c) 100%);
+  border: 1px solid rgba(99,102,241,.35);
+  border-radius: 12px;
+  padding: 22px 26px;
+  margin-bottom: 8px;
+  position: relative;
+  overflow: hidden;
+}
+.dash-briefing::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--indigo, #6366F1), var(--cyan, #06B6D4));
+}
+.dash-briefing-eyebrow {
+  font-family: var(--font-m);
+  font-size: 10px;
+  color: var(--cyan-pale, #67E8F9);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dash-briefing-eyebrow::before {
+  content: "";
+  width: 6px; height: 6px;
+  background: var(--cyan, #06B6D4);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--cyan, #06B6D4);
+}
+.dash-briefing-text {
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--text);
+  margin: 0;
+}
+.dash-briefing-text .hl-cyan { color: var(--cyan-pale, #67E8F9); font-weight: 600; }
+.dash-briefing-text .hl-green { color: var(--green); font-weight: 600; }
+.dash-briefing-text .hl-amber { color: var(--amber); font-weight: 600; }
+.dash-briefing-skel {
+  height: 18px;
+  background: linear-gradient(90deg, rgba(99,102,241,.08), rgba(99,102,241,.18), rgba(99,102,241,.08));
+  background-size: 200% 100%;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  animation: skel-shimmer 1.4s ease-in-out infinite;
+}
+@keyframes skel-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+/* WATCHING CARDS */
+.dash-watch-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.dash-watch-card {
+  background: var(--card);
+  border: 1px solid var(--bdr);
+  border-radius: 10px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.dash-watch-card:hover {
+  border-color: rgba(99,102,241,.4);
+  transform: translateY(-1px);
+}
+.dash-watch-tag {
+  display: inline-block;
+  font-family: var(--font-m);
+  font-size: 9px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 3px;
+  margin-bottom: 10px;
+}
+.dash-watch-tag.alert { background: rgba(248,113,113,.1); color: var(--red); border: 1px solid rgba(248,113,113,.3); }
+.dash-watch-tag.opportunity { background: rgba(74,222,128,.1); color: var(--green); border: 1px solid rgba(74,222,128,.3); }
+.dash-watch-tag.anomaly { background: rgba(251,191,36,.1); color: var(--amber); border: 1px solid rgba(251,191,36,.3); }
+.dash-watch-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 5px;
+}
+.dash-watch-detail {
+  font-size: 12px;
+  color: var(--slate);
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+.dash-watch-link {
+  font-family: var(--font-m);
+  font-size: 11px;
+  color: var(--cyan, #06B6D4);
+  letter-spacing: .04em;
+}
+
+/* DATA TILES — secondary row */
+.dash-data-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.dash-data-tile {
+  background: var(--card);
+  border: 1px solid var(--bdr);
+  border-radius: 10px;
+  padding: 16px;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+}
+.dash-data-tile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.dash-data-tile-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+.dash-data-tile-status {
+  font-family: var(--font-m);
+  font-size: 9px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--slate);
+}
+.dash-ai-strip {
+  background: linear-gradient(135deg, rgba(99,102,241,.08), rgba(6,182,212,.06));
+  border: 1px solid rgba(99,102,241,.2);
+  border-left: 3px solid var(--cyan, #06B6D4);
+  border-radius: 5px;
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text);
+  margin-top: auto;
+}
+.dash-ai-strip::before {
+  content: "AI";
+  font-family: var(--font-m);
+  font-size: 9px;
+  letter-spacing: .12em;
+  color: var(--cyan-pale, #67E8F9);
+  display: block;
+  margin-bottom: 3px;
+}
+.dash-ai-strip b { color: var(--cyan-pale, #67E8F9); font-weight: 600; }
+.dash-ai-strip .green { color: var(--green); font-weight: 600; }
+.dash-ai-strip .amber { color: var(--amber); font-weight: 600; }
+
+/* COHORT BAR CHART (data tile) */
+.dash-bar-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 5px;
+  height: 60px;
+  margin-bottom: 6px;
+}
+.dash-bar-chart .bar {
+  flex: 1;
+  background: linear-gradient(180deg, var(--cyan, #06B6D4), var(--indigo, #6366F1));
+  border-radius: 3px 3px 0 0;
+}
+.dash-bar-chart .bar.warn { background: linear-gradient(180deg, var(--amber), #B45309); }
+.dash-bar-labels {
+  display: flex;
+  gap: 5px;
+  font-family: var(--font-m);
+  font-size: 9px;
+  color: var(--slate);
+  margin-bottom: 12px;
+}
+.dash-bar-labels span { flex: 1; text-align: center; }
+
+/* COMPLIANCE GRID (data tile) */
+.dash-compliance-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+  margin-bottom: 12px;
+}
+.dash-compliance-cell {
+  background: var(--card-alt, #131a2c);
+  border: 1px solid var(--bdr);
+  border-radius: 4px;
+  padding: 7px 4px;
+  text-align: center;
+  font-family: var(--font-m);
+  font-size: 9px;
+  color: var(--slate);
+}
+.dash-compliance-cell .check { color: var(--green); font-size: 13px; margin-bottom: 1px; }
+.dash-compliance-cell .warn { color: var(--amber); font-size: 13px; margin-bottom: 1px; }
+
+/* WHAT'S NEW (data tile) */
+.dash-news-item {
+  border-left: 2px solid var(--cyan, #06B6D4);
+  padding: 4px 0 4px 10px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.dash-news-item b {
+  color: var(--cyan-pale, #67E8F9);
+  font-weight: 600;
+  font-size: 10px;
+  display: block;
+  margin-bottom: 2px;
+  font-family: var(--font-m);
+  letter-spacing: .04em;
+}
+.dash-news-item span { color: var(--slate); }
+
+/* BOTTOM ASK BAR — fixed */
+.dash-ask-wrap {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: linear-gradient(180deg, transparent 0%, var(--bg) 30%);
+  padding: 60px 28px 20px;
+  z-index: 50;
+  pointer-events: none;
+}
+.dash-ask-wrap > * { pointer-events: auto; }
+.dash-ask-bar {
+  max-width: 1280px;
+  margin: 0 auto;
+  background: var(--card);
+  border: 1.5px solid rgba(99,102,241,.35);
+  border-radius: 14px;
+  padding: 12px 16px;
+  box-shadow: 0 12px 40px rgba(0,0,0,.5);
+}
+.dash-ask-eyebrow {
+  font-family: var(--font-m);
+  font-size: 10px;
+  color: var(--cyan-pale, #67E8F9);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dash-ask-eyebrow::before {
+  content: "";
+  width: 6px; height: 6px;
+  background: var(--cyan, #06B6D4);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--cyan, #06B6D4);
+}
+.dash-ask-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-family: var(--font-b);
+  font-size: 15px;
+  padding: 4px 0;
+  outline: none;
+}
+.dash-ask-input::placeholder { color: var(--slate); }
+.dash-ask-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--bdr);
+}
+.dash-ask-hints {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.dash-ask-hint {
+  font-family: var(--font-m);
+  font-size: 11px;
+  color: var(--slate);
+  background: var(--card-alt, #131a2c);
+  border: 1px solid var(--bdr);
+  padding: 3px 9px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all .12s;
+}
+.dash-ask-hint:hover {
+  color: var(--cyan-pale, #67E8F9);
+  border-color: rgba(6,182,212,.4);
+}
+.dash-ask-send {
+  width: 30px; height: 30px;
+  background: var(--cyan, #06B6D4);
+  border: none;
+  border-radius: 7px;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 14px;
+}
+.dash-ask-send:disabled { opacity: .4; cursor: not-allowed; }
+
+/* INLINE ANSWER CARD (Q&A) */
+.dash-qa-card {
+  background: var(--card);
+  border: 1px solid var(--bdr);
+  border-left: 3px solid var(--cyan, #06B6D4);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  animation: dash-card-in .3s ease-out;
+}
+@keyframes dash-card-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.dash-qa-question {
+  font-family: var(--font-m);
+  font-size: 11px;
+  color: var(--slate);
+  letter-spacing: .04em;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed var(--bdr);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.dash-qa-question::before {
+  content: "Q";
+  color: var(--cyan-pale, #67E8F9);
+  font-weight: 700;
+}
+.dash-qa-close {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: var(--slate);
+  cursor: pointer;
+  font-size: 14px;
+}
+.dash-qa-close:hover { color: var(--text); }
+.dash-qa-answer {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text);
+}
+.dash-qa-answer b { color: var(--cyan-pale, #67E8F9); font-weight: 600; }
+.dash-qa-answer .green { color: var(--green); font-weight: 600; }
+.dash-qa-answer .amber { color: var(--amber); font-weight: 600; }
+.dash-qa-followup {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--bdr);
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.dash-qa-followup-link {
+  font-family: var(--font-m);
+  font-size: 11px;
+  color: var(--cyan, #06B6D4);
+  cursor: pointer;
+  letter-spacing: .04em;
+}
+.dash-qa-followup-link:hover { color: var(--cyan-pale, #67E8F9); }
+
+/* PLAN CARD */
+.dash-plan-card {
+  background: var(--card);
+  border: 1px solid rgba(99,102,241,.35);
+  border-radius: 10px;
+  padding: 18px 20px;
+  margin-bottom: 16px;
+  animation: dash-card-in .3s ease-out;
+}
+.dash-plan-eyebrow {
+  font-family: var(--font-m);
+  font-size: 10px;
+  color: var(--indigo-lt, #818CF8);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.dash-plan-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 14px;
+}
+.dash-plan-step {
+  display: flex;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px dashed var(--bdr);
+}
+.dash-plan-step:first-of-type { border-top: none; padding-top: 0; }
+.dash-plan-step-num {
+  flex-shrink: 0;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--bdr);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-m);
+  font-size: 11px;
+  color: var(--slate);
+  background: var(--card-alt, #131a2c);
+}
+.dash-plan-step.done .dash-plan-step-num {
+  background: var(--green);
+  color: var(--bg);
+  border-color: var(--green);
+}
+.dash-plan-step.in-progress .dash-plan-step-num {
+  background: var(--cyan, #06B6D4);
+  color: var(--bg);
+  border-color: var(--cyan, #06B6D4);
+  animation: dash-pulse 1.6s ease-in-out infinite;
+}
+@keyframes dash-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(6,182,212,.4); }
+  50% { box-shadow: 0 0 0 6px rgba(6,182,212,0); }
+}
+.dash-plan-step-body { flex: 1; }
+.dash-plan-step-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.dash-plan-step.done .dash-plan-step-title { color: var(--slate); text-decoration: line-through; }
+.dash-plan-step-detail {
+  font-size: 12px;
+  color: var(--slate);
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+.dash-plan-step-compliance {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.dash-compliance-badge {
+  font-family: var(--font-m);
+  font-size: 9px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 3px;
+  border: 1px solid var(--bdr);
+}
+.dash-compliance-badge.ok { background: rgba(74,222,128,.08); color: var(--green); border-color: rgba(74,222,128,.3); }
+.dash-compliance-badge.pending { background: rgba(251,191,36,.08); color: var(--amber); border-color: rgba(251,191,36,.3); }
+.dash-compliance-badge.flagged { background: rgba(248,113,113,.08); color: var(--red); border-color: rgba(248,113,113,.3); }
+.dash-plan-approve-btn {
+  background: var(--cyan, #06B6D4);
+  color: #fff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-family: var(--font-b);
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background .12s;
+}
+.dash-plan-approve-btn:hover { background: #0891B2; }
+.dash-plan-approve-btn:disabled { opacity: .4; cursor: not-allowed; }
+.dash-plan-step.done .dash-plan-approve-btn { display: none; }
+.dash-plan-step:not(.in-progress):not(.done) .dash-plan-approve-btn {
+  background: transparent;
+  color: var(--slate);
+  border: 1px solid var(--bdr);
+}
+.dash-plan-step.in-progress .dash-plan-approve-btn { background: var(--cyan, #06B6D4); }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .dash-ws-grid { grid-template-columns: repeat(2, 1fr); }
+  .dash-watch-grid { grid-template-columns: 1fr; }
+  .dash-data-grid { grid-template-columns: 1fr; }
+}
+
 /* ── SCREEN HERO ── */
 /* ── GLOBAL SEPARATOR BAND (Block 2) ── */
 .page-separator { height: 10px; background: var(--bg); flex-shrink: 0; }
@@ -741,8 +1356,6 @@ html:not(.screen-transitioning) body {
 .chat-plus-popover {
   position: absolute; bottom: calc(100% + 8px); left: 0;
   width: 260px;
-  max-height: min(340px, calc(100vh - 200px));
-  overflow-y: auto;
   background: var(--card); border: 1px solid rgba(99,102,241,.35);
   border-radius: 8px; padding: 6px;
   box-shadow: 0 12px 32px rgba(0,0,0,.6), 0 0 0 1px rgba(99,102,241,.08);
@@ -4045,24 +4658,47 @@ function ChatProvider({ children }) {
 
   const sendMessage = React.useCallback(async (text, opts) => {
     const ws = opts?.workspace || workspace;
+    // skipUserMsg: don't append a new user message (used for cross-workspace handoff continuation
+    // where the user's intent is already captured in prior turns and we just want the new
+    // workspace's AI to take its first turn). The api request still includes a synthetic user
+    // turn so the API call validates.
+    const skipUserMsg = !!opts?.skipUserMsg;
+    // handoffNote: optional brief system-side hint injected as the synthetic user turn for the
+    // API call only. Not displayed in the chat.
+    const handoffNote = opts?.handoffNote || '';
     const t = (text || '').trim();
-    if (!t || busy) return;
-    // Append user message
-    setMessages(prev => [
-      ...prev.map(m => m.role === 'assistant' ? { ...m, quickReplies: [] } : m),
-      { role: 'user', text: t, workspace: ws }
-    ]);
+    if (busy) return;
+    if (!skipUserMsg && !t) return;
+    if (skipUserMsg && !t && !handoffNote) return;
+    // Append user message (unless explicitly skipping for workspace handoff)
+    if (!skipUserMsg) {
+      setMessages(prev => [
+        ...prev.map(m => m.role === 'assistant' ? { ...m, quickReplies: [] } : m),
+        { role: 'user', text: t, workspace: ws }
+      ]);
+    } else {
+      // Still clear quick replies on prior assistants so old chips don't linger
+      setMessages(prev => prev.map(m => m.role === 'assistant' ? { ...m, quickReplies: [] } : m));
+    }
     setBusy(true);
     try {
       // Build the workspace-aware system prompt (may include async BQ injection)
       const sysPrompt = await buildUnifiedSystemPrompt(ws, { briefSoFar });
       // Build API messages from full conversation history (cross-workspace continuity)
       const apiMessages = [];
-      const allMsgs = messages.concat([{ role: 'user', text: t }]);
+      const allMsgs = skipUserMsg
+        ? messages.slice() // don't add a new user turn — the prior ones provide intent
+        : messages.concat([{ role: 'user', text: t }]);
       for (const m of allMsgs) {
         const role = m.role === 'assistant' ? 'assistant' : 'user';
         const content = typeof m.text === 'string' ? m.text : (m.content?.text || JSON.stringify(m.content || ''));
         if (content) apiMessages.push({ role, content });
+      }
+      // For skipUserMsg, append a synthetic user turn so the API has a user-trailing message.
+      // The note nudges the new-workspace AI to continue rather than start fresh.
+      if (skipUserMsg) {
+        const syntheticPrompt = handoffNote || `[Workspace handoff — the user just routed here from the home screen. Take your first turn on this workspace, picking up the conversation above. Do NOT re-introduce yourself, do NOT re-confirm what they want — just take the next concrete step. For example, if the user asked to build a campaign, your first turn here should ask the very next strategic question (e.g., card type) with quick replies, not "what would you like to build?"]`;
+        apiMessages.push({ role: 'user', content: syntheticPrompt });
       }
       const res = await fetch('https://signalset-lig-api.tickersignals.workers.dev/api/claude', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -4522,7 +5158,6 @@ function buildActionRenderer(opts) {
 function ChatPlusPopover({ onUpload, onDrive }) {
   const [plusOpen, setPlusOpen] = useState(false);
   const [direction, setDirection] = useState('up'); // 'up' = pop above, 'down' = drop below
-  const [maxH, setMaxH] = useState(360); // dynamically capped to available space at open time
   const btnRef = React.useRef(null);
   React.useEffect(() => {
     if (!plusOpen) return;
@@ -4537,19 +5172,19 @@ function ChatPlusPopover({ onUpload, onDrive }) {
     if (!plusOpen && btnRef.current) {
       const rect = btnRef.current.getBoundingClientRect();
       const vh = window.innerHeight || document.documentElement.clientHeight;
-      // Top 40% of viewport → drop down. Otherwise pop up.
-      const dir = rect.top < vh * 0.4 ? 'down' : 'up';
+      // Popover natural height ≈ 230px (7 items × ~30px + divider + padding).
+      // Pop in whichever direction has more clear space. Add 16px breathing room.
+      const popoverH = 230;
+      const breathing = 16;
+      const spaceAbove = rect.top - breathing;
+      const spaceBelow = vh - rect.bottom - breathing;
+      // Prefer up when both fit (consistent with composer-at-bottom expectation).
+      // Drop down only when up doesn't have room AND down does, or down has more room.
+      let dir;
+      if (spaceAbove >= popoverH) dir = 'up';
+      else if (spaceBelow >= popoverH) dir = 'down';
+      else dir = spaceAbove > spaceBelow ? 'up' : 'down';
       setDirection(dir);
-      // Cap popover height based on available space in chosen direction.
-      // Safety margin of 80px keeps it well clear of the eyebrow / page header zone.
-      // Account for popover's own 12px (6×2) padding so internal content fits cleanly.
-      const safetyMargin = 80;
-      const padBudget = 12;
-      const availableSpace = dir === 'down'
-        ? (vh - rect.bottom - safetyMargin)
-        : (rect.top - safetyMargin);
-      // Hard ceiling at 320px (was 360 — tighter on tall viewports). Floor at 120px so it's always usable.
-      setMaxH(Math.min(320, Math.max(120, availableSpace - padBudget)));
     }
     setPlusOpen(v => !v);
   };
@@ -4557,8 +5192,8 @@ function ChatPlusPopover({ onUpload, onDrive }) {
   const _doDrive  = () => { if (onDrive)  onDrive();  else alert('Google Drive — coming in Phase 11'); setPlusOpen(false); };
   // Inline positioning override per direction — overrides the CSS default (bottom: calc(100% + 8px))
   const popoverStyle = direction === 'down'
-    ? { top: 'calc(100% + 8px)', bottom: 'auto', maxHeight: maxH + 'px', overflowY: 'auto' }
-    : { bottom: 'calc(100% + 8px)', top: 'auto', maxHeight: maxH + 'px', overflowY: 'auto' };
+    ? { top: 'calc(100% + 8px)', bottom: 'auto' }
+    : { bottom: 'calc(100% + 8px)', top: 'auto' };
   return /*#__PURE__*/React.createElement("div", {
     className: "chat-plus-wrap",
     style: { position: 'relative' }
@@ -19467,227 +20102,782 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
 // ═══════════════════════════════════════════════════════════════
 
 // ══ HOME SCREEN ══════════════════════════════════════════════════════════════════
-const HOME_SYS = `You are the entry-point router for Flight Deck, an AI-powered marketing intelligence platform at a major US financial institution. You are NOT a brief-builder. You are NOT a campaign assistant. Your job is to listen briefly, classify what the user wants, and route them to the right capability where the deeper conversation happens.
+// HOME_SYS and HOME_MOCKS removed Phase 38 — home is no longer a chat router.
+// See Dashboard implementation below.
+// ──────────────────────────────────────────────────────────────────────────
+// HOME DASHBOARD (Phase 38) — replaces v11 router-style chat home.
+// Sections: greeting → workspaces tile row → briefing → watching → data tiles
+// → fixed bottom ask bar.
+// AI is constrained to data on hand. Anomalies are deterministic. Plans are
+// hardcoded shape templates parameterized by AI classification.
+// ──────────────────────────────────────────────────────────────────────────
 
-PLATFORM CONTEXT (for routing decisions, not for filling responses with data):
-- Identity: Living Identity Graph (LIG) — 916 nodes, 8 customer nodes, 5 behavioral segments (Explorers, Revelers, Luxuriates, Bask & Chill, Deal Seekers), 94% match rate, 7+ device resolution.
-- Measurement: LTV/CAC bubble chart, clean-room attribution, MTA, lift testing.
-- In-House Campaigns (Flight Deck): Smart Audience, Smart Triggers, Creative Selector, Campaign Builder.
-- Partner Campaigns: clean-room partner portal for co-brand activations.
+// detectAnomalies — pure JS, no AI. Examines deterministic data and returns
+// the top N anomalies sorted by severity. AI never invents anomalies; it can
+// only narrate the ones this function found.
+function detectAnomalies(data) {
+  const anomalies = [];
+  // Rule (a) — campaigns pacing > 10% off target
+  (data.campaigns || []).forEach(c => {
+    if (c.pace_pct < -10) {
+      anomalies.push({
+        type: 'campaign_underpace',
+        severity: 'alert',
+        title: c.name + ' pacing ' + c.pace_pct + '%',
+        detail: c.fatigue_signal
+          ? c.fatigue_signal
+          : 'Pacing ' + Math.abs(c.pace_pct) + '% under target. Review channel mix and creative performance.',
+        link_to: { screen: 'measurement', filter: { campaign: c.id } },
+        weight: Math.abs(c.pace_pct)
+      });
+    }
+  });
+  // Rule (b) — segments crossing LTV thresholds
+  (data.segments || []).forEach(s => {
+    if (s.threshold_crossed) {
+      anomalies.push({
+        type: 'segment_threshold',
+        severity: 'opportunity',
+        title: s.name + ' crossed $' + (s.ltv / 1000).toFixed(1) + 'K LTV',
+        detail: s.size.toLocaleString() + ' customers now ' + (s.threshold_crossed.eligible_for || 'eligible') + ' by your floor.',
+        link_to: { screen: 'desk', filter: { segment_focus: s.id } },
+        weight: 80
+      });
+    }
+  });
+  // Rule (c) — creative WoW CTR drops > 50%
+  (data.creatives || []).forEach(cr => {
+    if (cr.ctr_drop_wow > 50) {
+      anomalies.push({
+        type: 'creative_fatigue',
+        severity: 'alert',
+        title: cr.id + ' fatiguing',
+        detail: cr.name + ' CTR fell ' + cr.ctr_drop_wow + '% week-over-week. Refresh recommended.',
+        link_to: { screen: 'measurement', filter: { creative: cr.id } },
+        weight: cr.ctr_drop_wow
+      });
+    }
+  });
+  // Rule (d) — identity delta > 1.5x rolling 7-day baseline
+  if (data.identity_delta && data.identity_delta.nodes_added > data.identity_delta.baseline_7d * 1.5) {
+    anomalies.push({
+      type: 'identity_delta',
+      severity: 'anomaly',
+      title: data.identity_delta.nodes_added + ' new resolved identities',
+      detail: 'Highest delta in ' + (data.identity_delta.days_since_higher || '30') + ' days. Sources: ' + (data.identity_delta.top_source || 'device-graph match'),
+      link_to: { screen: 'identity', filter: {} },
+      weight: 60
+    });
+  }
+  // Rule (e) — partner slots opening within 7 days
+  (data.partner_slots || []).forEach(p => {
+    if (p.opens_in_days <= 7) {
+      anomalies.push({
+        type: 'partner_slot',
+        severity: 'opportunity',
+        title: p.name + ' slot opens ' + p.opens_label,
+        detail: 'Co-brand activation window available. ' + (p.audience_match || 'Audience match TBD') + '.',
+        link_to: { screen: 'cmn', filter: { partner: p.id } },
+        weight: 50
+      });
+    }
+  });
+  // Sort by weight descending, return top 3
+  return anomalies.sort((a, b) => b.weight - a.weight).slice(0, 3);
+}
 
-ROUTING — your only job:
-- If user describes campaign work (build, launch, refine a campaign, audience, trigger, creative): route to "desk" (In-House Campaigns).
-- If user asks about identity graph, household relationships, device resolution, segments: route to "identity".
-- If user asks about attribution, LTV, CAC, lift, cohort performance, channel weights: route to "measurement".
-- If user asks about partner campaigns, co-brand portals, clean room access: route to "cmn".
-- If user asks a general question that fits in chat: answer briefly (1-2 sentences) without routing.
+// Hardcoded plan shape templates for Phase 38.7. Each shape is a function
+// that returns a plan structure given parameters. AI classifies the user's
+// directive into one of these shapes and provides parameters; the rendered
+// plan card uses these templates.
+function buildPlan(shape, params) {
+  const id = 'plan_' + Math.random().toString(36).slice(2, 8);
+  const now = Date.now();
+  if (shape === 'creative_refresh') {
+    const campaign = params.campaign || 'the campaign';
+    const days = params.retest_window_days || 14;
+    return {
+      id, shape, created_at: now,
+      title: 'Refresh creative on ' + campaign + ' and re-test in ' + days + ' days',
+      steps: [
+        {
+          id: 's1', type: 'navigate-with-state',
+          title: 'Generate creative refresh in Flight Deck',
+          detail: 'Open Flight Deck with the creative refresh flow pre-loaded for ' + campaign + '. Modify with AI or upload a replacement.',
+          compliance: [{ label: 'Fair Lending', status: 'ok' }, { label: 'TCPA', status: 'pending' }],
+          target: { screen: 'desk', state: { campaign, mode: 'creative_refresh' } },
+          status: 'in-progress'
+        },
+        {
+          id: 's2', type: 'mock-execute',
+          title: 'Run compliance lint on new asset',
+          detail: 'Auto-lint covers Fair Lending, TCPA, GLBA, CAN-SPAM. Triggers when asset is locked in Flight Deck.',
+          compliance: [{ label: 'Fair Lending', status: 'ok' }, { label: 'TCPA', status: 'ok' }, { label: 'GLBA', status: 'ok' }],
+          status: 'pending'
+        },
+        {
+          id: 's3', type: 'schedule-alert',
+          title: 'Schedule re-test for ' + new Date(now + days * 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          detail: 'Monitor performance for 7 days. Alert if CTR exceeds rebound threshold or stays flat.',
+          compliance: [],
+          status: 'pending'
+        }
+      ]
+    };
+  }
+  if (shape === 'budget_reallocation') {
+    const from = params.from_campaign || 'underperforming campaign';
+    const to = params.to_campaign || 'high-performer';
+    return {
+      id, shape, created_at: now,
+      title: 'Reallocate budget from ' + from + ' to ' + to,
+      steps: [
+        {
+          id: 's1', type: 'mock-execute',
+          title: 'Pause ' + from,
+          detail: 'Suspend pacing on ' + from + '. Returns remaining daily budget to allocation pool.',
+          compliance: [{ label: 'Fair Lending', status: 'ok' }],
+          status: 'in-progress'
+        },
+        {
+          id: 's2', type: 'mock-execute',
+          title: 'Allocate to ' + to,
+          detail: 'Raise daily cap on ' + to + ' by reallocated amount. Pacing recalculated.',
+          compliance: [{ label: 'Fair Lending', status: 'ok' }],
+          status: 'pending'
+        },
+        {
+          id: 's3', type: 'schedule-alert',
+          title: 'Set pace alert at +20% threshold',
+          detail: 'Alert if ' + to + ' pacing exceeds +20% of target — overheating signal triggers review.',
+          compliance: [],
+          status: 'pending'
+        }
+      ]
+    };
+  }
+  if (shape === 'audience_expansion') {
+    const seed = params.seed_audience || 'seed segment';
+    return {
+      id, shape, created_at: now,
+      title: 'Expand audience reach via ' + seed + ' lookalikes',
+      steps: [
+        {
+          id: 's1', type: 'navigate-with-state',
+          title: 'Build lookalike from ' + seed,
+          detail: 'Open Audiences workspace with lookalike-builder pre-loaded. Choose similarity threshold.',
+          compliance: [{ label: 'GLBA', status: 'ok' }, { label: 'CCPA', status: 'pending' }],
+          target: { screen: 'desk', state: { mode: 'audience_lookalike', seed } },
+          status: 'in-progress'
+        },
+        {
+          id: 's2', type: 'mock-execute',
+          title: 'Run resolution + suppression check',
+          detail: 'Verify identity resolution rate and apply existing suppression rules. Flags lookalikes with insufficient match confidence.',
+          compliance: [{ label: 'Fair Lending', status: 'ok' }, { label: 'CCPA', status: 'ok' }],
+          status: 'pending'
+        },
+        {
+          id: 's3', type: 'mock-execute',
+          title: 'Activate to channels',
+          detail: 'Push expanded audience to active campaign destinations. Existing frequency caps preserved.',
+          compliance: [{ label: 'TCPA', status: 'ok' }],
+          status: 'pending'
+        }
+      ]
+    };
+  }
+  return null;
+}
 
-RESPONSE RULES — CRITICAL:
-- Keep responses SHORT. 1-3 sentences max. You are not the brief builder; do not ask for budget, flight, audience, partner, or any campaign details. The receiving capability handles all of that.
-- Never list cards types, never list partner names, never enumerate platform features. The user will discover those in the right capability.
-- Never produce markdown lists or multi-paragraph responses. Plain prose only.
-- When routing: acknowledge intent in one sentence, then offer the route via "nav" + "navLabel".
-
-Return ONLY valid JSON: { "text": "your 1-2 sentence response", "nav": "identity|measurement|desk|cmn"|null, "navLabel": "In-House Campaigns"|"Identity Graph"|"Measurement"|"Partner Campaigns"|null }
-
-CRITICAL: navLabel is JUST the destination name (e.g. "In-House Campaigns") — the UI wraps it with "Open the [navLabel] view →" automatically. Do NOT include "Open" or "view" in your navLabel value.`;
-const HOME_MOCKS = [{
-  text: 'Your Living Identity Graph resolves cardholder identities across 7+ devices and household members using deterministic LiveRamp matching at 94-99% confidence. The Explorers cluster shows 8.2 average devices per household; Luxuriates index on Apple ecosystem cohesion. Probabilistic edges on hover reveal cross-cluster purchase correlations that power lookalike expansion. See your full identity graph in action.',
-  nav: 'identity',
-  navLabel: 'Explore Identity Graph'
-}, {
-  text: 'Attribution across your five behavioral segments shows Explorers at 87.5x LTV/CAC and Revelers at 70.8x, well above the 54x blended average. Luxuriates carry the highest absolute LTV at $6,800 but require premium CTV; standard programmatic underperforms by 22% on this cohort. The walled-garden Meta campaign contributed an estimated 4,200 conversions via clean room cohort lift at +18% vs holdout. Drill into the cohort map to find your next acquisition target.',
-  nav: 'measurement',
-  navLabel: 'Open Measurement'
-}, {
-  text: 'The In-House Campaign Builder connects audience intelligence, AI-optimized journeys, compliance-cleared creatives, and multi-destination activation in one workflow. Smart Audience identified 52,400 High-Intent Travelers at 84% conversion propensity using SHAP-ranked transaction signals, suppressing current cardholders automatically. The AI trigger sequencer built an owned-first 21-day path projecting 4.8x ROAS with full MTA attribution. Build, approve, and activate entirely within the platform.',
-  nav: 'desk',
-  navLabel: 'Open In-House Campaigns'
-}, {
-  text: 'Partner Campaigns gives brand partners like Meridian Air clean-room access to FI cardholder segments with zero PII exposure, 94% deterministic identity match, and a 4.2x CPM premium over generic programmatic. In Chicago and Miami, Explorers and Revelers account for 70% of conversion lift; the geo intelligence layer surfaces city-level LTV/CAC efficiency down to neighborhoods. The closed-loop attribution links every ad impression to a confirmed cardholder transaction - ROAS is attributed, not modeled.',
-  nav: 'cmn',
-  navLabel: 'Open Partner Campaigns'
-}];
 function HomeScreen({
   setScreen
 }) {
-  const homeMsgsRef = React.useRef([]);
-  // Stash home-chat messages into a window-level cache for cross-surface transcript handoff.
-  // Read by Flight Deck on mount when the user routed there with active conversation context.
-  // Transitional pattern — Session 2 refactor will replace with proper lifted state.
-  const stashHomeChatToFlightDeck = () => {
-    try {
-      const m = homeMsgsRef.current || [];
-      if (m.length > 0) {
-        window._signalsetHomeToDesk = m.map(x => ({
-          role: x.role,
-          // Flatten content to string — handle both string and object response shapes
-          text: typeof x.content === 'string' ? x.content : (x.content?.text || '')
-        })).filter(x => x.text);
-      }
-    } catch (e) { /* non-fatal */ }
+  // ── DETERMINISTIC SEED DATA (replace each with live source as wiring progresses) ──
+  // Identity Graph delta — sourced from Neo4j (already live count via useNeo4jStatus elsewhere)
+  const identityData = {
+    nodes_total: 916,
+    nodes_added: 12,
+    pii_flags: 0,
+    resolution_rate: 91,
+    baseline_7d: 7,
+    days_since_higher: 30,
+    top_source: '9 device-graph match, 3 partner activation'
   };
-  const HOME_SAMPLES = ['Show me the household relationship in my identity graph', 'Run attribution — which cohorts have the best LTV/CAC ratio?', 'Walk me through the in-house campaign builder', 'What can a partner do with the platform?'];
-  const FEAT_TILES = [{
-    id: 'identity',
-    label: 'Identity',
-    sub: 'Living Identity Graph',
-    icon: 'dna',
-    desc: '5 segments · 8 customer nodes · household + device graph',
-    color: '#00B4E6',
-    bg: 'rgba(0,180,230,.08)'
-  }, {
-    id: 'measurement',
-    label: 'Measurement',
-    sub: 'Attribution & Cohort Analysis',
-    icon: 'chart',
-    desc: 'LTV/CAC bubble chart · 3-level micro-cohort drill · US geo',
-    color: '#8B5CF6',
-    bg: 'rgba(139,92,246,.08)'
-  }, {
-    id: 'desk',
-    label: "In-House",
-    sub: 'Campaign Suite',
-    icon: 'target',
-    desc: 'Setup · Audiences · Triggers · Creatives · Summary · Activate',
-    color: '#818CF8',
-    bg: 'rgba(99,102,241,.08)'
-  }, {
-    id: 'cmn',
-    label: "Partners",
-    sub: 'Clean Room Commerce Media',
-    icon: 'store',
-    desc: 'Geo targeting · Segment activation · Closed-loop ROAS',
-    color: '#F59E0B',
-    bg: 'rgba(245,158,11,.08)'
-  }];
-  function HomeResultRenderer(data, send) {
-    if (!data || !data.text && !data.error) return null;
-    const nav = data.nav || null;
-    const navLabel = data.navLabel || null;
-    // followups: prefer AI-supplied, fall back to deriving one chip from legacy nav/navLabel
-    const followups = Array.isArray(data.followups) && data.followups.length > 0
-      ? data.followups
-      : (nav && navLabel ? [{ label: 'Open the ' + navLabel + ' view \u2192', nav: nav }] : []);
-    const handleChip = (fu, ev) => {
-      if (fu.nav) {
-        // Stash home chat for cross-surface transcript handoff when routing to Flight Deck (desk)
-        if (fu.nav === 'desk') stashHomeChatToFlightDeck();
-        // brief transitional feedback so navigation reads as a narrated action, not a teleport
-        if (ev && ev.currentTarget) {
-          ev.currentTarget.style.opacity = '0.55';
-          ev.currentTarget.textContent = 'Opening\u2026';
-        }
-        document.documentElement.classList.add('screen-transitioning');
-        setTimeout(() => {
-          setScreen(fu.nav);
-          window.scrollTo(0, 0);
-          setTimeout(() => document.documentElement.classList.remove('screen-transitioning'), 80);
-        }, 380);
-      }
-      else if (fu.sendText && typeof send === 'function') { send(fu.sendText); }
-    };
-    return /*#__PURE__*/React.createElement("div", {
-      style: { flex: 1, display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0 }
-    },
-      /*#__PURE__*/React.createElement("div", {
-        style: {
-          padding: '4px 0',
-          fontSize: 16,
-          lineHeight: 1.72,
-          color: data.error ? 'var(--red)' : 'var(--text)',
-          whiteSpace: 'pre-wrap'
-        }
-      }, data.text || data.error),
-      followups.length > 0 && /*#__PURE__*/React.createElement("div", {
-        style: { display: 'flex', gap: 6, flexWrap: 'wrap', paddingTop: 2 }
-      }, followups.map((fu, i) => /*#__PURE__*/React.createElement("button", {
-        key: i,
-        onClick: (e) => handleChip(fu, e),
-        style: {
-          fontSize: 12,
-          color: 'var(--cyan-pale)',
-          background: 'rgba(99,102,241,.08)',
-          border: '1px solid var(--bdr)',
-          padding: '5px 11px',
-          borderRadius: 14,
-          cursor: 'pointer',
-          fontFamily: 'inherit',
-          transition: 'all .15s'
-        },
-        onMouseEnter: e => { e.currentTarget.style.background = 'rgba(99,102,241,.15)'; e.currentTarget.style.borderColor = 'var(--cyan)'; },
-        onMouseLeave: e => { e.currentTarget.style.background = 'rgba(99,102,241,.08)'; e.currentTarget.style.borderColor = 'var(--bdr)'; }
-      }, fu.label)))
-    );
-  }
-  // v11 — chatbot-first Home: kicker + greeting + centered chatbot + 4 context pills
-  const PILLS = [
-    {
-      id: 'measurement', section: 'measurement', label: 'Measurement',
-      icon: /*#__PURE__*/React.createElement("svg", { width: 13, height: 13, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" },
-        /*#__PURE__*/React.createElement("line", { x1: 4, y1: 21, x2: 4, y2: 10 }),
-        /*#__PURE__*/React.createElement("line", { x1: 10, y1: 21, x2: 10, y2: 4 }),
-        /*#__PURE__*/React.createElement("line", { x1: 16, y1: 21, x2: 16, y2: 14 }),
-        /*#__PURE__*/React.createElement("line", { x1: 22, y1: 21, x2: 22, y2: 8 })
-      )
-    },
-    {
-      id: 'desk', section: 'marketers', label: 'Activation',
-      icon: /*#__PURE__*/React.createElement("svg", { width: 13, height: 13, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" },
-        /*#__PURE__*/React.createElement("path", { d: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" }),
-        /*#__PURE__*/React.createElement("circle", { cx: 12, cy: 7, r: 4 })
-      )
-    },
-    {
-      id: 'identity', section: 'identity', label: 'Identity',
-      icon: /*#__PURE__*/React.createElement("svg", { width: 13, height: 13, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" },
-        /*#__PURE__*/React.createElement("circle", { cx: 12, cy: 12, r: 3 }),
-        /*#__PURE__*/React.createElement("circle", { cx: 5, cy: 6, r: 2 }),
-        /*#__PURE__*/React.createElement("circle", { cx: 19, cy: 6, r: 2 }),
-        /*#__PURE__*/React.createElement("circle", { cx: 5, cy: 18, r: 2 }),
-        /*#__PURE__*/React.createElement("circle", { cx: 19, cy: 18, r: 2 })
-      )
-    },
+  // Cohort/segment data — sourced from BQ via buildMzSystemPrompt path (Phase 38.3 wires for real)
+  const segmentsData = [
+    { id: 'travel_rewards', name: 'Travel Rewards', size: 4200, ltv: 4100, cac: 58, threshold_crossed: { eligible_for: 'Signature-eligible' } },
+    { id: 'luxuriates', name: 'Luxuriates', size: 22000, ltv: 6800, cac: 94, threshold_crossed: null },
+    { id: 'explorers', name: 'Explorers', size: 48200, ltv: 4200, cac: 48, threshold_crossed: null },
+    { id: 'revelers', name: 'Revelers', size: 31000, ltv: 5100, cac: 72, threshold_crossed: null },
+    { id: 'bask', name: 'Bask & Chill', size: 58000, ltv: 2400, cac: 31, threshold_crossed: null }
   ];
-  return /*#__PURE__*/React.createElement("div", { className: "v11-home" },
-    /*#__PURE__*/React.createElement("div", { className: "landing-hero-block", style: { display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' } },
-      /*#__PURE__*/React.createElement("div", { className: "v11-home-kicker" },
-        /*#__PURE__*/React.createElement("div", { className: "v11-home-kicker-dot" }),
-        "Signalset · Living Identity Graph"
+  // Active campaigns
+  const campaignsData = [
+    { id: 'first_class_points', name: 'First-Class Points', pace_pct: 18, spend: 32000 },
+    { id: 'acquisition_sprint_v2', name: 'Acquisition Sprint v2', pace_pct: -14, spend: 47000, fatigue_signal: 'CRV-001 CTR fell from 2.4% to 0.9% over 7 days. Creative refresh recommended.' },
+    { id: 'travel_upgrade_push', name: 'Travel Upgrade Push', pace_pct: 6, spend: 18000 },
+    { id: 'cash_back_reactivate', name: 'Cash Back Reactivate', pace_pct: -22, spend: 12000, fatigue_signal: 'TCPA review pending on a creative variant. Audience saturation suspected.' }
+  ];
+  // Creatives with WoW performance
+  const creativesData = [
+    { id: 'CRV-001', name: 'Travel Hero', ctr_drop_wow: 62, campaign_id: 'acquisition_sprint_v2' }
+  ];
+  // Partner slots
+  const partnerSlotsData = [
+    { id: 'sova_air', name: 'Sova Air', opens_in_days: 2, opens_label: 'Tuesday', audience_match: 'High-Intent Travelers · 38% overlap' }
+  ];
+
+  // Compute deterministic anomalies for the Watching list
+  const anomaliesData = detectAnomalies({
+    campaigns: campaignsData,
+    segments: segmentsData,
+    creatives: creativesData,
+    partner_slots: partnerSlotsData,
+    identity_delta: identityData
+  });
+
+  // Workspaces tile data
+  const workspacesData = [
+    {
+      id: 'identity', name: 'Identity Graph',
+      icon: /*#__PURE__*/React.createElement(Ico, { name: 'dna', size: 14, color: 'currentColor' }),
+      stats: [
+        { html: '<b>' + identityData.nodes_total + '</b> nodes · <span class="green">+' + identityData.nodes_added + ' today</span>' },
+        { html: identityData.resolution_rate + '% resolution rate' },
+        { html: '<b>' + identityData.pii_flags + '</b> PII issues' }
+      ]
+    },
+    {
+      id: 'measurement', name: 'Measurement',
+      icon: /*#__PURE__*/React.createElement(Ico, { name: 'chart', size: 14, color: 'currentColor' }),
+      stats: [
+        { html: '<b>' + campaignsData.length + '</b> active campaigns' },
+        { html: '$' + (campaignsData.reduce((s, c) => s + c.spend, 0) / 1000).toFixed(0) + 'K spent this week' },
+        { html: '<span class="amber">' + campaignsData.filter(c => c.pace_pct < -10).length + '</span> off-pace' }
+      ]
+    },
+    {
+      id: 'desk', name: 'Flight Deck',
+      icon: /*#__PURE__*/React.createElement(Ico, { name: 'layers', size: 14, color: 'currentColor' }),
+      stats: [
+        { html: '<b>1</b> brief in progress' },
+        { html: 'Acquisition Sprint v2' },
+        { html: '<span class="amber">14%</span> under target' }
+      ]
+    },
+    {
+      id: 'cmn', name: 'Partners',
+      icon: /*#__PURE__*/React.createElement(Ico, { name: 'store', size: 14, color: 'currentColor' }),
+      stats: [
+        { html: '<b>3</b> retailers active' },
+        { html: 'Last activation 2d ago' },
+        { html: '<span class="green">1</span> slot opens Tue' }
+      ]
+    }
+  ];
+
+  // ── ASK BAR + Q&A + PLAN CARD STATE ──
+  const [askInput, setAskInput] = React.useState('');
+  const [askBusy, setAskBusy] = React.useState(false);
+  const [activeQA, setActiveQA] = React.useState(null); // { question, answer_text, drill_in? }
+  const [activePlan, setActivePlan] = React.useState(null); // { id, title, steps: [...] }
+  // ── BRIEFING STATE ──
+  const [briefingText, setBriefingText] = React.useState(null); // null = loading skeleton
+  const [briefingTimestamp, setBriefingTimestamp] = React.useState(null);
+
+  // Compute briefing input for AI (deterministic data slice)
+  const briefingInput = React.useMemo(() => ({
+    neo4j_delta: {
+      nodes_added: identityData.nodes_added,
+      pii_flags: identityData.pii_flags,
+      top_resolution_source: identityData.top_source.split(',')[0]
+    },
+    bq_summary: {
+      top_segment_by_ltv: segmentsData.reduce((a, b) => a.ltv > b.ltv ? a : b).name,
+      ltv_threshold_crossed: segmentsData.find(s => s.threshold_crossed)?.name || null,
+      off_pace_campaigns: campaignsData.filter(c => c.pace_pct < -10).map(c => ({ name: c.name, pace_pct: c.pace_pct, fatigue_signal: c.fatigue_signal }))
+    },
+    partner_slots: partnerSlotsData.map(p => ({ name: p.name, opens: p.opens_label }))
+  }), []);
+
+  // Fetch briefing on mount
+  React.useEffect(() => {
+    let cancelled = false;
+    const fetchBriefing = async () => {
+      // Cache check — 5 min
+      try {
+        const cached = window._signalsetBriefingCache;
+        if (cached && (Date.now() - cached.timestamp) < 5 * 60 * 1000) {
+          if (!cancelled) {
+            setBriefingText(cached.text);
+            setBriefingTimestamp(new Date(cached.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }));
+          }
+          return;
+        }
+      } catch (e) { /* non-fatal */ }
+      // Build briefing prompt — strict constraints
+      const sysPrompt = `You are the briefing synthesizer for Signalset. Write a 3-4 sentence executive briefing for Dio summarizing what's happened across the platform overnight.
+
+STRICT CONSTRAINTS:
+- You may ONLY reference values present in the JSON input below. Do not invent metrics, percentages, or counts.
+- Do not use hedging language: NEVER write "approximately", "around", "roughly", "near", "about" with numeric values.
+- Cite specific values from the input verbatim where possible.
+- Output plain prose, no markdown. Wrap key entities/numbers in <span class="hl-cyan">...</span> for cyan highlight, <span class="hl-green">...</span> for positive, <span class="hl-amber">...</span> for warning.
+- Return ONLY the briefing prose with span tags. No JSON. No preamble.
+
+INPUT DATA:
+${JSON.stringify(briefingInput, null, 2)}
+
+Write the briefing now.`;
+
+      try {
+        const res = await fetch('https://signalset-lig-api.tickersignals.workers.dev/api/claude', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 400,
+            system: sysPrompt,
+            messages: [{ role: 'user', content: 'Generate the briefing.' }]
+          })
+        });
+        const data = await res.json();
+        const raw = data.content?.[0]?.text || '';
+        if (!cancelled) {
+          setBriefingText(raw.trim());
+          const ts = Date.now();
+          setBriefingTimestamp(new Date(ts).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }));
+          try { window._signalsetBriefingCache = { text: raw.trim(), timestamp: ts }; } catch (e) { /* non-fatal */ }
+        }
+      } catch (err) {
+        if (!cancelled) {
+          // Fallback: deterministic briefing from the input data (no AI needed)
+          const fallback = `Identity graph added <span class="hl-cyan">${briefingInput.neo4j_delta.nodes_added} resolved nodes</span> overnight with no PII flags. <span class="hl-green">${briefingInput.bq_summary.ltv_threshold_crossed || 'No segment'}</span> crossed your LTV threshold. <span class="hl-amber">${briefingInput.bq_summary.off_pace_campaigns[0]?.name || 'A campaign'}</span> is pacing under target. <span class="hl-cyan">${briefingInput.partner_slots[0]?.name || 'A partner'}</span> opens an activation slot ${briefingInput.partner_slots[0]?.opens || 'soon'}.`;
+          setBriefingText(fallback);
+          setBriefingTimestamp(new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }));
+        }
+      }
+    };
+    fetchBriefing();
+    return () => { cancelled = true; };
+  }, [briefingInput]);
+
+  const refreshBriefing = () => {
+    try { delete window._signalsetBriefingCache; } catch (e) { window._signalsetBriefingCache = null; }
+    setBriefingText(null);
+    // Re-run effect by toggling a state that depends on briefingInput identity — simplest: force a microtask
+    // The effect's dependency array includes briefingInput which is memoized; we need to bust cache + re-run.
+    // Easiest path: directly re-call the fetch logic. For brevity, reload-equivalent: trigger via state.
+    // Use a counter pattern:
+    setBriefingTimestamp('refreshing…');
+    // Effect won't re-run because briefingInput identity doesn't change. Manually call:
+    (async () => {
+      const sysPrompt = `You are the briefing synthesizer for Signalset. Write a 3-4 sentence executive briefing for Dio summarizing what's happened across the platform overnight.
+
+STRICT CONSTRAINTS:
+- You may ONLY reference values present in the JSON input below. Do not invent metrics, percentages, or counts.
+- Do not use hedging language: NEVER write "approximately", "around", "roughly", "near", "about" with numeric values.
+- Cite specific values from the input verbatim where possible.
+- Output plain prose, no markdown. Wrap key entities/numbers in <span class="hl-cyan">...</span> for cyan highlight, <span class="hl-green">...</span> for positive, <span class="hl-amber">...</span> for warning.
+- Return ONLY the briefing prose with span tags. No JSON. No preamble.
+
+INPUT DATA:
+${JSON.stringify(briefingInput, null, 2)}
+
+Write the briefing now.`;
+      try {
+        const res = await fetch('https://signalset-lig-api.tickersignals.workers.dev/api/claude', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 400,
+            system: sysPrompt,
+            messages: [{ role: 'user', content: 'Generate the briefing.' }]
+          })
+        });
+        const data = await res.json();
+        const raw = data.content?.[0]?.text || '';
+        setBriefingText(raw.trim());
+        const ts = Date.now();
+        setBriefingTimestamp(new Date(ts).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }));
+        try { window._signalsetBriefingCache = { text: raw.trim(), timestamp: ts }; } catch (e) { /* non-fatal */ }
+      } catch (err) {
+        setBriefingText('<span class="hl-amber">Connection issue — please retry.</span>');
+      }
+    })();
+  };
+
+  // ── ASK BAR HANDLER ──
+  // Phase 38.6/38.7 stub — for Wednesday demo, supports a curated set of inputs.
+  // Full intent classifier is post-pitch (ENH-20).
+  const handleAsk = async () => {
+    const q = askInput.trim();
+    if (!q || askBusy) return;
+    setAskInput('');
+    setAskBusy(true);
+
+    const ql = q.toLowerCase();
+    // Rough intent classifier — hardcoded patterns that match known demo questions/directives.
+    const isDirective = /\b(refresh|fix|reallocate|shift|pause|suspend|expand|build me|start|launch)\b/.test(ql);
+
+    try {
+      if (isDirective) {
+        // Directive → plan card
+        let shape = null;
+        let params = {};
+        if (/\b(refresh|fix.*creative|stale|fatigu)\b/.test(ql)) {
+          shape = 'creative_refresh';
+          params.campaign = /acquisition sprint/.test(ql) ? 'Acquisition Sprint v2' : (q.match(/on (.+?)( and|$)/i)?.[1] || 'Acquisition Sprint v2');
+          const wkMatch = q.match(/(\d+)\s*(week|day)/i);
+          if (wkMatch) {
+            params.retest_window_days = wkMatch[2].toLowerCase().startsWith('week') ? parseInt(wkMatch[1]) * 7 : parseInt(wkMatch[1]);
+          }
+        } else if (/\b(reallocate|shift.*budget|pause|suspend)\b/.test(ql)) {
+          shape = 'budget_reallocation';
+          params.from_campaign = /cash back/.test(ql) ? 'Cash Back Reactivate' : 'underperforming campaign';
+          params.to_campaign = /travel upgrade/.test(ql) ? 'Travel Upgrade Push' : 'high-performer';
+        } else if (/\b(expand.*audience|lookalike|find similar)\b/.test(ql)) {
+          shape = 'audience_expansion';
+          params.seed_audience = /travel rewards/.test(ql) ? 'Travel Rewards' : 'seed segment';
+        }
+        if (shape) {
+          const plan = buildPlan(shape, params);
+          setActivePlan(plan);
+          setActiveQA(null);
+        } else {
+          // Couldn't classify the directive shape — fall back to Q-style answer
+          setActiveQA({
+            question: q,
+            answer_text: 'I can help with that — but the demo currently supports three plan shapes: creative refresh, budget reallocation, and audience expansion. Try one of those.',
+            drill_ins: []
+          });
+        }
+      } else {
+        // Question → grounded Q&A
+        const sysPrompt = `You are the Signalset platform Q&A assistant. Answer the user's question using ONLY the data in the AVAILABLE DATA block below.
+
+STRICT CONSTRAINTS:
+- Reference only values present in AVAILABLE DATA. No invented metrics.
+- Keep answers to 2-4 sentences.
+- Wrap key values in <b>...</b> for emphasis, <span class="green">...</span> for positive, <span class="amber">...</span> for warning.
+- If the answer requires a workspace drill-in, suggest it via "drill_ins" in the JSON response.
+- Return JSON: { "text": "answer in HTML", "drill_ins": [{ "label": "...", "screen": "identity|measurement|desk|cmn" }] }
+- If you cannot answer from AVAILABLE DATA, say so concisely and suggest the workspace where the user can dig deeper.
+
+AVAILABLE DATA:
+${JSON.stringify({
+  identity: identityData,
+  segments: segmentsData,
+  campaigns: campaignsData,
+  creatives: creativesData,
+  partner_slots: partnerSlotsData,
+  anomalies: anomaliesData
+}, null, 2)}`;
+        const res = await fetch('https://signalset-lig-api.tickersignals.workers.dev/api/claude', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 600,
+            system: sysPrompt,
+            messages: [{ role: 'user', content: q }]
+          })
+        });
+        const data = await res.json();
+        const raw = data.content?.[0]?.text || '';
+        let parsed;
+        try { parsed = JSON.parse(raw.replace(/```json|```/g, '').trim()); }
+        catch (e) { parsed = { text: raw, drill_ins: [] }; }
+        setActiveQA({
+          question: q,
+          answer_text: parsed.text || raw,
+          drill_ins: Array.isArray(parsed.drill_ins) ? parsed.drill_ins.slice(0, 3) : []
+        });
+        setActivePlan(null);
+      }
+    } catch (err) {
+      setActiveQA({
+        question: q,
+        answer_text: '<span class="amber">Connection issue — please retry.</span>',
+        drill_ins: []
+      });
+    }
+    setAskBusy(false);
+  };
+
+  const approveStep = (stepId) => {
+    if (!activePlan) return;
+    const stepIdx = activePlan.steps.findIndex(s => s.id === stepId);
+    if (stepIdx === -1) return;
+    const step = activePlan.steps[stepIdx];
+    // Mark current step done, advance next to in-progress
+    const newSteps = activePlan.steps.map((s, i) => {
+      if (i === stepIdx) return { ...s, status: 'done' };
+      if (i === stepIdx + 1) return { ...s, status: 'in-progress' };
+      return s;
+    });
+    const updatedPlan = { ...activePlan, steps: newSteps };
+    setActivePlan(updatedPlan);
+    // If this step is navigate-with-state, push state and navigate
+    if (step.type === 'navigate-with-state' && step.target) {
+      try { window._signalsetPlanContext = { planId: activePlan.id, stepId, state: step.target.state }; } catch (e) { /* non-fatal */ }
+      setTimeout(() => {
+        setScreen(step.target.screen);
+        window.scrollTo(0, 0);
+      }, 320);
+    }
+  };
+
+  // Format greeting based on time of day
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  const timeStr = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+
+  return /*#__PURE__*/React.createElement("div", { className: "dash-home" },
+    // Greeting row
+    /*#__PURE__*/React.createElement("div", { className: "dash-greeting-row" },
+      /*#__PURE__*/React.createElement("div", { className: "dash-greeting" },
+        greeting + ', ',
+        /*#__PURE__*/React.createElement("span", null, "Dio")
       ),
-      /*#__PURE__*/React.createElement("h1", { className: "v11-home-greeting" },
-        "Hi Dio — ", /*#__PURE__*/React.createElement("span", null, "what would you like to do today?")
+      /*#__PURE__*/React.createElement("div", { className: "dash-greeting-meta" },
+        /*#__PURE__*/React.createElement("span", null, dateStr + ' · ' + timeStr),
+        /*#__PURE__*/React.createElement("button", {
+          className: "dash-refresh-btn",
+          onClick: refreshBriefing,
+          title: "Refresh briefing"
+        }, "↻ Refresh")
       )
     ),
-    /*#__PURE__*/React.createElement("div", { className: "v11-home-chat-wrap" },
-      /*#__PURE__*/React.createElement("div", { className: "home-chat-wrap" },
-        /*#__PURE__*/React.createElement(Chatbot, {
-          systemPrompt: HOME_SYS,
-          unifiedWorkspace: "home",
-          exploreLabel: "Identity Graph",
-          exploreScreen: () => { setScreen('identity'); window.scrollTo(0, 0); },
-          samples: HOME_SAMPLES,
-          placeholder: "Ask about identity, measurement, campaigns, or partner activation…",
-          messagesRef: homeMsgsRef,
-          resultRenderer: (d, send) => HomeResultRenderer(d, send)
-        })
-      )
-    ),
-    /*#__PURE__*/React.createElement("div", { className: "v11-home-pills" },
-      PILLS.map(p => /*#__PURE__*/React.createElement("div", {
-        key: p.id,
-        className: "v11-home-pill section-" + p.section,
-        onClick: () => {
-          if (p.id === 'drive') { alert('From Drive integration coming in Phase 11'); return; }
-          if (p.id === 'desk') stashHomeChatToFlightDeck();
-          setScreen(p.id); window.scrollTo(0, 0);
-        },
+
+    // WORKSPACES TILE ROW (above the fold per user direction)
+    /*#__PURE__*/React.createElement("div", { className: "dash-section-label" }, "— Workspaces"),
+    /*#__PURE__*/React.createElement("div", { className: "dash-ws-grid" },
+      workspacesData.map(ws => /*#__PURE__*/React.createElement("div", {
+        key: ws.id,
+        className: "dash-ws-tile",
+        onClick: () => { setScreen(ws.id); window.scrollTo(0, 0); },
         role: "button", tabIndex: 0,
-        onKeyDown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (p.id !== 'drive') { if (p.id === 'desk') stashHomeChatToFlightDeck(); setScreen(p.id); window.scrollTo(0, 0); } else { alert('From Drive integration coming in Phase 11'); } } }
+        onKeyDown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setScreen(ws.id); window.scrollTo(0, 0); } }
       },
-        /*#__PURE__*/React.createElement("span", { className: "v11-home-pill-ico" }, p.icon),
-        p.label
+        /*#__PURE__*/React.createElement("div", { className: "dash-ws-icon" }, ws.icon),
+        /*#__PURE__*/React.createElement("div", { className: "dash-ws-name" }, ws.name),
+        /*#__PURE__*/React.createElement("div", {
+          className: "dash-ws-stats",
+          dangerouslySetInnerHTML: { __html: ws.stats.map(s => s.html).join('<br>') }
+        }),
+        /*#__PURE__*/React.createElement("div", { className: "dash-ws-arrow" }, "Open →")
       ))
+    ),
+
+    // BRIEFING CARD
+    /*#__PURE__*/React.createElement("div", { className: "dash-section-label" }, "— Daily Briefing"),
+    /*#__PURE__*/React.createElement("div", { className: "dash-briefing" },
+      /*#__PURE__*/React.createElement("div", { className: "dash-briefing-eyebrow" },
+        briefingTimestamp ? ('Synthesized at ' + briefingTimestamp) : 'Synthesizing…'
+      ),
+      briefingText === null
+        ? /*#__PURE__*/React.createElement("div", null,
+            /*#__PURE__*/React.createElement("div", { className: "dash-briefing-skel", style: { width: '94%' } }),
+            /*#__PURE__*/React.createElement("div", { className: "dash-briefing-skel", style: { width: '88%' } }),
+            /*#__PURE__*/React.createElement("div", { className: "dash-briefing-skel", style: { width: '76%' } })
+          )
+        : /*#__PURE__*/React.createElement("p", {
+            className: "dash-briefing-text",
+            dangerouslySetInnerHTML: { __html: briefingText }
+          })
+    ),
+
+    // WATCHING LIST
+    /*#__PURE__*/React.createElement("div", { className: "dash-section-label" }, "— Watching"),
+    /*#__PURE__*/React.createElement("div", { className: "dash-watch-grid" },
+      anomaliesData.map((a, i) => /*#__PURE__*/React.createElement("div", {
+        key: i,
+        className: "dash-watch-card",
+        onClick: () => {
+          if (a.link_to && a.link_to.screen) {
+            try { window._signalsetWatchContext = { filter: a.link_to.filter, source: 'watching' }; } catch (e) { /* non-fatal */ }
+            setScreen(a.link_to.screen);
+            window.scrollTo(0, 0);
+          }
+        },
+        role: "button", tabIndex: 0
+      },
+        /*#__PURE__*/React.createElement("div", { className: "dash-watch-tag " + a.severity }, a.severity),
+        /*#__PURE__*/React.createElement("div", { className: "dash-watch-title" }, a.title),
+        /*#__PURE__*/React.createElement("div", { className: "dash-watch-detail" }, a.detail),
+        /*#__PURE__*/React.createElement("div", { className: "dash-watch-link" }, "Open in " + ({ identity: 'Identity Graph', measurement: 'Measurement', desk: 'Flight Deck', cmn: 'Partners' }[a.link_to.screen] || a.link_to.screen) + " →")
+      ))
+    ),
+
+    // DATA TILES — secondary row
+    /*#__PURE__*/React.createElement("div", { className: "dash-section-label" }, "— At a Glance"),
+    /*#__PURE__*/React.createElement("div", { className: "dash-data-grid" },
+      // Cohort tile
+      /*#__PURE__*/React.createElement("div", { className: "dash-data-tile" },
+        /*#__PURE__*/React.createElement("div", { className: "dash-data-tile-header" },
+          /*#__PURE__*/React.createElement("div", { className: "dash-data-tile-title" }, "Cohort LTV/CAC"),
+          /*#__PURE__*/React.createElement("div", { className: "dash-data-tile-status" }, segmentsData.length + " segments")
+        ),
+        /*#__PURE__*/React.createElement("div", { className: "dash-bar-chart" },
+          segmentsData.map((s, i) => /*#__PURE__*/React.createElement("div", {
+            key: s.id,
+            className: "bar" + (s.threshold_crossed ? '' : (s.ltv / s.cac < 30 ? ' warn' : '')),
+            style: { height: Math.min(95, (s.ltv / 70)) + '%' },
+            title: s.name + ' · LTV $' + s.ltv + ' · CAC $' + s.cac
+          }))
+        ),
+        /*#__PURE__*/React.createElement("div", { className: "dash-bar-labels" },
+          segmentsData.map(s => /*#__PURE__*/React.createElement("span", { key: s.id }, s.name.split(' ')[0].slice(0, 4)))
+        ),
+        /*#__PURE__*/React.createElement("div", {
+          className: "dash-ai-strip",
+          dangerouslySetInnerHTML: { __html: '<span class="green">Travel Rewards crossed your $4K LTV threshold</span> for the first time. Signature offer test recommended.' }
+        })
+      ),
+      // Compliance tile
+      /*#__PURE__*/React.createElement("div", { className: "dash-data-tile" },
+        /*#__PURE__*/React.createElement("div", { className: "dash-data-tile-header" },
+          /*#__PURE__*/React.createElement("div", { className: "dash-data-tile-title" }, "Compliance"),
+          /*#__PURE__*/React.createElement("div", { className: "dash-data-tile-status" }, "11 / 12 pass")
+        ),
+        /*#__PURE__*/React.createElement("div", { className: "dash-compliance-grid" },
+          [
+            { label: 'Fair Lending', ok: true },
+            { label: 'GLBA', ok: true },
+            { label: 'TCPA', ok: false },
+            { label: 'UDAAP', ok: true },
+            { label: 'CAN-SPAM', ok: true },
+            { label: 'CCPA', ok: true }
+          ].map((c, i) => /*#__PURE__*/React.createElement("div", { key: i, className: "dash-compliance-cell" },
+            /*#__PURE__*/React.createElement("div", { className: c.ok ? "check" : "warn" }, c.ok ? "✓" : "⚠"),
+            c.label
+          ))
+        ),
+        /*#__PURE__*/React.createElement("div", {
+          className: "dash-ai-strip",
+          dangerouslySetInnerHTML: { __html: '<span class="amber">1 TCPA review pending</span> on Cash Back Reactivate. All others clean.' }
+        })
+      ),
+      // What's New tile
+      /*#__PURE__*/React.createElement("div", { className: "dash-data-tile" },
+        /*#__PURE__*/React.createElement("div", { className: "dash-data-tile-header" },
+          /*#__PURE__*/React.createElement("div", { className: "dash-data-tile-title" }, "What's New"),
+          /*#__PURE__*/React.createElement("div", { className: "dash-data-tile-status" }, "3 updates")
+        ),
+        [
+          { date: 'NEW · APR 24', text: 'Smart Triggers v2 ships — auto-journey paths now AI-optimized for CVR.' },
+          { date: 'UPDATED · APR 22', text: 'Clean room expansion — InfoSum and AWS Clean Rooms now supported alongside LiveRamp.' },
+          { date: 'BETA · APR 18', text: 'Creative AI modify — refresh headlines, palettes, CTAs without re-uploading.' }
+        ].map((n, i) => /*#__PURE__*/React.createElement("div", { key: i, className: "dash-news-item" },
+          /*#__PURE__*/React.createElement("b", null, n.date),
+          /*#__PURE__*/React.createElement("span", null, n.text)
+        ))
+      )
+    ),
+
+    // ASK BAR — fixed bottom
+    /*#__PURE__*/React.createElement("div", { className: "dash-ask-wrap" },
+      /*#__PURE__*/React.createElement("div", { style: { maxWidth: 1280, margin: '0 auto' } },
+        // Active QA card (above the bar)
+        activeQA && /*#__PURE__*/React.createElement("div", { className: "dash-qa-card" },
+          /*#__PURE__*/React.createElement("div", { className: "dash-qa-question" },
+            /*#__PURE__*/React.createElement("span", null, activeQA.question),
+            /*#__PURE__*/React.createElement("button", {
+              className: "dash-qa-close",
+              onClick: () => setActiveQA(null),
+              "aria-label": "Close"
+            }, "×")
+          ),
+          /*#__PURE__*/React.createElement("div", {
+            className: "dash-qa-answer",
+            dangerouslySetInnerHTML: { __html: activeQA.answer_text }
+          }),
+          activeQA.drill_ins && activeQA.drill_ins.length > 0 && /*#__PURE__*/React.createElement("div", { className: "dash-qa-followup" },
+            activeQA.drill_ins.map((di, i) => /*#__PURE__*/React.createElement("span", {
+              key: i,
+              className: "dash-qa-followup-link",
+              onClick: () => { setScreen(di.screen); window.scrollTo(0, 0); }
+            }, di.label + ' →'))
+          )
+        ),
+        // Active plan card (above the bar)
+        activePlan && /*#__PURE__*/React.createElement("div", { className: "dash-plan-card" },
+          /*#__PURE__*/React.createElement("div", { className: "dash-plan-eyebrow" }, "Action plan · " + activePlan.steps.filter(s => s.status === 'done').length + " of " + activePlan.steps.length + " complete"),
+          /*#__PURE__*/React.createElement("div", { className: "dash-plan-title" }, activePlan.title),
+          activePlan.steps.map((step, i) => /*#__PURE__*/React.createElement("div", {
+            key: step.id,
+            className: "dash-plan-step " + step.status
+          },
+            /*#__PURE__*/React.createElement("div", { className: "dash-plan-step-num" }, step.status === 'done' ? '✓' : (i + 1)),
+            /*#__PURE__*/React.createElement("div", { className: "dash-plan-step-body" },
+              /*#__PURE__*/React.createElement("div", { className: "dash-plan-step-title" }, step.title),
+              /*#__PURE__*/React.createElement("div", { className: "dash-plan-step-detail" }, step.detail),
+              step.compliance && step.compliance.length > 0 && /*#__PURE__*/React.createElement("div", { className: "dash-plan-step-compliance" },
+                step.compliance.map((c, ci) => /*#__PURE__*/React.createElement("span", {
+                  key: ci,
+                  className: "dash-compliance-badge " + c.status
+                }, c.label + ' ' + (c.status === 'ok' ? '✓' : c.status === 'pending' ? '◐' : '✗')))
+              ),
+              step.status !== 'done' && /*#__PURE__*/React.createElement("button", {
+                className: "dash-plan-approve-btn",
+                onClick: () => approveStep(step.id),
+                disabled: step.status === 'pending'
+              }, step.status === 'in-progress' ? 'Approve →' : 'Pending')
+            )
+          )),
+          // Dismiss button when all steps done
+          activePlan.steps.every(s => s.status === 'done') && /*#__PURE__*/React.createElement("button", {
+            onClick: () => setActivePlan(null),
+            style: {
+              marginTop: 8,
+              background: 'transparent',
+              border: '1px solid var(--bdr)',
+              color: 'var(--slate)',
+              padding: '6px 12px',
+              borderRadius: 6,
+              fontSize: 12,
+              fontFamily: 'var(--font-m)',
+              cursor: 'pointer'
+            }
+          }, 'Plan complete · Dismiss')
+        ),
+        // The ask bar itself
+        /*#__PURE__*/React.createElement("div", { className: "dash-ask-bar" },
+          /*#__PURE__*/React.createElement("div", { className: "dash-ask-eyebrow" }, "Ask the platform · grounded in your live data"),
+          /*#__PURE__*/React.createElement("input", {
+            className: "dash-ask-input",
+            type: "text",
+            placeholder: askBusy ? 'Thinking…' : "Why is Acquisition Sprint underperforming? · Refresh creative on Acquisition Sprint v2 · Show top segment by LTV",
+            value: askInput,
+            onChange: (e) => setAskInput(e.target.value),
+            onKeyDown: (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAsk(); } },
+            disabled: askBusy
+          }),
+          /*#__PURE__*/React.createElement("div", { className: "dash-ask-bottom" },
+            /*#__PURE__*/React.createElement("div", { className: "dash-ask-hints" },
+              [
+                'Why is Acquisition Sprint underperforming?',
+                'Top segment by LTV',
+                'Refresh creative on Acquisition Sprint v2',
+                'Reallocate budget from Cash Back to Travel Upgrade'
+              ].map((h, i) => /*#__PURE__*/React.createElement("span", {
+                key: i,
+                className: "dash-ask-hint",
+                onClick: () => { setAskInput(h); setTimeout(() => handleAsk(), 50); }
+              }, h.length > 32 ? h.slice(0, 32) + '…' : h))
+            ),
+            /*#__PURE__*/React.createElement("button", {
+              className: "dash-ask-send",
+              onClick: handleAsk,
+              disabled: askBusy || !askInput.trim()
+            }, askBusy ? '…' : '↑')
+          )
+        )
+      )
     )
   );
 }
