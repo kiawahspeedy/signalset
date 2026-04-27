@@ -4364,7 +4364,26 @@ GENERAL RULES
 // Build the per-turn system prompt by appending workspace-specific context
 // Preserves the dynamic-data-injection pattern from the original buildMzSystemPrompt
 async function buildUnifiedSystemPrompt(workspace, contextData) {
-  let prompt = `WORKSPACE: ${workspace}\n\n` + UNIFIED_BASE_SYS;
+  // Phase 35 followup — extract ONLY the active workspace's section from UNIFIED_BASE_SYS.
+  // Including all 7 workspace specs in one prompt was causing the AI to default to the home
+  // router rules (most rigid + with verbatim example responses) regardless of WORKSPACE header.
+  // Now we surgically include just the active workspace block plus shared base rules.
+  const all = UNIFIED_BASE_SYS;
+  const wsHeader = 'WORKSPACE = "' + workspace + '"';
+  const wsIdx = all.indexOf(wsHeader);
+  let prompt;
+  if (wsIdx === -1) {
+    // Fallback — workspace not found, use everything (shouldn't happen)
+    prompt = `WORKSPACE: ${workspace}\n\n` + all;
+  } else {
+    // Find the next WORKSPACE = block (or end of string)
+    const nextWsIdx = all.indexOf('WORKSPACE = "', wsIdx + wsHeader.length);
+    const wsSection = nextWsIdx === -1 ? all.slice(wsIdx) : all.slice(wsIdx, nextWsIdx);
+    // Take the shared header (everything before the first WORKSPACE = block)
+    const firstWsIdx = all.indexOf('WORKSPACE = "');
+    const sharedHeader = firstWsIdx > -1 ? all.slice(0, firstWsIdx) : '';
+    prompt = `WORKSPACE: ${workspace}\n\n` + sharedHeader + '\n\n' + wsSection.trim();
+  }
   // Workspace-specific context decorators
   if (workspace === 'measurement' && typeof buildMzSystemPrompt === 'function') {
     // Reuse the dynamic BQ injection pattern by extracting just the data block
@@ -6567,7 +6586,10 @@ function IdentityGraph() {
       }]
     }
   };
-  const household = HOUSEHOLD_DATA[selected.id] || HOUSEHOLD_DATA['LIG-7F3A'];
+  // HOUSEHOLD_DATA is keyed by demo hex codes; actual node ids are sequential (LIG-0008 etc).
+  // Rotate through entries by node index so different bubbles show different households visibly.
+  const _householdKeys = Object.keys(HOUSEHOLD_DATA);
+  const household = HOUSEHOLD_DATA[selected.id] || HOUSEHOLD_DATA[_householdKeys[((selected.i || 0) % _householdKeys.length + _householdKeys.length) % _householdKeys.length]] || HOUSEHOLD_DATA['LIG-7F3A'];
   useEffect(() => {
     const drawIG = () => {
     const svg = d3.select(svgRef.current);
@@ -7202,9 +7224,9 @@ function IdentityGraph() {
       fontSize: 12,
       fontWeight: 600,
       cursor: 'pointer',
-      background: addedToList ? 'rgba(5,150,105,.1)' : 'var(--navy)',
-      color: addedToList ? 'var(--green)' : '#fff',
-      border: addedToList ? '1px solid rgba(5,150,105,.3)' : 'none',
+      background: addedToList ? 'rgba(5,150,105,.1)' : 'var(--card)',
+      color: addedToList ? 'var(--green)' : 'var(--slate)',
+      border: `1px solid ${addedToList ? 'rgba(5,150,105,.3)' : 'var(--bdr)'}`,
       transition: 'all .15s'
     }
   }, addedToList ? `✓ ${addedToList.split(' ')[0]}…` : '+ Add to List ▾'), showListDropdown && /*#__PURE__*/React.createElement("div", {
@@ -9755,8 +9777,8 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
 
   // ── Rewritten _builderGetResponse with rich data cards ────────────
   const _builderGetResponse = (text, step, data) => {
-    // STEP 1 — BRIEF CONFIRMATION (when builder was launched from a brief — data.name already set)
-    if (step === 1 && data.name && data.objective) {
+    // STEP 1 — BRIEF CONFIRMATION (only when launched from a brief — all three setup fields pre-set)
+    if (step === 1 && data.name && data.objective && data.budget) {
       const t = text.toLowerCase();
       // Confirm — advance to Step 2 (audiences) with the agent making the recommendation
       if (t.includes('\u2713') || t.includes('confirm') || t.includes('proceed')) {
@@ -9770,13 +9792,13 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
           stepComplete: true
         };
       }
-      // Edit campaign name
+      // Edit campaign name (intent: change name)
       if (t.includes('edit') && t.includes('name')) {
-        return { text: 'Sure \u2014 what should we call this campaign instead?', options: [data.name + ' (keep)', 'Q3 New Acquisition', 'Custom name \u2192'] };
+        return { text: 'Sure \u2014 what should we call this campaign instead?', options: [data.name + ' (keep)', 'Q3 New Acquisition', 'Custom name \u2192'], dataUpdate: { name: '' } };
       }
-      // Edit budget / flight
+      // Edit budget / flight (intent: change budget)
       if (t.includes('budget') || t.includes('flight') || t.includes('adjust')) {
-        return { text: 'Got it. What budget and flight window should we run with?', options: [data.budget || '\$450K \xB7 May 1\u201331', '\$250K \xB7 Faster sprint', '\$750K \xB7 Extended flight', 'Custom \u2192'] };
+        return { text: 'Got it. What budget and flight window should we run with?', options: [data.budget || '\$450K \xB7 May 1\u201331', '\$250K \xB7 Faster sprint', '\$750K \xB7 Extended flight', 'Custom \u2192'], dataUpdate: { budget: '' } };
       }
       // Restart
       if (t.includes('restart') || t.includes('scratch')) {
@@ -9785,18 +9807,18 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
       // User typed a custom answer — treat as a name override
       return { text: '\u201c' + text + '\u201d \u2014 noted as the campaign name. Confirm to proceed, or adjust other fields.', options: ['\u2713 Confirm and proceed to audiences', 'Adjust budget or flight', 'Restart from scratch'], dataUpdate: { name: text } };
     }
-    // STEP 1a — Name captured from first chip/input, ask objective
+    // STEP 1a — No name yet — capture name from first input
     if (step === 1 && !data.name) {
       const nm = text.includes('Custom') ? 'New Campaign' : text;
       return { text: '\u201c' + nm + '\u201d \u2014 noted.\n\nObjective?', options: ['New card acquisition', 'Product upgrade', 'Spend activation', 'Retention'], dataUpdate: { name: nm } };
     }
-    // STEP 1c — Objective captured, ask budget/flight
-    if (step === 1 && !data.budget) {
-      return { text: '\u2713 Objective: ' + text + '\n\nBudget and flight? Defaulting to Q2 run rate:', options: ['\$450K \xB7 May 1 \u2192 May 31', 'Override budget / dates'], dataUpdate: { objective: text } };
+    // STEP 1b — Name set, no objective — capture objective, ask budget
+    if (step === 1 && data.name && !data.objective) {
+      return { text: '\u2713 Objective: ' + text + '\n\nBudget and flight? Defaulting to Q2 run rate:', options: ['\$450K \xB7 May 1 \u2192 May 31', '\$250K \xB7 Faster sprint', '\$750K \xB7 Extended flight', 'Override budget / dates'], dataUpdate: { objective: text } };
     }
-    // STEP 1d — Budget captured, advance to step 2
-    if (step === 1) {
-      const bud = text.includes('Override') ? '\$350K \xB7 Custom dates' : '\$450K \xB7 May 1\u201331';
+    // STEP 1c — Name + objective set, no budget — capture budget, advance to Step 2
+    if (step === 1 && data.name && data.objective && !data.budget) {
+      const bud = text.includes('Override') || text.includes('Custom') ? '\$350K \xB7 Custom dates' : text;
       return {
         text: '\u2713 Setup complete.\n\nStep 2 \xB7 Audiences \u2014 querying the LIG for acquisition-intent segments with active consent and no existing Signature card\u2026',
         cards: [
