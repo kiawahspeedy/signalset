@@ -4773,37 +4773,6 @@ const JOURNEY_MOCKS = [{
 }];
 const MZ_TEXT_MOCKS = ['Explorers represent your highest-ROI acquisition target: LTV/CAC ratio of 87.5× versus the segment average of 68×. With only 18% current penetration, there is significant headroom — prioritize this segment for the travel rewards campaign.', 'Revelers justify their $72 CAC through superior brand engagement: 4.1× higher share-of-wallet growth vs. control groups in clean room analysis. Attribution data shows CTV as the highest-lift paid channel for this segment (+38% vs. email-only path).', 'The walled garden Meta/TikTok campaign contributed an estimated 4,200 conversions based on clean room cohort lift analysis (+18% vs. holdout). However, individual-level attribution is modeled — confidence is lower than the 98% on identity-resolved channels. Recommend supplementing with incrementality testing.', 'Luxuriates have the highest absolute LTV at $6,800 but require careful channel selection — they over-index on print and premium CTV and under-index on social. Standard programmatic buys underperform by 22% on this cohort; direct publisher deals outperform by 41%.'];
 const CMN_TEXT_MOCKS = ['For Meridian Air targeting top business travel DMAs, concentrating reach in Chicago, New York, San Francisco, and Dallas captures roughly 68% of the addressable high-intent traveler audience. Expected privacy-safe match: ~64% of the target base, yielding approximately 1.28M reachable users at a projected 4.2× CPM premium over generic programmatic. Next step: open the campaign builder to lock in DMA weighting.', 'Your strongest matches for a Meridian Air travel-rewards push are High-Intent Travelers (48.2K reach, 94% match — airline 3×/90d plus hotel co-occurrence) and VIP Loyalty Lookalike (124K reach, 87% match — modeled on your existing top-tier base). Combined that is ~170K high-confidence matches with strong airline-category spend concentration. Next step: build a combined audience and preview DMA-level reach.', 'Shopping behavior signals that indicate premium air travel intent include airline transactions ≥3× in 90 days, hotel or car-rental co-occurrence within the same booking window, corporate card usage patterns, and lounge access redemption. These signals identify approximately 44,100 in-market users in the Meridian Air target geography with 91% confidence of active purchase consideration. Next step: build an audience from these signals or refine by DMA.'];
-function getMockResponse(systemPrompt, userMessage) {
-  const isAudience = systemPrompt.includes('audienceName');
-  const isJourney = systemPrompt.includes('journeyName');
-  const isMZ = systemPrompt.includes('Measurement Intelligence');
-  const isCMN = systemPrompt.includes('Commerce Media');
-  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
-  const isHome = !isAudience && !isJourney && !isMZ && !isCMN;
-  if (isHome) {
-    const q = userMessage.toLowerCase();
-    if (q.includes('ltv') || q.includes('cac') || q.includes('attribution') || q.includes('measurement') || q.includes('cohort') || q.includes('conversion') || q.includes('performance') || q.includes('roas') || q.includes('lift'))
-      return HOME_MOCKS.find(m => m.nav === 'measurement') || HOME_MOCKS[1];
-    if (q.includes('merchant') || q.includes('commerce') || q.includes('retail') || q.includes('partner') || q.includes('walled garden'))
-      return HOME_MOCKS.find(m => m.nav === 'cmn') || HOME_MOCKS[3];
-    if (q.includes('campaign') || q.includes('in-house') || q.includes('summary') || q.includes('creative') || q.includes('trigger') || q.includes('smart audience') || q.includes('sfmc'))
-      return HOME_MOCKS.find(m => m.nav === 'desk') || HOME_MOCKS[2];
-    if (q.includes('identity') || q.includes('graph') || q.includes('household') || q.includes('device') || q.includes('dig') || q.includes('resolve') || q.includes('segment'))
-      return HOME_MOCKS.find(m => m.nav === 'identity') || HOME_MOCKS[0];
-    return pick(HOME_MOCKS);
-  }
-  if (isAudience) return pick(AUDIENCE_MOCKS);
-  if (isJourney) return pick(JOURNEY_MOCKS);
-  if (isMZ) return {
-    text: pick(MZ_TEXT_MOCKS)
-  };
-  if (isCMN) return {
-    text: pick(CMN_TEXT_MOCKS)
-  };
-  return {
-    text: 'Analysis complete. The data indicates strong segment performance with above-average conversion potential.'
-  };
-}
 
 // ═══════════════════════════════════════════════════════════════
 // SHARED CHATBOT COMPONENT
@@ -10128,18 +10097,7 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
       if (lastFD?.ready) setBriefReady(true);
     }
   }, [_chatCtx.briefSoFar, _chatCtx.messages]);
-  // Legacy seed effect (no longer needed — context provides continuity natively) but kept harmless
-  // for migration safety. Will be removed in Batch 2.
-  React.useEffect(() => {
-    try {
-      const stash = window._signalsetHomeToDesk;
-      if (stash) {
-        // Cache is now obsolete — drain it silently
-        try { delete window._signalsetHomeToDesk; } catch (e) { window._signalsetHomeToDesk = null; }
-      }
-    } catch (e) { /* non-fatal */ }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Phase 35 home-to-desk cache fully removed. Continuity now flows through ChatContext.
   const JOURNEY_SAMPLES = ['Build an AI-optimized conversion path for High-Intent Travelers — maximize CVR within a 14-day window', 'What trigger sequence drives the fastest path to Signature card application for mobile-first Explorers?'];
   const SMART_TRIGGERS_HEADER = /*#__PURE__*/React.createElement("div", {
     style: {
@@ -20037,6 +19995,35 @@ function buildPlan(shape, params) {
   return null;
 }
 
+// HTML sanitizer for AI-generated answer/plan content.
+// Allowlist approach: only <strong>, <em>, <b>, <i>, <br> are kept; everything else is escaped.
+// This prevents XSS via prompt injection or model hallucination since the dangerouslySetInnerHTML
+// path is a real surface for script/event-handler/iframe/javascript: payloads.
+function sanitizeAiHtml(input) {
+  if (input == null) return '';
+  const str = String(input);
+  // First pass: escape ALL HTML.
+  const escaped = str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+  // Second pass: selectively un-escape the allowlisted tags only.
+  // No attributes allowed on any tag.
+  const allowed = ['strong', 'em', 'b', 'i', 'br'];
+  let out = escaped;
+  for (const tag of allowed) {
+    // Opening tag (no attrs)
+    out = out.replace(new RegExp('&lt;' + tag + '&gt;', 'gi'), '<' + tag + '>');
+    // Closing tag
+    out = out.replace(new RegExp('&lt;/' + tag + '&gt;', 'gi'), '</' + tag + '>');
+    // Self-closing (for <br/>)
+    out = out.replace(new RegExp('&lt;' + tag + '\\s*/&gt;', 'gi'), '<' + tag + '/>');
+  }
+  return out;
+}
+
 
 function HomeScreen({
   setScreen,
@@ -20132,7 +20119,7 @@ ${JSON.stringify({
         let parsed;
         try { parsed = JSON.parse(raw.replace(/```json|```/g, '').trim()); }
         catch (e) { parsed = { text: raw, drill_ins: [] }; }
-        const cleaned = (parsed.text || raw).replace(/<span class="[^"]*">/g, '<strong>').replace(/<\/span>/g, '</strong>');
+        const cleaned = sanitizeAiHtml(parsed.text || raw);
         setActiveQA({ question: q, answer_html: cleaned, drill_ins: Array.isArray(parsed.drill_ins) ? parsed.drill_ins.slice(0, 3) : [] });
         setActivePlan(null);
       }
@@ -20234,6 +20221,8 @@ ${JSON.stringify({
           /*#__PURE__*/React.createElement("div", { className: "dash-ws-tile-name" }, ws.name)
         ),
         /*#__PURE__*/React.createElement("div", { className: "dash-ws-tile-stats" },
+          // NOTE: s.html is constructed from internal data sources only (numbers + literals).
+          // No user input or AI output flows here. If that ever changes, run through sanitizeAiHtml.
           ws.stats.map((s, i) => /*#__PURE__*/React.createElement("div", {
             key: i,
             dangerouslySetInnerHTML: { __html: s.html }
