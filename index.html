@@ -731,7 +731,7 @@ html:not(.screen-transitioning) body {
 /* BOTTOM ASK BAR */
 .dash-ask-wrap {
   position: fixed;
-  bottom: 0; left: 0; right: 0;
+  bottom: 0; left: 52px; right: 0;
   background: linear-gradient(180deg, transparent 0%, var(--bg) 50%);
   padding: 40px 28px 18px;
   z-index: 50;
@@ -6829,7 +6829,11 @@ function IdentityGraph() {
     const ro = new ResizeObserver(() => { if (svgRef.current && svgRef.current.getBoundingClientRect().width > 10) drawIG(); });
     if (svgRef.current) ro.observe(svgRef.current);
     return () => { if (simRef.current) simRef.current.stop(); ro.disconnect(); };
-  }, [selected]);
+    // NB: `selected` deliberately omitted — the d3 simulation must NOT rebuild on click,
+    // or every node selection causes the force layout to restart and nodes to bounce.
+    // Click highlight is handled in the .on('click') handler via direct DOM manipulation.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // Helper — apply visual state to the graph based on resultState
   function applyMatchHighlight(rs, nodes) {
     if (!nodes || !nodes.length) return;
@@ -10178,6 +10182,27 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
     "Flight Deck"
   ), /*#__PURE__*/React.createElement("h1", { className: "v11-home-greeting" },
     "Hi Dio \u2014 ", /*#__PURE__*/React.createElement("span", null, "what do you want to build today?")
+  ), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 8,
+      padding: '6px 14px',
+      marginTop: 14,
+      background: 'rgba(99,102,241,.06)',
+      border: '1px solid rgba(99,102,241,.22)',
+      borderRadius: 999,
+      fontFamily: 'IBM Plex Mono, monospace',
+      fontSize: 11,
+      color: 'var(--slate)',
+      letterSpacing: '.04em'
+    }
+  },
+    /*#__PURE__*/React.createElement("span", {
+      style: { width: 6, height: 6, borderRadius: '50%', background: 'var(--green)', boxShadow: '0 0 6px rgba(74,222,128,.6)' }
+    }),
+    /*#__PURE__*/React.createElement("span", { style: { color: 'var(--text)', fontWeight: 600 } }, "Campaign Builder \xB7 AI Concierge"),
+    /*#__PURE__*/React.createElement("span", { style: { opacity: 0.6 } }, "\xB7  Full LIG \xB7 Identity Graph \xB7 Measurement \xB7 Clean Room access")
   )), /*#__PURE__*/React.createElement("div", {
     className: "camp-hub-body"
   }, /*#__PURE__*/React.createElement("div", {
