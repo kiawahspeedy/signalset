@@ -534,307 +534,206 @@ html:not(.screen-transitioning) body {
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   DASHBOARD HOME (Phase 38) — replaces v11 router-style home
+   HOME (Phase 38) — 4 workspace tiles + campaigns list + ask bar.
+   Marketer-only landing. Phase 38.x will gate Partners by role.
    ───────────────────────────────────────────────────────────────── */
 .dash-home {
   width: 100%;
   max-width: 1280px;
   margin: 0 auto;
-  padding: 28px 28px 160px;
-}
-.dash-greeting-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 28px;
+  padding: 32px 28px 130px;
 }
 .dash-greeting {
   font-family: var(--font-b);
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 700;
   letter-spacing: -.01em;
   color: var(--text);
+  margin-bottom: 4px;
 }
 .dash-greeting span { color: var(--indigo-lt, #818CF8); }
-.dash-greeting-meta {
+.dash-subgreeting {
   font-family: var(--font-m);
   font-size: 11px;
   color: var(--slate);
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  margin-bottom: 26px;
 }
-.dash-refresh-btn {
-  background: transparent;
-  border: 1px solid var(--bdr);
-  color: var(--slate);
-  padding: 5px 11px;
-  border-radius: 5px;
-  font-family: var(--font-m);
-  font-size: 11px;
-  cursor: pointer;
-  transition: all .12s;
-}
-.dash-refresh-btn:hover { border-color: rgba(99,102,241,.4); color: var(--text); }
 
-/* Section spacing — no eyebrow labels */
-.dash-section { margin-bottom: 22px; }
-
-/* WORKSPACES — first row above the fold. Real mini-viz, not stat lists. */
+/* WORKSPACE TILES — 4 tiles row */
 .dash-ws-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 12px;
+  margin-bottom: 36px;
 }
 .dash-ws-tile {
   background: var(--card);
   border: 1px solid var(--bdr);
-  border-radius: 8px;
-  padding: 14px 16px;
+  border-radius: 10px;
+  padding: 18px 20px;
   cursor: pointer;
-  transition: border-color .12s, background .12s;
-  min-height: 168px;
+  transition: border-color .12s, background .12s, transform .12s;
   display: flex;
   flex-direction: column;
-  position: relative;
-  overflow: hidden;
+  gap: 14px;
+  min-height: 132px;
 }
 .dash-ws-tile:hover {
-  border-color: rgba(99,102,241,.35);
+  border-color: rgba(99,102,241,.4);
   background: var(--card-alt, #131a2c);
+  transform: translateY(-1px);
 }
-.dash-ws-name {
-  font-size: 12px;
-  font-weight: 600;
+.dash-ws-tile-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.dash-ws-icon {
+  width: 32px; height: 32px;
+  background: rgba(99,102,241,.1);
+  border: 1px solid rgba(99,102,241,.25);
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--indigo-lt, #818CF8);
+  flex-shrink: 0;
+}
+.dash-ws-tile-name {
+  font-family: var(--font-b);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+.dash-ws-tile-stats {
+  font-family: var(--font-m);
+  font-size: 11px;
   color: var(--slate);
-  letter-spacing: .04em;
-  text-transform: uppercase;
-  margin-bottom: 4px;
+  line-height: 1.6;
 }
-.dash-ws-headline {
+.dash-ws-tile-stats .accent { color: var(--text); font-weight: 500; }
+.dash-ws-tile-stats .green { color: var(--green); }
+.dash-ws-tile-stats .amber { color: var(--amber); }
+.dash-ws-tile-stats .red { color: var(--red); }
+
+/* CAMPAIGNS LIST */
+.dash-camp-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.dash-camp-title {
   font-family: var(--font-b);
   font-size: 18px;
   font-weight: 700;
   color: var(--text);
-  margin-bottom: 12px;
-  line-height: 1.2;
+  letter-spacing: -.005em;
 }
-.dash-ws-headline .accent { color: var(--indigo-lt, #818CF8); }
-.dash-ws-viz {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 60px;
-  margin: 4px 0 6px;
-}
-.dash-ws-viz svg { width: 100%; height: 100%; }
-.dash-ws-foot {
-  font-family: var(--font-m);
-  font-size: 10px;
-  color: var(--slate);
-  letter-spacing: .04em;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 4px;
-}
-
-/* BRIEFING CARD — toned down. Single accent. No glowing dot eyebrow. */
-.dash-briefing {
-  background: var(--card);
-  border: 1px solid var(--bdr);
-  border-radius: 8px;
-  padding: 18px 22px;
-  border-left: 2px solid var(--indigo-lt, #818CF8);
-}
-.dash-briefing-text {
-  font-size: 15px;
-  line-height: 1.7;
-  color: var(--text);
-  margin: 0;
-}
-/* Single accent only — bold weight on key entities, not rainbow highlights */
-.dash-briefing-text strong {
-  color: var(--text);
-  font-weight: 600;
-}
-.dash-briefing-skel {
-  height: 16px;
-  background: linear-gradient(90deg, rgba(99,102,241,.06), rgba(99,102,241,.14), rgba(99,102,241,.06));
-  background-size: 200% 100%;
-  border-radius: 3px;
-  margin-bottom: 8px;
-  animation: skel-shimmer 1.4s ease-in-out infinite;
-}
-@keyframes skel-shimmer {
-  0% { background-position: 100% 0; }
-  100% { background-position: -100% 0; }
-}
-
-/* WATCHING LIST — left-border accent stripe instead of pill tags. */
-.dash-watch-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-}
-.dash-watch-card {
-  background: var(--card);
-  border: 1px solid var(--bdr);
-  border-left: 3px solid var(--slate);
-  border-radius: 6px;
-  padding: 14px 16px;
-  cursor: pointer;
-  transition: background .12s, border-color .12s;
-}
-.dash-watch-card:hover {
-  background: var(--card-alt, #131a2c);
-}
-.dash-watch-card.alert { border-left-color: var(--red); }
-.dash-watch-card.opportunity { border-left-color: var(--green); }
-.dash-watch-card.anomaly { border-left-color: var(--amber); }
-.dash-watch-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text);
-  margin-bottom: 4px;
-}
-.dash-watch-detail {
-  font-size: 12px;
-  color: var(--slate);
-  line-height: 1.5;
-  margin-bottom: 8px;
-}
-.dash-watch-link {
-  font-family: var(--font-m);
-  font-size: 10px;
-  color: var(--slate);
-  letter-spacing: .04em;
-}
-.dash-watch-card:hover .dash-watch-link { color: var(--indigo-lt, #818CF8); }
-
-/* AT-A-GLANCE — real mini visualizations, no AI strips */
-.dash-data-grid {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1.2fr;
-  gap: 12px;
-}
-.dash-data-tile {
-  background: var(--card);
-  border: 1px solid var(--bdr);
-  border-radius: 8px;
-  padding: 16px 18px;
-  display: flex;
-  flex-direction: column;
-}
-.dash-tile-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 12px;
-}
-.dash-tile-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--slate);
-  letter-spacing: .04em;
-  text-transform: uppercase;
-}
-.dash-tile-meta {
-  font-family: var(--font-m);
-  font-size: 10px;
-  color: var(--slate);
-}
-
-/* Cohort scatter — real LTV/CAC viz */
-.dash-cohort-svg { width: 100%; height: 220px; }
-.dash-cohort-axis-label {
-  font-family: var(--font-m);
-  font-size: 9px;
-  fill: var(--slate);
-  letter-spacing: .04em;
-  text-transform: uppercase;
-}
-.dash-cohort-bubble {
-  cursor: pointer;
-  transition: opacity .15s;
-}
-.dash-cohort-bubble:hover { opacity: .85; }
-.dash-cohort-label {
-  font-family: var(--font-b);
-  font-size: 10px;
-  fill: var(--text);
-  pointer-events: none;
-}
-
-/* Compliance — keep grid, drop AI strip */
-.dash-comp-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 6px;
-  flex: 1;
-}
-.dash-comp-cell {
-  background: var(--card-alt, #131a2c);
-  border: 1px solid var(--bdr);
-  border-radius: 4px;
-  padding: 8px 10px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.dash-camp-meta {
   font-family: var(--font-m);
   font-size: 11px;
   color: var(--slate);
 }
-.dash-comp-cell .ico {
-  font-size: 13px;
-  font-family: var(--font-b);
-}
-.dash-comp-cell .ok { color: var(--green); }
-.dash-comp-cell .warn { color: var(--amber); }
-
-/* Active campaigns mini list */
-.dash-camp-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.dash-camp-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 10px;
-  background: var(--card-alt, #131a2c);
-  border: 1px solid var(--bdr);
-  border-radius: 4px;
-  font-size: 12px;
+.dash-camp-meta a {
+  color: var(--indigo-lt, #818CF8);
+  text-decoration: none;
+  margin-left: 10px;
   cursor: pointer;
 }
-.dash-camp-row:hover { border-color: rgba(99,102,241,.3); }
-.dash-camp-row-name {
+.dash-camp-meta a:hover { color: var(--text); }
+
+.dash-camp-table {
+  background: var(--card);
+  border: 1px solid var(--bdr);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.dash-camp-row {
+  display: grid;
+  grid-template-columns: 32px minmax(220px, 2fr) minmax(160px, 1.4fr) minmax(110px, 1fr) 90px 80px 70px 80px;
+  gap: 14px;
+  padding: 14px 18px;
+  align-items: center;
+  border-bottom: 1px solid var(--bdr);
+  cursor: pointer;
+  transition: background .1s;
+}
+.dash-camp-row:last-child { border-bottom: none; }
+.dash-camp-row:hover { background: var(--card-alt, #131a2c); }
+.dash-camp-row.head {
+  background: var(--card-alt, #131a2c);
+  cursor: default;
+  padding: 9px 18px;
+  font-family: var(--font-m);
+  font-size: 9px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--slate);
+}
+.dash-camp-row.head:hover { background: var(--card-alt, #131a2c); }
+
+.dash-camp-status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin: 0 auto;
+}
+.dash-camp-status-dot.active { background: var(--green); box-shadow: 0 0 6px rgba(74,222,128,.5); }
+.dash-camp-status-dot.paused { background: var(--amber); }
+.dash-camp-status-dot.draft { background: var(--slate); opacity: 0.6; }
+
+.dash-camp-name {
+  font-family: var(--font-b);
+  font-size: 14px;
+  font-weight: 600;
   color: var(--text);
-  font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 60%;
 }
-.dash-camp-row-pace {
+.dash-camp-id {
   font-family: var(--font-m);
+  font-size: 10px;
+  color: var(--slate);
+  margin-top: 2px;
+}
+
+.dash-camp-cell {
+  font-family: var(--font-m);
+  font-size: 12px;
+  color: var(--text);
+}
+.dash-camp-cell.dim {
+  color: var(--slate);
   font-size: 11px;
+}
+.dash-camp-cell.num {
+  text-align: right;
   font-weight: 500;
 }
-.dash-camp-row-pace.green { color: var(--green); }
-.dash-camp-row-pace.amber { color: var(--amber); }
-.dash-camp-row-pace.red { color: var(--red); }
-.dash-camp-row-pace.flat { color: var(--slate); }
+.dash-camp-cell.num.green { color: var(--green); }
+.dash-camp-cell.num.amber { color: var(--amber); }
+.dash-camp-cell.num.red { color: var(--red); }
 
-/* BOTTOM ASK BAR — minimal, no eyebrow */
+.dash-camp-bar {
+  position: relative;
+  height: 4px;
+  background: rgba(99,102,241,.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.dash-camp-bar-fill {
+  position: absolute;
+  top: 0; left: 0; bottom: 0;
+  background: var(--indigo-lt, #818CF8);
+  border-radius: 2px;
+}
+.dash-camp-bar-fill.over { background: var(--amber); }
+
+/* BOTTOM ASK BAR */
 .dash-ask-wrap {
   position: fixed;
   bottom: 0; left: 0; right: 0;
-  background: linear-gradient(180deg, transparent 0%, var(--bg) 40%);
-  padding: 50px 28px 18px;
+  background: linear-gradient(180deg, transparent 0%, var(--bg) 50%);
+  padding: 40px 28px 18px;
   z-index: 50;
   pointer-events: none;
 }
@@ -852,7 +751,7 @@ html:not(.screen-transitioning) body {
   box-shadow: 0 8px 28px rgba(0,0,0,.5);
 }
 .dash-ask-bar:focus-within {
-  border-color: rgba(99,102,241,.5);
+  border-color: rgba(99,102,241,.45);
 }
 .dash-ask-input {
   flex: 1;
@@ -879,26 +778,22 @@ html:not(.screen-transitioning) body {
 .dash-ask-send:hover { background: var(--indigo-lt, #818CF8); }
 .dash-ask-send:disabled { opacity: .35; cursor: not-allowed; }
 
-/* INLINE Q&A CARD — minimal */
-.dash-qa-card {
+/* INLINE ANSWER + PLAN — kept in case ask bar is re-wired post-Wednesday */
+.dash-qa-card,
+.dash-plan-card {
   background: var(--card);
   border: 1px solid var(--bdr);
   border-radius: 8px;
   padding: 14px 18px;
   margin-bottom: 10px;
-  animation: dash-card-in .25s ease-out;
 }
-@keyframes dash-card-in {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+.dash-qa-card { border-left: 2px solid var(--indigo-lt, #818CF8); }
 .dash-qa-question {
   font-family: var(--font-m);
   font-size: 11px;
   color: var(--slate);
   margin-bottom: 8px;
   display: flex;
-  align-items: center;
   gap: 8px;
 }
 .dash-qa-close {
@@ -908,7 +803,6 @@ html:not(.screen-transitioning) body {
   color: var(--slate);
   cursor: pointer;
   font-size: 14px;
-  line-height: 1;
 }
 .dash-qa-close:hover { color: var(--text); }
 .dash-qa-answer {
@@ -920,7 +814,7 @@ html:not(.screen-transitioning) body {
 .dash-qa-followup {
   margin-top: 10px;
   display: flex;
-  gap: 12px;
+  gap: 14px;
   flex-wrap: wrap;
 }
 .dash-qa-followup-link {
@@ -931,15 +825,7 @@ html:not(.screen-transitioning) body {
 }
 .dash-qa-followup-link:hover { color: var(--text); }
 
-/* PLAN CARD */
-.dash-plan-card {
-  background: var(--card);
-  border: 1px solid rgba(99,102,241,.3);
-  border-radius: 8px;
-  padding: 16px 18px;
-  margin-bottom: 10px;
-  animation: dash-card-in .25s ease-out;
-}
+/* PLAN CARD (unchanged from prior, kept here for completeness) */
 .dash-plan-title {
   font-size: 14px;
   font-weight: 600;
@@ -969,71 +855,27 @@ html:not(.screen-transitioning) body {
   font-size: 10px;
   color: var(--slate);
 }
-.dash-plan-step.done .dash-plan-step-num {
-  background: var(--green);
-  color: var(--bg);
-  border-color: var(--green);
-}
-.dash-plan-step.in-progress .dash-plan-step-num {
-  background: var(--indigo, #6366F1);
-  color: #fff;
-  border-color: var(--indigo, #6366F1);
-}
+.dash-plan-step.done .dash-plan-step-num { background: var(--green); color: var(--bg); border-color: var(--green); }
+.dash-plan-step.in-progress .dash-plan-step-num { background: var(--indigo, #6366F1); color: #fff; border-color: var(--indigo, #6366F1); }
 .dash-plan-step-body { flex: 1; }
-.dash-plan-step-title {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text);
-  margin-bottom: 3px;
-}
+.dash-plan-step-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
 .dash-plan-step.done .dash-plan-step-title { color: var(--slate); }
-.dash-plan-step-detail {
-  font-size: 12px;
-  color: var(--slate);
-  line-height: 1.5;
-  margin-bottom: 6px;
-}
-.dash-plan-step-compliance {
-  display: flex;
-  gap: 5px;
-  flex-wrap: wrap;
-  margin-bottom: 8px;
-}
-.dash-comp-badge {
-  font-family: var(--font-m);
-  font-size: 9px;
-  letter-spacing: .04em;
-  padding: 2px 6px;
-  border-radius: 3px;
-  border: 1px solid var(--bdr);
-  color: var(--slate);
-}
+.dash-plan-step-detail { font-size: 12px; color: var(--slate); line-height: 1.5; margin-bottom: 6px; }
+.dash-plan-step-compliance { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 8px; }
+.dash-comp-badge { font-family: var(--font-m); font-size: 9px; letter-spacing: .04em; padding: 2px 6px; border-radius: 3px; border: 1px solid var(--bdr); color: var(--slate); }
 .dash-comp-badge.ok { color: var(--green); border-color: rgba(74,222,128,.3); }
 .dash-comp-badge.pending { color: var(--amber); border-color: rgba(251,191,36,.3); }
 .dash-comp-badge.flagged { color: var(--red); border-color: rgba(248,113,113,.3); }
-.dash-plan-approve {
-  background: var(--indigo, #6366F1);
-  color: #fff;
-  border: none;
-  padding: 5px 12px;
-  border-radius: 5px;
-  font-family: var(--font-b);
-  font-weight: 600;
-  font-size: 11px;
-  cursor: pointer;
-}
+.dash-plan-approve { background: var(--indigo, #6366F1); color: #fff; border: none; padding: 5px 12px; border-radius: 5px; font-family: var(--font-b); font-weight: 600; font-size: 11px; cursor: pointer; }
 .dash-plan-approve:hover { background: var(--indigo-lt, #818CF8); }
-.dash-plan-approve:disabled {
-  background: transparent;
-  color: var(--slate);
-  border: 1px solid var(--bdr);
-  cursor: not-allowed;
-}
+.dash-plan-approve:disabled { background: transparent; color: var(--slate); border: 1px solid var(--bdr); cursor: not-allowed; }
 
-@media (max-width: 1000px) {
+@media (max-width: 1100px) {
   .dash-ws-grid { grid-template-columns: repeat(2, 1fr); }
-  .dash-watch-grid { grid-template-columns: 1fr; }
-  .dash-data-grid { grid-template-columns: 1fr; }
+  .dash-camp-row {
+    grid-template-columns: 24px 2fr 1fr 1fr 80px 70px;
+  }
+  .dash-camp-row .hide-narrow { display: none; }
 }
 
 /* ── SCREEN HERO ── */
@@ -9550,6 +9392,16 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
     if (!jumpTab) return;
     setDeskHub(false);
     setTab(DESK_SUB_MAP[jumpTab] || jumpTab);
+    // Phase 38 — if HomeScreen routed here with a specific campaign selection,
+    // pick it up from the window cache and apply. Cleared after consumption.
+    try {
+      const campId = window._signalsetSelectCampaign;
+      if (campId) {
+        const idx = MK_CAMPAIGNS_DEFAULT.findIndex(c => c.id === campId);
+        if (idx >= 0) setMkSelectedCampIdx(idx);
+        delete window._signalsetSelectCampaign;
+      }
+    } catch (e) { /* non-fatal */ }
     if (onTabConsumed) onTabConsumed();
   }, [jumpTab]);
   // ── Marketer Campaigns state ──────────────────────────────────────
@@ -20185,209 +20037,42 @@ function buildPlan(shape, params) {
   return null;
 }
 
+
 function HomeScreen({
-  setScreen
+  setScreen,
+  navigate
 }) {
-  // ── DATA SOURCES ────────────────────────────────────────────────
-  // COHORTS (top-level const) — segment data with LTV/CAC/size/color.
-  // MK_CAMPAIGNS_DEFAULT (top-level const) — campaigns with pace_pct.
-  // Phase 9 will swap these consts with Supabase queries; this dashboard
-  // will pick up live data automatically.
+  // ── DATA SOURCES ──────────────────────────────────────────────
   const cohorts = COHORTS;
   const campaigns = MK_CAMPAIGNS_DEFAULT;
   const neoStatus = useNeo4jStatus();
   const nodeCount = neoStatus?.nodes || 916;
 
-  // Identity delta — derived (later wired to Neo4j delta query)
   const identityDelta = {
     nodes_added: 12,
     pii_flags: 0,
-    resolution_rate: 91,
-    baseline_7d: 7,
-    days_since_higher: 30,
-    top_source: '9 device-graph match, 3 partner activation'
+    resolution_rate: 91
   };
   const partnerSlots = [
-    { id: 'sova_air', name: 'Sova Air', opens_in_days: 2, opens_label: 'Tuesday', audience_match: 'High-Intent Travelers' },
-    { id: 'meridian', name: 'Meridian Air', opens_in_days: 14, opens_label: 'May 10', audience_match: 'Luxuriates' },
-    { id: 'grove', name: 'Grove Coffee', opens_in_days: 21, opens_label: 'May 17', audience_match: 'Bask & Chill' }
+    { id: 'sova_air', name: 'Sova Air', opens_in_days: 2, opens_label: 'Tuesday' },
+    { id: 'meridian', name: 'Meridian Air', opens_in_days: 14, opens_label: 'May 10' },
+    { id: 'grove', name: 'Grove Coffee', opens_in_days: 21, opens_label: 'May 17' }
   ];
 
-  // Compute anomalies deterministically — crosses real campaign + segment data
-  const anomalies = React.useMemo(() => {
-    const out = [];
-    campaigns.forEach(c => {
-      if (c.pace_pct < -10) {
-        out.push({
-          severity: 'alert',
-          title: c.name + ' pacing ' + c.pace_pct + '%',
-          detail: c.fatigue_signal || 'Pacing ' + Math.abs(c.pace_pct) + '% under target.',
-          link_screen: 'measurement',
-          link_label: 'Open in Measurement',
-          weight: Math.abs(c.pace_pct)
-        });
-      }
-    });
-    // Find Travel Rewards segment if it exists - cross with campaign data for threshold-cross signal
-    const explorers = cohorts.find(c => c.name === 'Explorers');
-    if (explorers && explorers.ltv >= 4000) {
-      out.push({
-        severity: 'opportunity',
-        title: explorers.name + ' crossed $' + (explorers.ltv / 1000).toFixed(1) + 'K LTV',
-        detail: explorers.size.toLocaleString() + ' customers now Signature-eligible by your floor.',
-        link_screen: 'desk',
-        link_label: 'Open in Flight Deck',
-        weight: 80
-      });
-    }
-    if (identityDelta.nodes_added > identityDelta.baseline_7d * 1.5) {
-      out.push({
-        severity: 'anomaly',
-        title: identityDelta.nodes_added + ' new resolved identities',
-        detail: 'Highest delta in ' + identityDelta.days_since_higher + ' days. ' + identityDelta.top_source + '.',
-        link_screen: 'identity',
-        link_label: 'Open in Identity Graph',
-        weight: 60
-      });
-    }
-    return out.sort((a, b) => b.weight - a.weight).slice(0, 3);
-  }, [campaigns, cohorts]);
+  const activeCampaigns = campaigns.filter(c => c.status === 'active');
+  const offPaceCount = campaigns.filter(c => c.pace_pct < -10).length;
+  const totalSpend = campaigns.reduce((s, c) => s + (c.spent || 0), 0);
+  const totalBudget = campaigns.reduce((s, c) => s + (c.budget || 0), 0);
 
-  // ── ASK BAR + Q&A + PLAN STATE ────────────────────────────────
+  // Sort campaigns by ROAS descending
+  const sortedCampaigns = [...campaigns].sort((a, b) => (b.roas || 0) - (a.roas || 0));
+
+  // ── ASK BAR STATE ────────────────────────────────────────────
   const [askInput, setAskInput] = React.useState('');
   const [askBusy, setAskBusy] = React.useState(false);
   const [activeQA, setActiveQA] = React.useState(null);
   const [activePlan, setActivePlan] = React.useState(null);
 
-  // ── BRIEFING STATE ────────────────────────────────────────────
-  const [briefingHTML, setBriefingHTML] = React.useState(null);
-  const [briefingTimestamp, setBriefingTimestamp] = React.useState(null);
-
-  // Briefing input — deterministic data that AI synthesizes from
-  const briefingInput = React.useMemo(() => ({
-    identity: {
-      nodes_total: nodeCount,
-      nodes_added: identityDelta.nodes_added,
-      pii_flags: identityDelta.pii_flags,
-      top_resolution_source: identityDelta.top_source.split(',')[0]
-    },
-    segments: {
-      top_by_ltv: cohorts.reduce((a, b) => a.ltv > b.ltv ? a : b).name,
-      newly_eligible: cohorts.filter(c => c.ltv >= 4000).map(c => c.name)
-    },
-    campaigns: {
-      off_pace: campaigns.filter(c => c.pace_pct < -10).map(c => ({ name: c.name, pace_pct: c.pace_pct, signal: c.fatigue_signal }))
-    },
-    partner_slots: partnerSlots.filter(p => p.opens_in_days <= 7).map(p => ({ name: p.name, opens: p.opens_label }))
-  }), [nodeCount]);
-
-  // Fetch briefing on mount with cache
-  React.useEffect(() => {
-    let cancelled = false;
-    const fetchBriefing = async () => {
-      try {
-        const cached = window._signalsetBriefingCache;
-        if (cached && (Date.now() - cached.timestamp) < 5 * 60 * 1000) {
-          if (!cancelled) {
-            setBriefingHTML(cached.html);
-            setBriefingTimestamp(new Date(cached.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }));
-          }
-          return;
-        }
-      } catch (e) { /* non-fatal */ }
-      const sysPrompt = `You are the briefing synthesizer for Signalset. Write a 3-4 sentence executive briefing for Dio summarizing what's happened across the platform overnight.
-
-STRICT CONSTRAINTS:
-- Reference ONLY values present in the JSON input below. Do not invent metrics, percentages, or counts.
-- NEVER write "approximately", "around", "roughly", "near", or "about" with numeric values.
-- Cite specific values verbatim where possible.
-- Output plain prose, no markdown. Wrap critical entity names and numbers in <strong>...</strong> for bold weight only. NO color span tags. NO <span class="hl-...">. The briefing should read as understated executive prose, not a colored highlight reel.
-- Return ONLY the briefing prose with <strong> tags. No JSON. No preamble.
-
-INPUT DATA:
-${JSON.stringify(briefingInput, null, 2)}
-
-Write the briefing now.`;
-
-      try {
-        const res = await fetch('https://signalset-lig-api.tickersignals.workers.dev/api/claude', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: 'claude-sonnet-4-20250514',
-            max_tokens: 400,
-            system: sysPrompt,
-            messages: [{ role: 'user', content: 'Generate the briefing.' }]
-          })
-        });
-        const data = await res.json();
-        const raw = data.content?.[0]?.text || '';
-        // Strip any rainbow-class spans that the AI might still emit
-        const cleaned = raw.replace(/<span class="hl-[^"]*">/g, '<strong>').replace(/<\/span>/g, '</strong>').trim();
-        if (!cancelled) {
-          setBriefingHTML(cleaned);
-          const ts = Date.now();
-          setBriefingTimestamp(new Date(ts).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }));
-          try { window._signalsetBriefingCache = { html: cleaned, timestamp: ts }; } catch (e) { /* non-fatal */ }
-        }
-      } catch (err) {
-        if (!cancelled) {
-          // Fallback — deterministic prose from data, no AI
-          const fb = `The graph ingested <strong>${briefingInput.identity.nodes_added} new nodes</strong> overnight with <strong>${briefingInput.identity.pii_flags} PII flags</strong>. <strong>${briefingInput.segments.top_by_ltv}</strong> remains the top segment by LTV. ${briefingInput.campaigns.off_pace.length > 0 ? '<strong>' + briefingInput.campaigns.off_pace[0].name + '</strong> is pacing ' + briefingInput.campaigns.off_pace[0].pace_pct + '%. ' : ''}${briefingInput.partner_slots[0] ? '<strong>' + briefingInput.partner_slots[0].name + '</strong> partnership slot opens ' + briefingInput.partner_slots[0].opens + '.' : ''}`;
-          setBriefingHTML(fb);
-          setBriefingTimestamp(new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }));
-        }
-      }
-    };
-    fetchBriefing();
-    return () => { cancelled = true; };
-  }, [briefingInput]);
-
-  const refreshBriefing = () => {
-    try { delete window._signalsetBriefingCache; } catch (e) { window._signalsetBriefingCache = null; }
-    setBriefingHTML(null);
-    setBriefingTimestamp(null);
-    // Re-trigger via a short delay (effect won't re-run because briefingInput is memoized;
-    // simpler to manually re-call the same fetch logic)
-    (async () => {
-      const sysPrompt = `You are the briefing synthesizer for Signalset. Write a 3-4 sentence executive briefing for Dio summarizing what's happened across the platform overnight.
-
-STRICT CONSTRAINTS:
-- Reference ONLY values present in the JSON input below. Do not invent metrics, percentages, or counts.
-- NEVER write "approximately", "around", "roughly", "near", or "about" with numeric values.
-- Cite specific values verbatim where possible.
-- Output plain prose, no markdown. Wrap critical entity names and numbers in <strong>...</strong> for bold weight only. NO color span tags. NO <span class="hl-...">. The briefing should read as understated executive prose, not a colored highlight reel.
-- Return ONLY the briefing prose with <strong> tags. No JSON. No preamble.
-
-INPUT DATA:
-${JSON.stringify(briefingInput, null, 2)}
-
-Write the briefing now.`;
-      try {
-        const res = await fetch('https://signalset-lig-api.tickersignals.workers.dev/api/claude', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: 'claude-sonnet-4-20250514',
-            max_tokens: 400,
-            system: sysPrompt,
-            messages: [{ role: 'user', content: 'Generate the briefing.' }]
-          })
-        });
-        const data = await res.json();
-        const raw = data.content?.[0]?.text || '';
-        const cleaned = raw.replace(/<span class="hl-[^"]*">/g, '<strong>').replace(/<\/span>/g, '</strong>').trim();
-        setBriefingHTML(cleaned);
-        const ts = Date.now();
-        setBriefingTimestamp(new Date(ts).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }));
-        try { window._signalsetBriefingCache = { html: cleaned, timestamp: ts }; } catch (e) { /* non-fatal */ }
-      } catch (err) {
-        setBriefingHTML('Connection issue — please retry.');
-      }
-    })();
-  };
-
-  // ── ASK HANDLER (Q&A + PLAN classification) ────────────────────
   const handleAsk = async () => {
     const q = askInput.trim();
     if (!q || askBusy) return;
@@ -20404,8 +20089,9 @@ Write the briefing now.`;
           shape = 'creative_refresh';
           params.campaign = /acquisition sprint/.test(ql) ? 'Acquisition Sprint v2' : (q.match(/on (.+?)( and|$)/i)?.[1] || 'Acquisition Sprint v2');
           const wkMatch = q.match(/(\d+)\s*(week|day)/i);
-          if (wkMatch) params.retest_window_days = wkMatch[2].toLowerCase().startsWith('week') ? parseInt(wkMatch[1]) * 7 : parseInt(wkMatch[1]);
-          else params.retest_window_days = 14;
+          params.retest_window_days = wkMatch
+            ? (wkMatch[2].toLowerCase().startsWith('week') ? parseInt(wkMatch[1]) * 7 : parseInt(wkMatch[1]))
+            : 14;
         } else if (/\b(reallocate|shift.*budget|pause|suspend)\b/.test(ql)) {
           shape = 'budget_reallocation';
           params.from_campaign = /cash back/.test(ql) ? 'Cash Back Reactivate' : 'underperforming campaign';
@@ -20424,13 +20110,18 @@ Write the briefing now.`;
         const sysPrompt = `You are the Signalset Q&A assistant. Answer using ONLY the AVAILABLE DATA below.
 
 STRICT CONSTRAINTS:
-- Reference only values present. No invented metrics. No hedging language ("about", "around", "approximately").
+- Reference only values present. No invented metrics. No hedging language.
 - Keep to 2-4 sentences.
-- Wrap key values in <strong>...</strong> for bold weight only. NO color spans. NO <span class="green"> or similar.
+- Wrap key values in <strong>...</strong> for bold weight only. NO color spans.
 - Return JSON: { "text": "answer in HTML with <strong> only", "drill_ins": [{ "label": "...", "screen": "identity|measurement|desk|cmn" }] }
 
 AVAILABLE DATA:
-${JSON.stringify({ identity: identityDelta, segments: cohorts.map(c => ({ name: c.name, ltv: c.ltv, cac: c.cac, size: c.size, ratio: (c.ltv/c.cac).toFixed(1) })), campaigns: campaigns.map(c => ({ name: c.name, pace_pct: c.pace_pct, status: c.status, segment: c.segment, signal: c.fatigue_signal })), partner_slots: partnerSlots, anomalies }, null, 2)}`;
+${JSON.stringify({
+  identity: { nodes_total: nodeCount, ...identityDelta },
+  segments: cohorts.map(c => ({ name: c.name, ltv: c.ltv, cac: c.cac, size: c.size, ratio: (c.ltv/c.cac).toFixed(1) })),
+  campaigns: campaigns.map(c => ({ name: c.name, pace_pct: c.pace_pct, status: c.status, segment: c.segment, signal: c.fatigue_signal })),
+  partner_slots: partnerSlots
+}, null, 2)}`;
         const res = await fetch('https://signalset-lig-api.tickersignals.workers.dev/api/claude', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -20468,321 +20159,156 @@ ${JSON.stringify({ identity: identityDelta, segments: cohorts.map(c => ({ name: 
     }
   };
 
-  // ── MINI VIZ — drawn inside SVGs from real data ───────────────
-  // Identity Graph mini — static node-cluster snapshot using COHORTS colors
-  const renderIdentityMini = () => {
-    const W = 200, H = 70;
-    // Place a node "cluster" per cohort, with a few satellite dots
-    return /*#__PURE__*/React.createElement("svg", { viewBox: `0 0 ${W} ${H}`, preserveAspectRatio: "xMidYMid meet" },
-      // Light grid dots (subtle background)
-      [...Array(8)].map((_, i) => [...Array(3)].map((__, j) => /*#__PURE__*/React.createElement("circle", {
-        key: i + '-' + j, cx: 12 + i * 25, cy: 14 + j * 22, r: 0.6, fill: 'rgba(99,102,241,.12)'
-      }))),
-      // Edges between cluster centers
-      cohorts.slice(0, 5).map((c, i) => {
-        if (i === 0) return null;
-        const prev = cohorts[i - 1];
-        const x1 = 18 + (i - 1) * 40, y1 = 35 + ((i - 1) % 2 === 0 ? -12 : 12);
-        const x2 = 18 + i * 40, y2 = 35 + (i % 2 === 0 ? -12 : 12);
-        return /*#__PURE__*/React.createElement("line", {
-          key: 'edge-' + i, x1, y1, x2, y2,
-          stroke: 'rgba(99,102,241,.25)', strokeWidth: 0.6
-        });
-      }),
-      // Cluster centers with cohort colors
-      cohorts.slice(0, 5).map((c, i) => {
-        const cx = 18 + i * 40, cy = 35 + (i % 2 === 0 ? -12 : 12);
-        const r = Math.max(3, Math.min(7, c.size / 12000));
-        return /*#__PURE__*/React.createElement("g", { key: c.name },
-          // Satellite micro-nodes
-          [...Array(3)].map((_, j) => {
-            const angle = (j / 3) * Math.PI * 2;
-            return /*#__PURE__*/React.createElement("circle", {
-              key: j, cx: cx + Math.cos(angle) * (r + 4), cy: cy + Math.sin(angle) * (r + 4),
-              r: 1, fill: c.color, opacity: 0.5
-            });
-          }),
-          // Main cluster dot
-          /*#__PURE__*/React.createElement("circle", {
-            cx, cy, r, fill: c.color, opacity: 0.9
-          }),
-          /*#__PURE__*/React.createElement("circle", {
-            cx, cy, r: r + 1.5, fill: 'none', stroke: c.color, strokeWidth: 0.5, opacity: 0.4
-          })
-        );
-      })
-    );
-  };
-
-  // Cohort scatter — real LTV/CAC bubble plot using COHORTS data
-  const renderCohortScatter = () => {
-    const W = 360, H = 200;
-    const padL = 36, padR = 16, padT = 14, padB = 28;
-    const innerW = W - padL - padR, innerH = H - padT - padB;
-    const maxCAC = Math.max(...cohorts.map(c => c.cac)) * 1.15;
-    const maxLTV = Math.max(...cohorts.map(c => c.ltv)) * 1.1;
-    const maxSize = Math.max(...cohorts.map(c => c.size));
-    return /*#__PURE__*/React.createElement("svg", { className: "dash-cohort-svg", viewBox: `0 0 ${W} ${H}`, preserveAspectRatio: "xMidYMid meet" },
-      // Y axis
-      /*#__PURE__*/React.createElement("line", { x1: padL, y1: padT, x2: padL, y2: H - padB, stroke: 'var(--bdr)' }),
-      /*#__PURE__*/React.createElement("line", { x1: padL, y1: H - padB, x2: W - padR, y2: H - padB, stroke: 'var(--bdr)' }),
-      // Y axis ticks (LTV)
-      [0, 0.25, 0.5, 0.75, 1].map(t => /*#__PURE__*/React.createElement("g", { key: 't' + t },
-        /*#__PURE__*/React.createElement("text", {
-          x: padL - 6, y: padT + (1 - t) * innerH + 3,
-          textAnchor: 'end', className: "dash-cohort-axis-label",
-          fill: "var(--slate)", fontSize: 9
-        }, '$' + Math.round(t * maxLTV / 1000) + 'k')
-      )),
-      // X axis ticks (CAC)
-      [0, 0.5, 1].map(t => /*#__PURE__*/React.createElement("text", {
-        key: 'x' + t,
-        x: padL + t * innerW, y: H - padB + 14,
-        textAnchor: 'middle', fontSize: 9, fill: "var(--slate)",
-        fontFamily: 'var(--font-m)'
-      }, '$' + Math.round(t * maxCAC))),
-      // Axis labels
-      /*#__PURE__*/React.createElement("text", { x: padL, y: padT - 4, fontSize: 9, fill: "var(--slate)", fontFamily: 'var(--font-m)' }, "LTV"),
-      /*#__PURE__*/React.createElement("text", { x: W - padR, y: H - 6, textAnchor: 'end', fontSize: 9, fill: "var(--slate)", fontFamily: 'var(--font-m)' }, "CAC"),
-      // Bubbles
-      cohorts.map(c => {
-        const cx = padL + (c.cac / maxCAC) * innerW;
-        const cy = padT + (1 - c.ltv / maxLTV) * innerH;
-        const r = 4 + (c.size / maxSize) * 14;
-        return /*#__PURE__*/React.createElement("g", { key: c.name, className: "dash-cohort-bubble" },
-          /*#__PURE__*/React.createElement("circle", {
-            cx, cy, r,
-            fill: c.color, opacity: 0.45,
-            stroke: c.color, strokeWidth: 1.2
-          }),
-          /*#__PURE__*/React.createElement("text", {
-            x: cx, y: cy + r + 11,
-            textAnchor: 'middle',
-            className: "dash-cohort-label", fontSize: 10
-          }, c.name.split(' ')[0])
-        );
-      })
-    );
+  // Click handler for campaign rows: navigate to Flight Deck Campaigns tab and pre-select the row
+  const openCampaign = (campId) => {
+    try { window._signalsetSelectCampaign = campId; } catch (e) { /* non-fatal */ }
+    if (typeof navigate === 'function') {
+      navigate('desk', 'campaigns');
+    } else {
+      setScreen('desk');
+    }
+    window.scrollTo(0, 0);
   };
 
   // Greeting
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-  const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-  const timeStr = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
-  // Active campaign count for Flight Deck tile
-  const activeCampaigns = campaigns.filter(c => c.status === 'active');
-  const offPaceCount = campaigns.filter(c => c.pace_pct < -10).length;
-  const totalSpend = campaigns.reduce((s, c) => s + c.spent, 0);
+  // Workspace tile definitions
+  const workspaces = [
+    {
+      id: 'identity', name: 'Identity Graph',
+      icon: /*#__PURE__*/React.createElement(Ico, { name: 'dna', size: 16, color: 'currentColor' }),
+      stats: [
+        { html: '<span class="accent">' + nodeCount.toLocaleString() + '</span> resolved nodes' },
+        { html: '<span class="green">+' + identityDelta.nodes_added + '</span> overnight · ' + identityDelta.resolution_rate + '% match rate' }
+      ]
+    },
+    {
+      id: 'measurement', name: 'Measurement',
+      icon: /*#__PURE__*/React.createElement(Ico, { name: 'chart', size: 16, color: 'currentColor' }),
+      stats: [
+        { html: '<span class="accent">' + cohorts.length + '</span> behavioral segments · <span class="accent">$' + (totalSpend / 1000).toFixed(0) + 'K</span> attributed' },
+        { html: 'Top: ' + cohorts.reduce((a, b) => a.ltv > b.ltv ? a : b).name + ' · LTV $' + cohorts.reduce((a, b) => a.ltv > b.ltv ? a : b).ltv.toLocaleString() }
+      ]
+    },
+    {
+      id: 'desk', name: 'Flight Deck',
+      icon: /*#__PURE__*/React.createElement(Ico, { name: 'layers', size: 16, color: 'currentColor' }),
+      stats: [
+        { html: '<span class="accent">' + activeCampaigns.length + '</span> active campaigns · 1 brief in progress' },
+        { html: offPaceCount > 0
+          ? '<span class="amber">' + offPaceCount + ' off-pace</span> · review recommended'
+          : 'All campaigns pacing on target' }
+      ]
+    },
+    {
+      id: 'cmn', name: 'Partners',
+      icon: /*#__PURE__*/React.createElement(Ico, { name: 'store', size: 16, color: 'currentColor' }),
+      stats: [
+        { html: '<span class="accent">' + partnerSlots.length + '</span> retailer relationships' },
+        { html: '<span class="green">' + partnerSlots.filter(p => p.opens_in_days <= 7).length + ' opening this week</span> · last activation 2d ago' }
+      ]
+    }
+  ];
 
   return /*#__PURE__*/React.createElement("div", { className: "dash-home" },
-    // Greeting row
-    /*#__PURE__*/React.createElement("div", { className: "dash-greeting-row" },
-      /*#__PURE__*/React.createElement("div", { className: "dash-greeting" },
-        greeting + ', ',
-        /*#__PURE__*/React.createElement("span", null, "Dio")
+    // Greeting
+    /*#__PURE__*/React.createElement("div", { className: "dash-greeting" },
+      greeting + ', ', /*#__PURE__*/React.createElement("span", null, "Dio")
+    ),
+    /*#__PURE__*/React.createElement("div", { className: "dash-subgreeting" }, dateStr),
+
+    // 4 WORKSPACE TILES
+    /*#__PURE__*/React.createElement("div", { className: "dash-ws-grid" },
+      workspaces.map(ws => /*#__PURE__*/React.createElement("div", {
+        key: ws.id,
+        className: "dash-ws-tile",
+        onClick: () => { setScreen(ws.id); window.scrollTo(0, 0); },
+        role: "button", tabIndex: 0,
+        onKeyDown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setScreen(ws.id); window.scrollTo(0, 0); } }
+      },
+        /*#__PURE__*/React.createElement("div", { className: "dash-ws-tile-top" },
+          /*#__PURE__*/React.createElement("div", { className: "dash-ws-icon" }, ws.icon),
+          /*#__PURE__*/React.createElement("div", { className: "dash-ws-tile-name" }, ws.name)
+        ),
+        /*#__PURE__*/React.createElement("div", { className: "dash-ws-tile-stats" },
+          ws.stats.map((s, i) => /*#__PURE__*/React.createElement("div", {
+            key: i,
+            dangerouslySetInnerHTML: { __html: s.html }
+          }))
+        )
+      ))
+    ),
+
+    // CAMPAIGNS LIST HEADER
+    /*#__PURE__*/React.createElement("div", { className: "dash-camp-section-head" },
+      /*#__PURE__*/React.createElement("div", { className: "dash-camp-title" }, "Active Campaigns"),
+      /*#__PURE__*/React.createElement("div", { className: "dash-camp-meta" },
+        activeCampaigns.length + " running · $" + (totalSpend / 1000).toFixed(0) + "K of $" + (totalBudget / 1000).toFixed(0) + "K budget",
+        /*#__PURE__*/React.createElement("a", {
+          onClick: () => navigate ? navigate('desk', 'campaigns') : setScreen('desk')
+        }, "View all in Flight Deck →")
+      )
+    ),
+
+    // CAMPAIGNS TABLE
+    /*#__PURE__*/React.createElement("div", { className: "dash-camp-table" },
+      // Head row
+      /*#__PURE__*/React.createElement("div", { className: "dash-camp-row head" },
+        /*#__PURE__*/React.createElement("div", null, ""),
+        /*#__PURE__*/React.createElement("div", null, "Campaign"),
+        /*#__PURE__*/React.createElement("div", { className: "hide-narrow" }, "Segment"),
+        /*#__PURE__*/React.createElement("div", null, "Spend / Budget"),
+        /*#__PURE__*/React.createElement("div", { style: { textAlign: 'right' }, className: "hide-narrow" }, "Conversions"),
+        /*#__PURE__*/React.createElement("div", { style: { textAlign: 'right' } }, "ROAS"),
+        /*#__PURE__*/React.createElement("div", { style: { textAlign: 'right' } }, "Lift"),
+        /*#__PURE__*/React.createElement("div", { style: { textAlign: 'right' } }, "Pace")
       ),
-      /*#__PURE__*/React.createElement("div", { className: "dash-greeting-meta" },
-        /*#__PURE__*/React.createElement("span", null, dateStr + ' · ' + timeStr),
-        /*#__PURE__*/React.createElement("button", {
-          className: "dash-refresh-btn",
-          onClick: refreshBriefing
-        }, "↻ Refresh")
-      )
-    ),
-
-    // WORKSPACES — real mini-viz, not stat lists
-    /*#__PURE__*/React.createElement("div", { className: "dash-section" },
-      /*#__PURE__*/React.createElement("div", { className: "dash-ws-grid" },
-        // Identity Graph tile — node cluster mini
-        /*#__PURE__*/React.createElement("div", {
-          className: "dash-ws-tile",
-          onClick: () => { setScreen('identity'); window.scrollTo(0, 0); },
+      // Rows
+      sortedCampaigns.map(c => {
+        const pct = c.budget > 0 ? Math.min(100, (c.spent / c.budget) * 100) : 0;
+        const overPace = c.pace_pct > 15;
+        const paceClass = c.pace_pct < -15 ? 'red' : c.pace_pct < -5 ? 'amber' : c.pace_pct > 5 ? 'green' : '';
+        const paceLabel = c.pace_pct === 0 ? '—' : (c.pace_pct > 0 ? '+' : '') + c.pace_pct + '%';
+        return /*#__PURE__*/React.createElement("div", {
+          key: c.id,
+          className: "dash-camp-row",
+          onClick: () => openCampaign(c.id),
           role: "button", tabIndex: 0
         },
-          /*#__PURE__*/React.createElement("div", { className: "dash-ws-name" }, "Identity Graph"),
-          /*#__PURE__*/React.createElement("div", { className: "dash-ws-headline" }, nodeCount.toLocaleString(), /*#__PURE__*/React.createElement("span", { className: "accent" }, " nodes")),
-          /*#__PURE__*/React.createElement("div", { className: "dash-ws-viz" }, renderIdentityMini()),
-          /*#__PURE__*/React.createElement("div", { className: "dash-ws-foot" },
-            /*#__PURE__*/React.createElement("span", null, "+" + identityDelta.nodes_added + " today"),
-            /*#__PURE__*/React.createElement("span", null, identityDelta.resolution_rate + "% rate")
-          )
-        ),
-        // Measurement tile — top-segment LTV/CAC ratios
-        /*#__PURE__*/React.createElement("div", {
-          className: "dash-ws-tile",
-          onClick: () => { setScreen('measurement'); window.scrollTo(0, 0); },
-          role: "button", tabIndex: 0
-        },
-          /*#__PURE__*/React.createElement("div", { className: "dash-ws-name" }, "Measurement"),
-          /*#__PURE__*/React.createElement("div", { className: "dash-ws-headline" }, '$' + (totalSpend / 1000).toFixed(0) + 'K', /*#__PURE__*/React.createElement("span", { className: "accent" }, " spent")),
-          /*#__PURE__*/React.createElement("div", { className: "dash-ws-viz", style: { flexDirection: 'column', alignItems: 'stretch', gap: 4, padding: '4px 0' } },
-            cohorts.slice(0, 4).map(c => /*#__PURE__*/React.createElement("div", {
-              key: c.name,
-              style: { display: 'flex', alignItems: 'center', gap: 6, fontSize: 10, fontFamily: 'var(--font-m)', color: 'var(--slate)' }
-            },
-              /*#__PURE__*/React.createElement("div", {
-                style: { width: 6, height: 6, borderRadius: '50%', background: c.color, flexShrink: 0 }
-              }),
-              /*#__PURE__*/React.createElement("span", { style: { flex: 1, color: 'var(--text)' } }, c.name),
-              /*#__PURE__*/React.createElement("span", null, (c.ltv / c.cac).toFixed(1) + '×')
-            ))
+          /*#__PURE__*/React.createElement("div", null,
+            /*#__PURE__*/React.createElement("div", { className: "dash-camp-status-dot " + c.status })
           ),
-          /*#__PURE__*/React.createElement("div", { className: "dash-ws-foot" },
-            /*#__PURE__*/React.createElement("span", null, activeCampaigns.length + " active campaigns"),
-            offPaceCount > 0 && /*#__PURE__*/React.createElement("span", { style: { color: 'var(--amber)' } }, offPaceCount + " off-pace")
-          )
-        ),
-        // Flight Deck tile — campaign list
-        /*#__PURE__*/React.createElement("div", {
-          className: "dash-ws-tile",
-          onClick: () => { setScreen('desk'); window.scrollTo(0, 0); },
-          role: "button", tabIndex: 0
-        },
-          /*#__PURE__*/React.createElement("div", { className: "dash-ws-name" }, "Flight Deck"),
-          /*#__PURE__*/React.createElement("div", { className: "dash-ws-headline" }, activeCampaigns.length, /*#__PURE__*/React.createElement("span", { className: "accent" }, " campaigns")),
-          /*#__PURE__*/React.createElement("div", { className: "dash-ws-viz", style: { flexDirection: 'column', alignItems: 'stretch', gap: 3, padding: '4px 0' } },
-            activeCampaigns.slice(0, 3).map(c => /*#__PURE__*/React.createElement("div", {
-              key: c.id,
-              style: { display: 'flex', alignItems: 'center', gap: 6, fontSize: 10, fontFamily: 'var(--font-m)' }
-            },
-              /*#__PURE__*/React.createElement("div", {
-                style: { width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
-                  background: c.pace_pct < -10 ? 'var(--red)' : c.pace_pct > 5 ? 'var(--green)' : 'var(--slate)'
-                }
-              }),
-              /*#__PURE__*/React.createElement("span", {
-                style: { flex: 1, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }
-              }, c.name),
-              /*#__PURE__*/React.createElement("span", {
-                style: { color: c.pace_pct < -10 ? 'var(--red)' : c.pace_pct > 5 ? 'var(--green)' : 'var(--slate)' }
-              }, (c.pace_pct >= 0 ? '+' : '') + c.pace_pct + '%')
-            ))
+          /*#__PURE__*/React.createElement("div", null,
+            /*#__PURE__*/React.createElement("div", { className: "dash-camp-name" }, c.name),
+            /*#__PURE__*/React.createElement("div", { className: "dash-camp-id" }, c.id + ' · ' + c.creative)
           ),
-          /*#__PURE__*/React.createElement("div", { className: "dash-ws-foot" },
-            /*#__PURE__*/React.createElement("span", null, "1 brief in progress"),
-            /*#__PURE__*/React.createElement("span", null, "View →")
-          )
-        ),
-        // Partners tile — partner list
-        /*#__PURE__*/React.createElement("div", {
-          className: "dash-ws-tile",
-          onClick: () => { setScreen('cmn'); window.scrollTo(0, 0); },
-          role: "button", tabIndex: 0
-        },
-          /*#__PURE__*/React.createElement("div", { className: "dash-ws-name" }, "Partners"),
-          /*#__PURE__*/React.createElement("div", { className: "dash-ws-headline" }, partnerSlots.length, /*#__PURE__*/React.createElement("span", { className: "accent" }, " active")),
-          /*#__PURE__*/React.createElement("div", { className: "dash-ws-viz", style: { flexDirection: 'column', alignItems: 'stretch', gap: 4, padding: '4px 0' } },
-            partnerSlots.slice(0, 3).map(p => /*#__PURE__*/React.createElement("div", {
-              key: p.id,
-              style: { display: 'flex', alignItems: 'center', gap: 6, fontSize: 10, fontFamily: 'var(--font-m)' }
-            },
+          /*#__PURE__*/React.createElement("div", { className: "dash-camp-cell dim hide-narrow" }, c.segment),
+          /*#__PURE__*/React.createElement("div", null,
+            /*#__PURE__*/React.createElement("div", {
+              className: "dash-camp-cell",
+              style: { fontSize: 12, marginBottom: 4 }
+            }, '$' + c.spent + 'K / $' + c.budget + 'K'),
+            /*#__PURE__*/React.createElement("div", { className: "dash-camp-bar" },
               /*#__PURE__*/React.createElement("div", {
-                style: { width: 6, height: 6, borderRadius: '50%', background: p.opens_in_days <= 7 ? 'var(--green)' : 'var(--slate)', flexShrink: 0 }
-              }),
-              /*#__PURE__*/React.createElement("span", { style: { flex: 1, color: 'var(--text)' } }, p.name),
-              /*#__PURE__*/React.createElement("span", { style: { color: 'var(--slate)' } }, p.opens_label)
-            ))
-          ),
-          /*#__PURE__*/React.createElement("div", { className: "dash-ws-foot" },
-            /*#__PURE__*/React.createElement("span", null, "Last: 2d ago"),
-            /*#__PURE__*/React.createElement("span", null, "View →")
-          )
-        )
-      )
-    ),
-
-    // BRIEFING CARD — toned down, no eyebrow, no rainbow highlights
-    /*#__PURE__*/React.createElement("div", { className: "dash-section" },
-      /*#__PURE__*/React.createElement("div", { className: "dash-briefing" },
-        briefingHTML === null
-          ? /*#__PURE__*/React.createElement("div", null,
-              /*#__PURE__*/React.createElement("div", { className: "dash-briefing-skel", style: { width: '94%' } }),
-              /*#__PURE__*/React.createElement("div", { className: "dash-briefing-skel", style: { width: '88%' } }),
-              /*#__PURE__*/React.createElement("div", { className: "dash-briefing-skel", style: { width: '72%' } })
+                className: "dash-camp-bar-fill" + (overPace ? ' over' : ''),
+                style: { width: pct + '%' }
+              })
             )
-          : /*#__PURE__*/React.createElement("p", {
-              className: "dash-briefing-text",
-              dangerouslySetInnerHTML: { __html: briefingHTML }
-            })
-      )
-    ),
-
-    // WATCHING LIST — left-border accent, no severity pills
-    anomalies.length > 0 && /*#__PURE__*/React.createElement("div", { className: "dash-section" },
-      /*#__PURE__*/React.createElement("div", { className: "dash-watch-grid" },
-        anomalies.map((a, i) => /*#__PURE__*/React.createElement("div", {
-          key: i,
-          className: "dash-watch-card " + a.severity,
-          onClick: () => { setScreen(a.link_screen); window.scrollTo(0, 0); },
-          role: "button", tabIndex: 0
-        },
-          /*#__PURE__*/React.createElement("div", { className: "dash-watch-title" }, a.title),
-          /*#__PURE__*/React.createElement("div", { className: "dash-watch-detail" }, a.detail),
-          /*#__PURE__*/React.createElement("div", { className: "dash-watch-link" }, a.link_label + " →")
-        ))
-      )
-    ),
-
-    // AT-A-GLANCE — real LTV/CAC scatter + compliance + active campaigns list
-    /*#__PURE__*/React.createElement("div", { className: "dash-section" },
-      /*#__PURE__*/React.createElement("div", { className: "dash-data-grid" },
-        // Cohort LTV/CAC scatter (real bubble plot from COHORTS data)
-        /*#__PURE__*/React.createElement("div", { className: "dash-data-tile", onClick: () => { setScreen('measurement'); window.scrollTo(0, 0); }, style: { cursor: 'pointer' } },
-          /*#__PURE__*/React.createElement("div", { className: "dash-tile-header" },
-            /*#__PURE__*/React.createElement("div", { className: "dash-tile-title" }, "Cohort LTV/CAC"),
-            /*#__PURE__*/React.createElement("div", { className: "dash-tile-meta" }, cohorts.length + " segments")
           ),
-          renderCohortScatter()
-        ),
-        // Compliance grid (no AI strip)
-        /*#__PURE__*/React.createElement("div", { className: "dash-data-tile" },
-          /*#__PURE__*/React.createElement("div", { className: "dash-tile-header" },
-            /*#__PURE__*/React.createElement("div", { className: "dash-tile-title" }, "Compliance"),
-            /*#__PURE__*/React.createElement("div", { className: "dash-tile-meta" }, "11 / 12 pass")
-          ),
-          /*#__PURE__*/React.createElement("div", { className: "dash-comp-grid" },
-            [
-              { label: 'Fair Lending', ok: true },
-              { label: 'GLBA', ok: true },
-              { label: 'TCPA', ok: false },
-              { label: 'UDAAP', ok: true },
-              { label: 'CAN-SPAM', ok: true },
-              { label: 'CCPA', ok: true }
-            ].map((c, i) => /*#__PURE__*/React.createElement("div", { key: i, className: "dash-comp-cell" },
-              /*#__PURE__*/React.createElement("span", null, c.label),
-              /*#__PURE__*/React.createElement("span", { className: "ico " + (c.ok ? 'ok' : 'warn') }, c.ok ? "✓" : "⚠")
-            ))
-          )
-        ),
-        // Active campaigns mini list (real campaigns from MK_CAMPAIGNS_DEFAULT)
-        /*#__PURE__*/React.createElement("div", { className: "dash-data-tile", onClick: () => { setScreen('desk'); window.scrollTo(0, 0); }, style: { cursor: 'pointer' } },
-          /*#__PURE__*/React.createElement("div", { className: "dash-tile-header" },
-            /*#__PURE__*/React.createElement("div", { className: "dash-tile-title" }, "Active Campaigns"),
-            /*#__PURE__*/React.createElement("div", { className: "dash-tile-meta" }, activeCampaigns.length + " running")
-          ),
-          /*#__PURE__*/React.createElement("div", { className: "dash-camp-list" },
-            activeCampaigns.slice(0, 5).map(c => {
-              const paceClass = c.pace_pct < -15 ? 'red' : c.pace_pct < -5 ? 'amber' : c.pace_pct > 5 ? 'green' : 'flat';
-              const paceLabel = c.pace_pct === 0 ? 'on pace' : (c.pace_pct > 0 ? '+' : '') + c.pace_pct + '%';
-              return /*#__PURE__*/React.createElement("div", {
-                key: c.id, className: "dash-camp-row",
-                onClick: (e) => { e.stopPropagation(); setScreen('desk'); window.scrollTo(0, 0); }
-              },
-                /*#__PURE__*/React.createElement("span", { className: "dash-camp-row-name", title: c.name }, c.name),
-                /*#__PURE__*/React.createElement("span", { className: "dash-camp-row-pace " + paceClass }, paceLabel)
-              );
-            })
-          )
-        )
-      )
+          /*#__PURE__*/React.createElement("div", { className: "dash-camp-cell num hide-narrow" }, c.conversions ? c.conversions.toLocaleString() : '—'),
+          /*#__PURE__*/React.createElement("div", { className: "dash-camp-cell num" }, c.roas ? c.roas.toFixed(1) + '×' : '—'),
+          /*#__PURE__*/React.createElement("div", { className: "dash-camp-cell num green" }, c.lift ? '+' + c.lift + '%' : '—'),
+          /*#__PURE__*/React.createElement("div", { className: "dash-camp-cell num " + paceClass }, paceLabel)
+        );
+      })
     ),
 
     // BOTTOM ASK BAR
     /*#__PURE__*/React.createElement("div", { className: "dash-ask-wrap" },
       /*#__PURE__*/React.createElement("div", { style: { maxWidth: 1280, margin: '0 auto' } },
-        // QA card
         activeQA && /*#__PURE__*/React.createElement("div", { className: "dash-qa-card" },
           /*#__PURE__*/React.createElement("div", { className: "dash-qa-question" },
             /*#__PURE__*/React.createElement("span", null, activeQA.question),
@@ -20796,7 +20322,6 @@ ${JSON.stringify({ identity: identityDelta, segments: cohorts.map(c => ({ name: 
             }, di.label + " →"))
           )
         ),
-        // Plan card
         activePlan && /*#__PURE__*/React.createElement("div", { className: "dash-plan-card" },
           /*#__PURE__*/React.createElement("div", { className: "dash-plan-meta" }, "Action plan · " + activePlan.steps.filter(s => s.status === 'done').length + " of " + activePlan.steps.length + " complete"),
           /*#__PURE__*/React.createElement("div", { className: "dash-plan-title" }, activePlan.title),
@@ -20820,7 +20345,6 @@ ${JSON.stringify({ identity: identityDelta, segments: cohorts.map(c => ({ name: 
             style: { marginTop: 8, background: 'transparent', border: '1px solid var(--bdr)', color: 'var(--slate)', padding: '5px 11px', borderRadius: 5, fontSize: 11, fontFamily: 'var(--font-m)', cursor: 'pointer' }
           }, 'Plan complete · Dismiss')
         ),
-        // The bar
         /*#__PURE__*/React.createElement("div", { className: "dash-ask-bar" },
           /*#__PURE__*/React.createElement("input", {
             className: "dash-ask-input",
@@ -21900,7 +21424,8 @@ function App() {
   }, /*#__PURE__*/React.createElement("div", {
     className: `screen ${screen === 'home' ? 'active' : ''}`
   }, /*#__PURE__*/React.createElement(HomeScreen, {
-    setScreen: setScreen
+    setScreen: setScreen,
+    navigate: navigate
   })), /*#__PURE__*/React.createElement("div", {
     className: `screen ${screen === 'identity' ? 'active' : ''}`
   }, /*#__PURE__*/React.createElement(IdentityGraph, null)), /*#__PURE__*/React.createElement("div", {
