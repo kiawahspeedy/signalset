@@ -10184,6 +10184,7 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
     "Hi Dio \u2014 ", /*#__PURE__*/React.createElement("span", null, "what do you want to build today?")
   ), /*#__PURE__*/React.createElement("div", {
     style: {
+      alignSelf: 'center',
       display: 'inline-flex',
       alignItems: 'center',
       gap: 8,
@@ -10195,11 +10196,13 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
       fontFamily: 'IBM Plex Mono, monospace',
       fontSize: 11,
       color: 'var(--slate)',
-      letterSpacing: '.04em'
+      letterSpacing: '.04em',
+      width: 'auto',
+      maxWidth: 'fit-content'
     }
   },
     /*#__PURE__*/React.createElement("span", {
-      style: { width: 6, height: 6, borderRadius: '50%', background: 'var(--green)', boxShadow: '0 0 6px rgba(74,222,128,.6)' }
+      style: { width: 6, height: 6, borderRadius: '50%', background: 'var(--green)', boxShadow: '0 0 6px rgba(74,222,128,.6)', flexShrink: 0 }
     }),
     /*#__PURE__*/React.createElement("span", { style: { color: 'var(--text)', fontWeight: 600 } }, "Campaign Builder \xB7 AI Concierge"),
     /*#__PURE__*/React.createElement("span", { style: { opacity: 0.6 } }, "\xB7  Full LIG \xB7 Identity Graph \xB7 Measurement \xB7 Clean Room access")
