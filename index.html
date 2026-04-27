@@ -9826,6 +9826,31 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
 
   // ── Rewritten _builderGetResponse with rich data cards ────────────
   const _builderGetResponse = (text, step, data) => {
+    // ── Dynamic flight windows ──────────────────────────────────────
+    // Compute realistic forward-looking dates so demo never feels stale.
+    // Standard 4-week flight starts the next Monday after a 7-day prep window;
+    // sprint is 2 weeks; extended is 8 weeks; co-brand is 6 weeks.
+    const _flightWindows = (() => {
+      const today = new Date();
+      const start = new Date(today);
+      start.setDate(start.getDate() + 7); // 1-week prep buffer
+      // Snap to next Monday
+      const dow = start.getDay();
+      if (dow !== 1) start.setDate(start.getDate() + ((1 - dow + 7) % 7 || 7));
+      const fmt = (d) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const fmtFull = (d) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const addDays = (d, n) => { const r = new Date(d); r.setDate(r.getDate() + n); return r; };
+      const std4End = addDays(start, 27);    // 4-week
+      const sprint2End = addDays(start, 13); // 2-week sprint
+      const ext8End = addDays(start, 55);    // 8-week extended
+      const co6End = addDays(start, 41);     // 6-week co-brand
+      return {
+        std: { label: fmt(start) + ' \u2192 ' + fmt(std4End), full: fmt(start) + '\u2013' + fmtFull(std4End) },
+        sprint: { label: fmt(start) + ' \u2192 ' + fmt(sprint2End), full: fmt(start) + '\u2013' + fmtFull(sprint2End) },
+        extended: { label: fmt(start) + ' \u2192 ' + fmt(ext8End), full: fmt(start) + '\u2013' + fmtFull(ext8End) },
+        cobrand: { label: fmt(start) + ' \u2192 ' + fmt(co6End), full: fmt(start) + '\u2013' + fmtFull(co6End) }
+      };
+    })();
     // STEP 1 — BRIEF CONFIRMATION (only when launched from a brief — all three setup fields pre-set)
     if (step === 1 && data.name && data.objective && data.budget) {
       const t = text.toLowerCase();
@@ -9848,7 +9873,7 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
       }
       // Edit budget / flight (intent: change budget)
       if (t.includes('budget') || t.includes('flight') || t.includes('adjust')) {
-        return { text: 'Got it. What budget and flight window should we run with?', options: [data.budget || '\$450K \xB7 May 1\u201331', '\$250K \xB7 Faster sprint', '\$750K \xB7 Extended flight', 'Custom \u2192'], dataUpdate: { budget: '' } };
+        return { text: 'Got it. What budget and flight window should we run with?', options: [data.budget || '\$450K \xB7 ' + _flightWindows.std.label, '\$250K \xB7 Faster sprint', '\$750K \xB7 Extended flight', 'Custom \u2192'], dataUpdate: { budget: '' } };
       }
       // Restart
       if (t.includes('restart') || t.includes('scratch')) {
@@ -9904,10 +9929,10 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
       const cardMeta = CARD_LOOKUP[cleaned] || { partner: null, group: cleaned.toLowerCase().includes('co-brand') ? 'co-brand' : 'in-house' };
       const isCoBrand = cardMeta.group === 'co-brand';
       return {
-        text: '\u2713 Card locked: ' + cleaned + (cardMeta.partner ? ' (' + cardMeta.partner + ' co-brand)' : '') + '\n\nBudget and flight? ' + (isCoBrand ? 'Co-brand campaigns typically run a 6-week flight to align with partner inventory cycles.' : 'Defaulting to Q2 run rate:'),
+        text: '\u2713 Card locked: ' + cleaned + (cardMeta.partner ? ' (' + cardMeta.partner + ' co-brand)' : '') + '\n\nBudget and flight? ' + (isCoBrand ? 'Co-brand campaigns typically run a 6-week flight to align with partner inventory cycles.' : 'Defaulting to next-month run rate:'),
         options: isCoBrand
-          ? ['\$300K \xB7 May 1 \u2192 Jun 12 (6wk co-brand)', '\$500K \xB7 Extended co-brand flight', '\$200K \xB7 Test sprint', 'Override budget / dates']
-          : ['\$450K \xB7 May 1 \u2192 May 31', '\$250K \xB7 Faster sprint', '\$750K \xB7 Extended flight', 'Override budget / dates'],
+          ? ['\$300K \xB7 ' + _flightWindows.cobrand.label + ' (6wk co-brand)', '\$500K \xB7 Extended co-brand flight', '\$200K \xB7 Test sprint', 'Override budget / dates']
+          : ['\$450K \xB7 ' + _flightWindows.std.label, '\$250K \xB7 Faster sprint', '\$750K \xB7 Extended flight', 'Override budget / dates'],
         dataUpdate: { card: cleaned, partner: cardMeta.partner || '', isCoBrand: isCoBrand }
       };
     }
@@ -9915,7 +9940,7 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
     if (step === 1 && data.name && data.objective && data.skipCardType && !data.budget) {
       return {
         text: '\u2713 Goal: ' + text + '\n\nBudget and flight?',
-        options: ['\$450K \xB7 May 1 \u2192 May 31', '\$250K \xB7 Faster sprint', '\$750K \xB7 Extended flight', 'Override budget / dates'],
+        options: ['\$450K \xB7 ' + _flightWindows.std.label, '\$250K \xB7 Faster sprint', '\$750K \xB7 Extended flight', 'Override budget / dates'],
         dataUpdate: { objective_detail: text }
       };
     }
@@ -9930,7 +9955,7 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
           { type: 'audience', id: 'AUD-002', name: 'Affluent Mobile-First Upgraders', taxonomy: 'Luxuriates \xB7 IAB-matched', size: '38,700', sizeLabel: 'upgrade targets', criteria: ['Monthly spend \$5K+ \xB7 3 consecutive months', 'Mobile primary >80% \xB7 No premium card in wallet'], features: [{ label: 'Monthly spend', pct: 81 }, { label: 'Mobile primary', pct: 74 }], propensity: 79, dests: ['Adobe RTCDP', 'SFMC / Email', 'Clean Room (LR)'], compliance: ['Fair Lending \u2713', 'UDAAP \u2713'], recommended: false }
         ],
         options: ['Use AUD-001 \u2014 High-Intent Travel Rewards', 'Use AUD-002 instead', 'Show AUD-003', 'Build a custom segment \u2192'],
-        stepComplete: true, dataUpdate: { budget: bud, flight: 'May 1\u201331, 2026' }
+        stepComplete: true, dataUpdate: { budget: bud, flight: data.isCoBrand ? _flightWindows.cobrand.full : _flightWindows.std.full }
       };
     }
     // STEP 2 — Audience selection
@@ -9985,7 +10010,7 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
       // "Use CRV-XXX" — lock and advance
       if (t.includes('crv-001') || (t.includes('use') && t.includes('travel hero')) || t.includes('lock crv-001') || t.includes('premium rewards')) {
         const crvName = 'CRV-001 Premium Rewards \u2014 Travel Hero';
-        const sumLines = [data.name||'Campaign', data.objective||'New card acquisition', data.budget||'\$450K', data.flight||'Spring 2026', data.audience||'Audience', data.trigger||'Trigger', crvName].join(' \xB7 ');
+        const sumLines = [data.name||'Campaign', data.objective||'New card acquisition', data.budget||'\$450K', data.flight||_flightWindows.std.full, data.audience||'Audience', data.trigger||'Trigger', crvName].join(' \xB7 ');
         return {
           text: '\u2713 Creative locked: ' + crvName + ' \xB7 auto-lint clear\n\nStep 5 \xB7 Summary & Approval\nAuto-compliance ran \u2014 16/16 checks passed, 2 issues auto-fixed by AI.\n\n' + sumLines + '\n\nI need your sign-off. Compliance review triggers automatically after you approve.',
           options: ['\u2713 I approve \u2014 send to compliance', 'View compliance report \u2192', 'Request changes'],
@@ -9994,7 +10019,7 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
       }
       if (t.includes('crv-002') || t.includes('first-class') || t.includes('upgrade offer')) {
         const crvName = 'CRV-002 First-Class Upgrade Offer';
-        const sumLines = [data.name||'Campaign', data.objective||'New card acquisition', data.budget||'\$450K', data.flight||'Spring 2026', data.audience||'Audience', data.trigger||'Trigger', crvName].join(' \xB7 ');
+        const sumLines = [data.name||'Campaign', data.objective||'New card acquisition', data.budget||'\$450K', data.flight||_flightWindows.std.full, data.audience||'Audience', data.trigger||'Trigger', crvName].join(' \xB7 ');
         return {
           text: '\u2713 Creative locked: ' + crvName + ' \xB7 auto-lint clear\n\nStep 5 \xB7 Summary & Approval\nAuto-compliance ran \u2014 16/16 checks passed, 2 issues auto-fixed by AI.\n\n' + sumLines + '\n\nI need your sign-off. Compliance review triggers automatically after you approve.',
           options: ['\u2713 I approve \u2014 send to compliance', 'View compliance report \u2192', 'Request changes'],
@@ -10003,7 +10028,7 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
       }
       if (t.includes('crv-003') || t.includes('accelerator') || t.includes('miles')) {
         const crvName = 'CRV-003 Miles Accelerator Push';
-        const sumLines = [data.name||'Campaign', data.objective||'New card acquisition', data.budget||'\$450K', data.flight||'Spring 2026', data.audience||'Audience', data.trigger||'Trigger', crvName].join(' \xB7 ');
+        const sumLines = [data.name||'Campaign', data.objective||'New card acquisition', data.budget||'\$450K', data.flight||_flightWindows.std.full, data.audience||'Audience', data.trigger||'Trigger', crvName].join(' \xB7 ');
         return {
           text: '\u2713 Creative locked: ' + crvName + ' \xB7 auto-lint clear\n\nStep 5 \xB7 Summary & Approval\nAuto-compliance ran \u2014 16/16 checks passed, 2 issues auto-fixed by AI.\n\n' + sumLines + '\n\nI need your sign-off. Compliance review triggers automatically after you approve.',
           options: ['\u2713 I approve \u2014 send to compliance', 'View compliance report \u2192', 'Request changes'],
@@ -10062,21 +10087,27 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
           stepComplete: true, postApproval: true
         };
       }
-      // Post-approval — handle the follow-up choice
-      if (data.creative && (data.creative.includes('\u2713') || data.creative.length > 0) && step === 6) {
-        const t = text.toLowerCase();
-        if (t.includes('view campaigns') || t.includes('campaigns')) {
-          return { text: 'Taking you to the Campaigns dashboard\u2026', navigate: 'campaigns' };
-        }
-        if (t.includes('another campaign') || t.includes('build another')) {
-          return { text: 'Starting a fresh campaign brief. What would you like to build?', resetBuilder: true };
-        }
-        if (t.includes('audience')) return { text: 'Opening the Audiences workspace\u2026', navigate: 'audience' };
-        if (t.includes('trigger')) return { text: 'Opening the Triggers workspace\u2026', navigate: 'journey' };
-        if (t.includes('creative')) return { text: 'Opening the Creatives workspace\u2026', navigate: 'creative' };
-        if (t.includes('result')) return { text: 'Opening campaign results\u2026', navigate: 'campaigns' };
-      }
+      // Request changes path (still step 5 — campaign not approved yet)
       return { text: 'What would you like to change?', options: ['Change audience', 'Change trigger', 'Change creative', 'Change budget / dates'] };
+    }
+    // STEP 6 — Post-approval (after stepComplete advanced from 5 → 6)
+    if (step === 6) {
+      const t = text.toLowerCase();
+      if (t.includes('view campaigns') || (t.includes('campaign') && !t.includes('build') && !t.includes('another'))) {
+        return { text: 'Taking you to the Campaigns dashboard\u2026', navigate: 'campaigns' };
+      }
+      if (t.includes('another') || t.includes('build another') || t.includes('fresh')) {
+        return { text: 'Starting a fresh campaign brief. What would you like to build?', resetBuilder: true };
+      }
+      if (t.includes('audience') || t.includes('refine')) return { text: 'Opening the Audiences workspace\u2026', navigate: 'audience' };
+      if (t.includes('trigger') || t.includes('flow')) return { text: 'Opening the Triggers workspace\u2026', navigate: 'journey' };
+      if (t.includes('creative') || t.includes('review')) return { text: 'Opening the Creatives workspace\u2026', navigate: 'creative' };
+      if (t.includes('result') || t.includes('see results')) return { text: 'Opening campaign results\u2026', navigate: 'campaigns' };
+      // Catch-all for step 6 — re-show the post-approval options instead of "anything else to adjust"
+      return {
+        text: 'Where would you like to go next?',
+        options: ['View Campaigns \u2192', 'Build another campaign', 'Refine an audience', 'Plan a trigger flow', 'Review creatives']
+      };
     }
     return { text: 'Got it \u2014 anything else you\u2019d like to adjust?' };
   };
@@ -10097,10 +10128,17 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
       if (resp.postApproval) {
         const d = { ...builderCampData, ...(resp.dataUpdate || {}) };
         const nm = d.name || (d.objective ? d.objective + ' Campaign' : 'New Campaign');
-        // Parse budget from data.budget string ("$750K · June-August 2026" or "$450K · May 1-31")
+        // Parse budget from data.budget string ("$750K · Jun 2 → Jul 27" or "$450K · May 4 → May 31")
         const budMatch = String(d.budget || '').match(/\$?(\d+(?:\.\d+)?)([KkMm])?/);
         const budNum = budMatch ? (parseFloat(budMatch[1]) * (budMatch[2] && budMatch[2].toLowerCase() === 'm' ? 1000 : 1)) : 450;
-        const newCamp = { id: 'MK-' + Math.random().toString(36).slice(2,6).toUpperCase(), name: nm, creative: (d.creative||'Email').replace(' \u2713',''), segment: (d.audience||'AI Audience').replace(/AUD-\d+ /,'').replace(' \u2713',''), dmas: 'Multi-market', startDate: 'May 1', endDate: 'May 31', status: 'active', budget: budNum, spent: 0, impressions: 0, clicks: 0, conversions: 0, roas: 0, lift: 0 };
+        // Compute realistic dynamic flight start/end (next Monday + 4 weeks by default)
+        const _today = new Date();
+        const _start = new Date(_today); _start.setDate(_start.getDate() + 7);
+        const _dow = _start.getDay(); if (_dow !== 1) _start.setDate(_start.getDate() + ((1 - _dow + 7) % 7 || 7));
+        const _isCoBrand = !!d.isCoBrand;
+        const _end = new Date(_start); _end.setDate(_end.getDate() + (_isCoBrand ? 41 : 27));
+        const _fmt = (dt) => dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const newCamp = { id: 'MK-' + Math.random().toString(36).slice(2,6).toUpperCase(), name: nm, creative: (d.creative||'Email').replace(' \u2713',''), segment: (d.audience||'AI Audience').replace(/AUD-\d+ /,'').replace(' \u2713',''), dmas: 'Multi-market', startDate: _fmt(_start), endDate: _fmt(_end), status: 'active', budget: budNum, spent: 0, impressions: 0, clicks: 0, conversions: 0, roas: 0, lift: 0 };
         setMarketingCampaigns(prev => [newCamp, ...prev]);
         setMkSelectedCampIdx(0);
       }
@@ -10117,7 +10155,7 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
       // Reset builder for "build another" path
       if (resp.resetBuilder) {
         setTimeout(() => {
-          setBuilderMessages([{ role: 'assistant', text: 'Fresh start \u2014 what campaign would you like to build?', options: ['New card acquisition', 'Spend activation', 'Product upgrade', 'Retention'] }]);
+          setBuilderMessages([{ role: 'assistant', text: 'Fresh start \u2014 what campaign would you like to build?', options: ['New card acquisition', 'Co-brand marketing', 'Offer & promotion', 'Retention', 'Something else \u2192'] }]);
           setBuilderStep(1); setBuilderCreativeIdx(0);
           setBuilderCampData({ name:'', objective:'', card:'', partner:'', budget:'', flight:'', audience:'', trigger:'', creative:'' });
         }, 500);
@@ -10448,7 +10486,26 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
                   /*#__PURE__*/React.createElement("span", { style: { fontWeight: 700 } }, val)
                 )
               )
-            )
+            ),
+            /* Escape hatch — show after 2+ user turns when no ready signal has fired */
+            (() => {
+              const userTurns = ideaMessages.filter(m => m.role === 'user').length;
+              const lastFD = [...ideaMessages].reverse().find(m => m.role === 'assistant' && m.workspace === 'flight_deck');
+              const readyAlreadyVisible = lastFD?.ready;
+              if (userTurns >= 2 && !readyAlreadyVisible && !ideaBusy) {
+                return /*#__PURE__*/React.createElement("div", {
+                  style: { padding: '10px 0 4px', alignSelf: 'stretch', display: 'flex', justifyContent: 'flex-start' }
+                },
+                  /*#__PURE__*/React.createElement("button", {
+                    onClick: () => { setBuilderMode(true); setDeskHub(false); window.scrollTo(0,0); },
+                    style: { padding: '8px 14px', fontSize: 12, fontWeight: 700, color: 'var(--cyan-pale)', background: 'transparent', border: '1px dashed rgba(99,102,241,.4)', borderRadius: 8, cursor: 'pointer', fontFamily: 'var(--font-b)', transition: 'all .15s' },
+                    onMouseEnter: e => { e.currentTarget.style.background = 'rgba(99,102,241,.1)'; e.currentTarget.style.borderColor = 'var(--cyan)'; e.currentTarget.style.borderStyle = 'solid'; },
+                    onMouseLeave: e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(99,102,241,.4)'; e.currentTarget.style.borderStyle = 'dashed'; }
+                  }, 'Skip ahead \u2014 launch builder with what we have \u2192')
+                );
+              }
+              return null;
+            })()
           )
         )
       )
@@ -10611,7 +10668,7 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
           m.role === 'assistant' && m.cards && _renderBuilderCards(m.cards),
           m.role === 'assistant' && m.options && i === builderMessages.length - 1 &&
           /*#__PURE__*/React.createElement("div", { style: { display: 'flex', flexWrap: 'wrap', gap: 7 } },
-            m.options.map((opt, oi) => /*#__PURE__*/React.createElement("button", { key: oi, onClick: () => _builderSend(opt), style: { padding: '7px 13px', borderRadius: 7, fontSize: 12, fontWeight: 600, background: opt.includes('\u2713') ? 'rgba(74,222,128,.08)' : 'var(--card-alt)', border: '1px solid ' + (opt.includes('\u2713') ? 'rgba(74,222,128,.35)' : 'rgba(99,102,241,.28)'), color: opt.includes('\u2713') ? 'var(--green)' : 'var(--text)', cursor: 'pointer', fontFamily: 'var(--font-b)', transition: 'all .15s' } }, opt))
+            m.options.map((opt, oi) => /*#__PURE__*/React.createElement("button", { key: oi, onClick: () => _builderSend(opt), style: { padding: '7px 13px', borderRadius: 7, fontSize: 12, fontWeight: 700, background: opt.includes('\u2713') ? '#fff' : 'var(--card-alt)', border: '1px solid ' + (opt.includes('\u2713') ? '#fff' : 'rgba(99,102,241,.28)'), color: opt.includes('\u2713') ? '#0a0e1a' : 'var(--text)', cursor: 'pointer', fontFamily: 'var(--font-b)', transition: 'all .15s', boxShadow: opt.includes('\u2713') ? '0 2px 8px rgba(0,0,0,.4)' : 'none' } }, opt))
           )
         )),
         builderBusy && /*#__PURE__*/React.createElement("div", { style: { display: 'flex', alignItems: 'flex-start' } },
@@ -10697,16 +10754,16 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
               borderRadius: 9,
               fontSize: 13,
               fontWeight: 800,
-              background: 'rgba(74,222,128,.14)',
-              border: '1px solid rgba(74,222,128,.55)',
-              color: 'var(--green)',
+              background: '#fff',
+              border: '1px solid #fff',
+              color: '#0a0e1a',
               cursor: 'pointer',
               fontFamily: 'var(--font-b)',
-              boxShadow: '0 0 0 1px rgba(74,222,128,.15) inset, 0 6px 18px rgba(74,222,128,.08)',
+              boxShadow: '0 4px 14px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.5)',
               transition: 'all .15s'
             },
-            onMouseEnter: e => { e.currentTarget.style.background = 'rgba(74,222,128,.22)'; e.currentTarget.style.borderColor = 'rgba(74,222,128,.75)'; },
-            onMouseLeave: e => { e.currentTarget.style.background = 'rgba(74,222,128,.14)'; e.currentTarget.style.borderColor = 'rgba(74,222,128,.55)'; }
+            onMouseEnter: e => { e.currentTarget.style.background = '#f0f2f8'; e.currentTarget.style.transform = 'translateY(-1px)'; },
+            onMouseLeave: e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.transform = 'none'; }
           },
             '\u2713  Use ' + BUILDER_CREATIVES[builderCreativeIdx].id + ' \u2014 ' + BUILDER_CREATIVES[builderCreativeIdx].name + '  \u2192'
           ),
