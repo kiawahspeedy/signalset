@@ -127,6 +127,8 @@ body {
 .nav-status { display: flex; align-items: center; gap: 7px; font-size: 15px; color: var(--green); font-weight: 500; }
 .pulse { width: 8px; height: 8px; background: var(--green); border-radius: 50%; animation: pulse 2s ease infinite; }
 @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.3)} }
+@keyframes pulse-cyan { 0%,100%{box-shadow:0 0 8px var(--cyan); opacity:1} 50%{box-shadow:0 0 14px var(--cyan); opacity:.7} }
+@keyframes newCampPulse { 0% { box-shadow: 0 0 0 4px rgba(74,222,128,.5), 0 8px 32px rgba(74,222,128,.4); } 100% { box-shadow: 0 0 0 1px rgba(74,222,128,.3), 0 4px 18px rgba(74,222,128,.18); } }
 
 /* ── MAIN ── */
 .main { padding-top: 62px; min-height: 100vh; }
@@ -995,8 +997,9 @@ html:not(.screen-transitioning) body {
 .msg.user { justify-content: flex-end; }
 .msg.user .bubble {
   background: var(--cyan); border: none;
-  color: #FFFFFF; font-size: 15px; padding: 12px 17px; line-height: 1.68;
+  color: #FFFFFF; font-size: 15px; padding: 12px 20px; line-height: 1.68;
   border-radius: 16px 16px 4px 16px; max-width: 78%;
+  min-width: 64px; text-align: center;
 }
 .msg.assistant .bubble { flex: 1; font-size: 15px; line-height: 1.7; color: var(--text); background: transparent; padding: 4px 0; border-radius: 0; border: none; box-shadow: none; }
 
@@ -9386,6 +9389,74 @@ function JourneyBuilderLightbox({ open, onClose, context, onSave }) {
 // SCREEN 2 — FLIGHT DECK
 // ═══════════════════════════════════════════════════════════════
 
+// ── ComplianceRunner ───────────────────────────────────────────────
+// Animated sequential compliance check display. Each check transitions
+// pending \u2192 running \u2192 (passed | autofixed) on a stagger.
+function ComplianceRunner({ checks, campaignName, onComplete }) {
+  const [statuses, setStatuses] = React.useState(() => checks.map(() => 'pending'));
+  const [done, setDone] = React.useState(false);
+  React.useEffect(() => {
+    let cancelled = false;
+    const PER_CHECK = 380; // ms — sequenced reveal
+    const RUN_DURATION = 240; // ms running before resolve
+    checks.forEach((c, i) => {
+      const startT = i * PER_CHECK;
+      setTimeout(() => {
+        if (cancelled) return;
+        setStatuses(prev => prev.map((s, j) => j === i ? 'running' : s));
+      }, startT);
+      setTimeout(() => {
+        if (cancelled) return;
+        setStatuses(prev => prev.map((s, j) => j === i ? c.status : s));
+        if (i === checks.length - 1) {
+          setTimeout(() => { if (!cancelled) { setDone(true); onComplete && onComplete(); } }, 200);
+        }
+      }, startT + RUN_DURATION);
+    });
+    return () => { cancelled = true; };
+  }, []);
+  const passedCount = statuses.filter(s => s === 'pass').length;
+  const autofixedCount = statuses.filter(s => s === 'autofixed').length;
+  const totalResolved = passedCount + autofixedCount;
+  return /*#__PURE__*/React.createElement("div", { style: { background: 'rgba(8,8,15,.7)', border: '1px solid rgba(99,102,241,.25)', borderRadius: 10, padding: '16px 18px', fontFamily: 'IBM Plex Mono, monospace' } },
+    /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14, paddingBottom: 10, borderBottom: '1px solid rgba(99,102,241,.18)' } },
+      /*#__PURE__*/React.createElement("div", null,
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.12em', color: 'var(--cyan-dim)' } }, 'Auto-Compliance Engine'),
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 14, fontWeight: 700, color: 'var(--text)', marginTop: 3, fontFamily: 'var(--font-b)' } }, campaignName)
+      ),
+      /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, color: done ? 'var(--green)' : 'var(--cyan-dim)' } },
+        done ? '\u2713 ' + totalResolved + '/' + checks.length + ' resolved' : 'running ' + totalResolved + '/' + checks.length + '\u2026'
+      )
+    ),
+    /*#__PURE__*/React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 8 } },
+      checks.map((c, i) => {
+        const status = statuses[i];
+        const isPending = status === 'pending';
+        const isRunning = status === 'running';
+        const isPass = status === 'pass';
+        const isAutofixed = status === 'autofixed';
+        const dotColor = isPending ? 'rgba(148,163,184,.3)' : isRunning ? 'var(--cyan)' : isPass ? 'var(--green)' : 'var(--amber)';
+        const labelColor = isPending ? 'rgba(148,163,184,.5)' : 'var(--text)';
+        const detailColor = isPending ? 'rgba(148,163,184,.4)' : 'var(--slate)';
+        const statusLabel = isPending ? '' : isRunning ? 'running\u2026' : isPass ? '\u2713 clear' : '\u26A0 auto-fixed';
+        const statusColor = isRunning ? 'var(--cyan-dim)' : isPass ? 'var(--green)' : 'var(--amber)';
+        return /*#__PURE__*/React.createElement("div", { key: c.id, style: { display: 'flex', gap: 10, alignItems: 'flex-start', opacity: isPending ? 0.5 : 1, transition: 'opacity .3s' } },
+          /*#__PURE__*/React.createElement("div", { style: { width: 9, height: 9, borderRadius: '50%', background: dotColor, marginTop: 4, flexShrink: 0, boxShadow: isRunning ? '0 0 8px var(--cyan)' : 'none', animation: isRunning ? 'pulse-cyan 0.8s ease-in-out infinite' : 'none' } }),
+          /*#__PURE__*/React.createElement("div", { style: { flex: 1, minWidth: 0 } },
+            /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 } },
+              /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, fontWeight: 700, color: labelColor, transition: 'color .3s' } }, c.label),
+              statusLabel && /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: statusColor, fontWeight: 700, whiteSpace: 'nowrap' } }, statusLabel)
+            ),
+            !isPending && /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: detailColor, marginTop: 2, lineHeight: 1.5, transition: 'color .3s' } }, c.detail),
+            isAutofixed && c.fix && (status === 'autofixed') && /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--amber)', marginTop: 4, padding: '4px 8px', background: 'rgba(251,191,36,.06)', border: '1px dashed rgba(251,191,36,.25)', borderRadius: 4 } }, c.fix)
+          )
+        );
+      })
+    ),
+    done && /*#__PURE__*/React.createElement("div", { style: { marginTop: 14, paddingTop: 12, borderTop: '1px solid rgba(99,102,241,.18)', fontSize: 11, color: 'var(--green)', fontWeight: 700 } }, '\u2713 Ready for sign-off')
+  );
+}
+
 function MarketingDesk({ jumpTab, onTabConsumed }) {
   const neo4jStatus = useNeo4jStatus();
   // Phase 35 — consume unified chat context for the Flight Deck ideation chat (workspace='flight_deck')
@@ -9565,6 +9636,9 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
   const [builderBusy, setBuilderBusy] = useState(false);
   const [builderInput, setBuilderInput] = useState('');
   const [builderCampData, setBuilderCampData] = useState({ name: '', objective: '', card: '', partner: '', budget: '', flight: '', audience: '', trigger: '', creative: '' });
+  // Transition splash + new-campaign highlight state for builder \u2192 Campaigns handoff
+  const [transitionState, setTransitionState] = useState(null); // { phase: 'fade-out' | 'splash' | 'land', campName }
+  const [highlightCampId, setHighlightCampId] = useState(null);
   const builderChatRef = React.useRef(null);
   // Auto-scroll builder chat to bottom on every new message or while AI is typing
   useEffect(() => {
@@ -9826,6 +9900,23 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
 
   // ── Rewritten _builderGetResponse with rich data cards ────────────
   const _builderGetResponse = (text, step, data) => {
+    // ── UNIVERSAL "Something else \u2192" escape ────────────────────
+    // When user clicks the universal escape pill, ask for free-form input.
+    // Captured text becomes the value for whichever field is being asked
+    // about at the current step. This works at any point in the flow.
+    if (/^something else/i.test(text.trim())) {
+      const fieldByStep = {
+        1: !data.name ? 'campaign name' : !data.objective ? 'campaign objective' : !data.card && !data.skipCardType ? 'card or product' : 'budget and flight window',
+        2: 'audience',
+        3: 'trigger path',
+        4: 'creative direction'
+      };
+      const field = fieldByStep[step] || 'next step';
+      return {
+        text: 'No problem \u2014 tell me what you\u2019d rather do for ' + field + '. Type a description and I\u2019ll work with it.',
+        options: []
+      };
+    }
     // ── Dynamic flight windows ──────────────────────────────────────
     // Compute realistic forward-looking dates so demo never feels stale.
     // Standard 4-week flight starts the next Monday after a 7-day prep window;
@@ -10044,28 +10135,26 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
     // STEP 5 — Approval (final step, stay-in-chat handoff)
     if (step === 5) {
       const tl = text.toLowerCase();
-      // View compliance report — surface the full report inline, then re-show approval options
+      // View compliance report — surface as animated sequential checks
       if (tl.includes('compliance report') || tl.includes('view compliance')) {
-        const report = '\u2713 Auto-Compliance Report \u2014 ' + (data.name || 'Campaign') + '\n\n' +
-          'Run completed by Signalset Compliance Engine \xB7 16/16 checks passed \xB7 2 issues auto-fixed by AI\n\n' +
-          'REGULATORY FRAMEWORKS\n' +
-          '\u2022 Fair Lending (ECOA / Reg B) \u2014 \u2713 clear  \xB7  no protected-class proxies in audience criteria\n' +
-          '\u2022 GLBA \u2014 \u2713 clear  \xB7  PII handling within consent scope\n' +
-          '\u2022 TCPA \u2014 \u2713 clear  \xB7  SMS/voice channels only on opted-in cohort\n' +
-          '\u2022 UDAAP \u2014 \u2713 clear  \xB7  offer disclosure language reviewed for clarity\n' +
-          '\u2022 CAN-SPAM \u2014 \u2713 clear  \xB7  unsubscribe header + sender ID present\n' +
-          '\u2022 CCPA / state privacy \u2014 \u2713 clear  \xB7  opt-out honored across destinations\n' +
-          (data.isCoBrand ? '\u2022 Co-brand DPA \u2014 \u2713 clear  \xB7  partner data flow within agreement scope\n' : '') +
-          '\n2 ISSUES AUTO-FIXED\n' +
-          '\u2022 Subject line "Limited time \u2014 act now" flagged as urgency-pressure under UDAAP. Auto-rewritten to "Limited-time offer \u2014 see details inside."\n' +
-          '\u2022 APR disclosure font size in mobile creative was 9pt (below 10pt minimum). Auto-bumped to 10pt with no layout shift.\n\n' +
-          'AUDIENCE CHECKS\n' +
-          '\u2022 ' + (data.audience || 'AUD-001') + ' \u2014 fair-lending overlap test passed (no proxy correlation > 0.15)\n' +
-          '\u2022 Consent: 100% audience has active email + push consent within 90-day window\n\n' +
-          'Ready for sign-off.';
+        const checks = [
+          { id: 'fair_lending', label: 'Fair Lending (ECOA / Reg B)', detail: 'no protected-class proxies in audience criteria', status: 'pass' },
+          { id: 'glba', label: 'GLBA', detail: 'PII handling within consent scope', status: 'pass' },
+          { id: 'tcpa', label: 'TCPA', detail: 'SMS / voice channels only on opted-in cohort', status: 'pass' },
+          { id: 'udaap', label: 'UDAAP', detail: 'subject line urgency-pressure detected \u2192 auto-rewritten', status: 'autofixed', fix: '"Limited time \u2014 act now" \u2192 "Limited-time offer \u2014 see details inside"' },
+          { id: 'can_spam', label: 'CAN-SPAM', detail: 'unsubscribe header + sender ID present', status: 'pass' },
+          { id: 'ccpa', label: 'CCPA / state privacy', detail: 'opt-out honored across destinations', status: 'pass' },
+          { id: 'apr_disc', label: 'APR disclosure rendering', detail: 'mobile font 9pt below 10pt minimum \u2192 auto-bumped', status: 'autofixed', fix: 'Mobile creative APR text 9pt \u2192 10pt (no layout shift)' },
+          { id: 'fair_lending_overlap', label: 'Audience fair-lending overlap', detail: 'no proxy correlation > 0.15 (AUD-001 passed)', status: 'pass' },
+          { id: 'consent', label: 'Consent coverage', detail: '100% of audience has active email + push consent within 90 days', status: 'pass' }
+        ];
+        if (data.isCoBrand) {
+          checks.splice(7, 0, { id: 'cobrand_dpa', label: 'Co-brand DPA', detail: 'partner data flow within agreement scope', status: 'pass' });
+        }
         return {
-          text: report,
-          options: ['\u2713 I approve \u2014 send to compliance', 'Request changes', 'Download report (PDF)']
+          text: '',
+          complianceCheck: { checks, campaignName: data.name || 'Campaign' },
+          options: []  // options injected after animation completes via state
         };
       }
       // Download report (placeholder — not wired to actual PDF gen, just acknowledge)
@@ -10122,7 +10211,7 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
     setTimeout(() => {
       if (resp.dataUpdate) setBuilderCampData(prev => ({ ...prev, ...resp.dataUpdate }));
       if (resp.stepComplete) setBuilderStep(prev => Math.min(prev + 1, 6));
-      setBuilderMessages(prev => [...prev, { role: 'assistant', text: resp.text, options: resp.options, cards: resp.cards || null }]);
+      setBuilderMessages(prev => [...prev, { role: 'assistant', text: resp.text, options: resp.options, cards: resp.cards || null, complianceCheck: resp.complianceCheck || null }]);
       setBuilderBusy(false);
       // Approval just landed — create the campaign behind the scenes, stay in chat
       if (resp.postApproval) {
@@ -10142,15 +10231,37 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
         setMarketingCampaigns(prev => [newCamp, ...prev]);
         setMkSelectedCampIdx(0);
       }
-      // Navigation request from post-approval prompt
+      // Navigation request from post-approval prompt — staged transition with splash + highlight
       if (resp.navigate) {
-        setTimeout(() => {
-          setBuilderMode(false); setBuilderMessages([]); setBuilderStep(1); setBuilderCreativeIdx(0);
-          setBuilderCampData({ name:'', objective:'', card:'', partner:'', budget:'', flight:'', audience:'', trigger:'', creative:'' });
-          setBuilderExited(true); setActivationState('idle'); setHubBriefReady(false);
-          if (resp.navigate === 'campaigns') setTab('campaigns');
-          else { setDeskHub(true); setTab(resp.navigate); }
-        }, 700);
+        if (resp.navigate === 'campaigns') {
+          // Staged: 250ms fade-out, 1000ms splash, then land on campaigns w/ highlight
+          const campName = (builderCampData.name) || (builderCampData.objective ? builderCampData.objective + ' Campaign' : 'New Campaign');
+          // Track which campaign to highlight (the one we just created — should be at top of list)
+          setMarketingCampaigns(prev => {
+            const newest = prev[0];
+            if (newest) setHighlightCampId(newest.id);
+            return prev;
+          });
+          setTransitionState({ phase: 'fade-out', campName });
+          setTimeout(() => setTransitionState({ phase: 'splash', campName }), 250);
+          setTimeout(() => {
+            setBuilderMode(false); setBuilderMessages([]); setBuilderStep(1); setBuilderCreativeIdx(0);
+            setBuilderCampData({ name:'', objective:'', card:'', partner:'', budget:'', flight:'', audience:'', trigger:'', creative:'' });
+            setBuilderExited(true); setActivationState('idle'); setHubBriefReady(false);
+            setTab('campaigns');
+            setMkSelectedCampIdx(0);
+            setTransitionState(null);
+            // Auto-clear highlight after 4s
+            setTimeout(() => setHighlightCampId(null), 4000);
+          }, 1300);
+        } else {
+          setTimeout(() => {
+            setBuilderMode(false); setBuilderMessages([]); setBuilderStep(1); setBuilderCreativeIdx(0);
+            setBuilderCampData({ name:'', objective:'', card:'', partner:'', budget:'', flight:'', audience:'', trigger:'', creative:'' });
+            setBuilderExited(true); setActivationState('idle'); setHubBriefReady(false);
+            setDeskHub(true); setTab(resp.navigate);
+          }, 700);
+        }
       }
       // Reset builder for "build another" path
       if (resp.resetBuilder) {
@@ -10492,7 +10603,9 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
               const userTurns = ideaMessages.filter(m => m.role === 'user').length;
               const lastFD = [...ideaMessages].reverse().find(m => m.role === 'assistant' && m.workspace === 'flight_deck');
               const readyAlreadyVisible = lastFD?.ready;
-              if (userTurns >= 2 && !readyAlreadyVisible && !ideaBusy) {
+              const lastAssistantText = String(lastFD?.text || '');
+              const isPostApproval = /Approval logged|queued for activation|All steps done/i.test(lastAssistantText);
+              if (userTurns >= 2 && !readyAlreadyVisible && !ideaBusy && !builderMode && !isPostApproval) {
                 return /*#__PURE__*/React.createElement("div", {
                   style: { padding: '10px 0 4px', alignSelf: 'stretch', display: 'flex', justifyContent: 'flex-start' }
                 },
@@ -10647,8 +10760,28 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
     }
   }, "Identity resolved. Measurement proven. Activation powered by AI.")),
 
+  /* Transition splash — overlays during builder \u2192 Campaigns handoff */
+  transitionState?.phase === 'splash' && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999,
+      background: 'rgba(8,8,15,.92)', backdropFilter: 'blur(8px)',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      gap: 18, animation: 'fadeIn .25s ease-out'
+    }
+  },
+    /*#__PURE__*/React.createElement("div", {
+      style: { width: 56, height: 56, borderRadius: '50%', background: 'rgba(74,222,128,.12)', border: '2px solid var(--green)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, color: 'var(--green)', animation: 'pulse-cyan 1s ease-in-out infinite' }
+    }, '\u2713'),
+    /*#__PURE__*/React.createElement("div", { style: { fontSize: 18, fontWeight: 800, color: 'var(--text)', fontFamily: 'var(--font-b)', letterSpacing: '.01em' } },
+      transitionState.campName + ' is live'
+    ),
+    /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: 'var(--cyan-dim)', fontFamily: 'IBM Plex Mono, monospace', letterSpacing: '.04em' } },
+      'Activating across destinations\u2026 routing to Campaigns'
+    )
+  ),
+
   /* ── Chat-forward Campaign Builder ─────────────────────────────────── */
-  builderMode ? /*#__PURE__*/React.createElement("div", { style: { flex: 1, display: 'flex', minHeight: 0, overflow: 'hidden', background: 'var(--bg)' } },
+  builderMode ? /*#__PURE__*/React.createElement("div", { style: { flex: 1, display: 'flex', minHeight: 0, overflow: 'hidden', background: 'var(--bg)', opacity: transitionState?.phase === 'fade-out' ? 0 : 1, transition: 'opacity .25s ease-out' } },
     /* LEFT: conversation */
     /*#__PURE__*/React.createElement("div", { style: { flex: '0 0 58%', display: 'flex', flexDirection: 'column', overflow: 'hidden' } },
       /* Chat header */
@@ -10664,11 +10797,33 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
       /* Messages */
       /*#__PURE__*/React.createElement("div", { ref: builderChatRef, style: { flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: 14, borderRight: '1px solid var(--bdr)' } },
         builderMessages.map((m, i) => /*#__PURE__*/React.createElement("div", { key: i, style: { display: 'flex', flexDirection: 'column', alignItems: m.role === 'user' ? 'flex-end' : 'flex-start', gap: 6 } },
-          /*#__PURE__*/React.createElement("div", { style: { maxWidth: '88%', padding: '12px 16px', borderRadius: m.role === 'user' ? '16px 16px 4px 16px' : '4px 16px 16px 16px', background: m.role === 'user' ? 'var(--cyan)' : 'rgba(30,33,76,.98)', border: m.role === 'user' ? 'none' : '1px solid rgba(129,140,248,.4)', fontSize: 14, lineHeight: 1.65, color: m.role === 'user' ? '#fff' : '#F1F5F9', whiteSpace: 'pre-wrap' } }, m.text),
+          /* Skip text bubble entirely when this is a compliance-runner message with empty text */
+          (m.text || !m.complianceCheck) && /*#__PURE__*/React.createElement("div", { style: { maxWidth: '88%', padding: '12px 16px', borderRadius: m.role === 'user' ? '16px 16px 4px 16px' : '4px 16px 16px 16px', background: m.role === 'user' ? 'var(--cyan)' : 'rgba(30,33,76,.98)', border: m.role === 'user' ? 'none' : '1px solid rgba(129,140,248,.4)', fontSize: 14, lineHeight: 1.65, color: m.role === 'user' ? '#fff' : '#F1F5F9', whiteSpace: 'pre-wrap', minWidth: m.role === 'user' ? 64 : 'auto', textAlign: m.role === 'user' ? 'center' : 'left' } }, m.text),
+          m.role === 'assistant' && m.complianceCheck && /*#__PURE__*/React.createElement(ComplianceRunner, {
+            checks: m.complianceCheck.checks,
+            campaignName: m.complianceCheck.campaignName,
+            onComplete: () => {
+              // After animation finishes, mutate the message to surface approval options
+              setBuilderMessages(prev => prev.map((mm, mi) => mi === i ? { ...mm, options: ['\u2713 I approve \u2014 send to compliance', 'Request changes', 'Download report (PDF)'], complianceComplete: true } : mm));
+            }
+          }),
           m.role === 'assistant' && m.cards && _renderBuilderCards(m.cards),
-          m.role === 'assistant' && m.options && i === builderMessages.length - 1 &&
+          m.role === 'assistant' && m.options && m.options.length > 0 && i === builderMessages.length - 1 &&
           /*#__PURE__*/React.createElement("div", { style: { display: 'flex', flexWrap: 'wrap', gap: 7 } },
-            m.options.map((opt, oi) => /*#__PURE__*/React.createElement("button", { key: oi, onClick: () => _builderSend(opt), style: { padding: '7px 13px', borderRadius: 7, fontSize: 12, fontWeight: 700, background: opt.includes('\u2713') ? '#fff' : 'var(--card-alt)', border: '1px solid ' + (opt.includes('\u2713') ? '#fff' : 'rgba(99,102,241,.28)'), color: opt.includes('\u2713') ? '#0a0e1a' : 'var(--text)', cursor: 'pointer', fontFamily: 'var(--font-b)', transition: 'all .15s', boxShadow: opt.includes('\u2713') ? '0 2px 8px rgba(0,0,0,.4)' : 'none' } }, opt))
+            (() => {
+              // Append a universal "Something else \u2192" escape pill on every chat turn,
+              // unless the option set already includes one OR this is a step 5/6 approval
+              // or post-approval menu (those have their own change-flow handlers).
+              const opts = m.options.slice();
+              const alreadyHas = opts.some(o => /something else/i.test(o));
+              const isApprovalStep = opts.some(o => /I approve|send to compliance/i.test(o));
+              const isPostApproval = opts.some(o => /View Campaigns|Build another campaign/i.test(o));
+              const isChangeMenu = opts.every(o => /Change /i.test(o));
+              if (!alreadyHas && !isApprovalStep && !isPostApproval && !isChangeMenu) {
+                opts.push('Something else \u2192');
+              }
+              return opts.map((opt, oi) => /*#__PURE__*/React.createElement("button", { key: oi, onClick: () => _builderSend(opt), style: { padding: '7px 13px', borderRadius: 7, fontSize: 12, fontWeight: 700, background: opt.includes('\u2713') ? '#fff' : (opt.includes('Something else') ? 'transparent' : 'var(--card-alt)'), border: '1px solid ' + (opt.includes('\u2713') ? '#fff' : (opt.includes('Something else') ? 'rgba(99,102,241,.35)' : 'rgba(99,102,241,.28)')), color: opt.includes('\u2713') ? '#0a0e1a' : (opt.includes('Something else') ? 'var(--cyan-pale)' : 'var(--text)'), cursor: 'pointer', fontFamily: 'var(--font-b)', transition: 'all .15s', boxShadow: opt.includes('\u2713') ? '0 2px 8px rgba(0,0,0,.4)' : 'none', borderStyle: opt.includes('Something else') ? 'dashed' : 'solid' } }, opt));
+            })()
           )
         )),
         builderBusy && /*#__PURE__*/React.createElement("div", { style: { display: 'flex', alignItems: 'flex-start' } },
@@ -11012,10 +11167,12 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
             mkFiltered.map(camp => {
               const idx = marketingCampaigns.indexOf(camp);
               const isSel = mkSelectedCampIdx === idx;
-              return /*#__PURE__*/React.createElement("div", { key: camp.id, onClick: () => setMkSelectedCampIdx(idx), style: { padding: '12px 14px', borderBottom: '1px solid var(--bdr-soft)', cursor: 'pointer', background: isSel ? 'rgba(99,102,241,.1)' : 'transparent', borderLeft: isSel ? '2px solid var(--cyan-dim)' : '2px solid transparent', paddingLeft: isSel ? 12 : 14 } },
+              const isHighlighted = highlightCampId === camp.id;
+              return /*#__PURE__*/React.createElement("div", { key: camp.id, onClick: () => setMkSelectedCampIdx(idx), style: { padding: '12px 14px', borderBottom: '1px solid var(--bdr-soft)', cursor: 'pointer', background: isHighlighted ? 'rgba(74,222,128,.12)' : (isSel ? 'rgba(99,102,241,.1)' : 'transparent'), borderLeft: isHighlighted ? '2px solid var(--green)' : (isSel ? '2px solid var(--cyan-dim)' : '2px solid transparent'), paddingLeft: (isSel || isHighlighted) ? 12 : 14, boxShadow: isHighlighted ? '0 0 0 1px rgba(74,222,128,.3), 0 4px 18px rgba(74,222,128,.18)' : 'none', animation: isHighlighted ? 'newCampPulse 2.4s ease-out' : 'none', transition: 'box-shadow .4s ease' } },
                 /*#__PURE__*/React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 } },
                   /*#__PURE__*/React.createElement("span", { style: { width: 7, height: 7, borderRadius: '50%', background: camp.status === 'active' ? 'var(--green)' : camp.status === 'draft' ? 'var(--amber)' : 'rgba(148,163,184,.5)', flexShrink: 0 } }),
                   /*#__PURE__*/React.createElement("span", { style: { fontSize: 13, fontWeight: 700, flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, camp.name),
+                  isHighlighted && /*#__PURE__*/React.createElement("span", { style: { fontSize: 9, fontWeight: 800, padding: '2px 6px', borderRadius: 4, background: 'var(--green)', color: '#0a0e1a', fontFamily: 'IBM Plex Mono, monospace', textTransform: 'uppercase', letterSpacing: '.06em', flexShrink: 0 } }, "New"),
                   camp.status === 'draft'
                     ? /*#__PURE__*/React.createElement("span", { style: { fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: 'rgba(245,158,11,.1)', border: '1px solid rgba(245,158,11,.3)', color: 'var(--amber)', fontFamily: 'IBM Plex Mono, monospace', textTransform: 'uppercase', flexShrink: 0 } }, "Draft")
                     : /*#__PURE__*/React.createElement("span", { style: { fontSize: 11, color: camp.status === 'active' ? 'var(--green)' : 'var(--slate)', fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace', flexShrink: 0 } }, camp.roas + "\xD7")
