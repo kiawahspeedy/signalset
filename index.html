@@ -10197,7 +10197,7 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
     /*#__PURE__*/React.createElement("div", { className: "v11-home-kicker-dot" }),
     "Flight Deck"
   ), /*#__PURE__*/React.createElement("h1", { className: "v11-home-greeting" },
-    "Hi Dio \u2014 ", /*#__PURE__*/React.createElement("span", null, "what would you like to do today?")
+    "Hi Dio \u2014 ", /*#__PURE__*/React.createElement("span", null, "what do you want to build today?")
   )), /*#__PURE__*/React.createElement("div", {
     className: "camp-hub-body"
   }, /*#__PURE__*/React.createElement("div", {
@@ -21404,7 +21404,7 @@ function App() {
     /*#__PURE__*/React.createElement(V11TopStrip, {
       screen,
       neo4jStatus,
-      onBrandClick: () => { setAppState('splash'); window.scrollTo(0,0); }
+      onBrandClick: () => { navigate('home'); }
     }),
     /*#__PURE__*/React.createElement(V11Rail, {
       screen,
