@@ -4413,6 +4413,10 @@ async function buildUnifiedSystemPrompt(workspace, contextData) {
       }
     } catch (e) { /* fall through with base prompt */ }
   }
+  // Date grounding — without this, the model invents timing from training-data context
+  // or anchors on hardcoded references like "Q2 2026" elsewhere in the file. Inject today's
+  // actual date and instruct the model to anchor forward-looking suggestions to it.
+  prompt += '\n\n══════ TODAY ══════\nToday is ' + new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) + '. When suggesting flight timing, quarters, seasons, or any forward-looking date window, anchor your suggestions to TODAY — never propose quarters or seasons that have already ended. Do not state the date verbatim to the user; treat it as background context.';
   if (contextData && contextData.briefSoFar) {
     prompt += '\n\n══════ BRIEF SO FAR ══════\n' + JSON.stringify(contextData.briefSoFar, null, 2);
   }
