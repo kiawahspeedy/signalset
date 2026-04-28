@@ -9453,6 +9453,52 @@ function renderRichText(text) {
   return nodes;
 }
 
+// ── resolveQuickReplies + fallback directive map ───────────────────
+// Belt-and-suspenders for model discipline. The system prompt tells the
+// model to always emit quick_replies on question turns; this helper
+// enforces it at render time. When the model returns nothing on a question,
+// we synthesize meta-pills (Tell me more / Skip this / Not sure / Something
+// else →). Those meta-pills are NOT echoed back as user messages — clicking
+// them sends a hidden directive (FALLBACK_DIRECTIVES below) telling the
+// model to retry the question with proper quick_replies. This prevents the
+// recursive loop where "Tell me more" got interpreted as a literal user
+// reply and the model expanded the question without ever providing pills.
+var FALLBACK_DIRECTIVES = {
+  'Tell me more': '[USER_FALLBACK_RETRY] The user clicked "Tell me more" because your previous turn asked a question without providing quick_replies, so they had no clickable answers. Please re-ask the same question more clearly with 2-4 short quick_replies covering the most likely answers, plus "Something else →" as the final option. Do NOT lecture or expand at length; the issue was missing pills, not insufficient detail.',
+  'Skip this': '[USER_FALLBACK_RETRY] The user clicked "Skip this" because your previous turn asked a question they want to defer. Move on to the next brief element (audience / budget / flight / creative / metric / constraints — whichever has not been answered yet) and ask that next question with 2-4 quick_replies and "Something else →".',
+  'Not sure': '[USER_FALLBACK_RETRY] The user clicked "Not sure" because your previous turn asked a question they cannot answer cleanly. Re-ask with simpler, more concrete quick_replies (2-3 specific options that map directly to common answers) plus "Something else →". Do not lecture — they need clearer choices, not more explanation.'
+};
+function isFallbackDirective(label) {
+  return typeof label === 'string' && Object.prototype.hasOwnProperty.call(FALLBACK_DIRECTIVES, label);
+}
+// resolveQuickReplies(message, prevTurnWasFallbackRetry)
+// If the previous turn was already a fallback retry and the model STILL
+// returned no pills, suppress synthesis to avoid an infinite loop. The user
+// can still type freely or click "Something else →" on a 1-3 pill response.
+function resolveQuickReplies(message, prevTurnWasFallbackRetry) {
+  if (!message || message.role !== 'assistant' || message.ready) return [];
+  var raw = Array.isArray(message.quickReplies) ? message.quickReplies.slice() : [];
+  var text = typeof message.text === 'string' ? message.text : '';
+  var hasQuestion = text.indexOf('?') !== -1;
+  // Empty + question → synthesize fallback pills, BUT only if last turn wasn't already a retry
+  if (raw.length === 0 && hasQuestion) {
+    if (prevTurnWasFallbackRetry) return []; // give up gracefully — user will type
+    return ['Tell me more', 'Skip this', 'Not sure', 'Something else \u2192'];
+  }
+  // Empty + not a question → leave empty (might be a final summary or CTA)
+  if (raw.length === 0) return [];
+  // Has 4 pills already → respect model output, don't add anything
+  if (raw.length >= 4) return raw.slice(0, 4);
+  // Has 1-3 pills → append "Something else →" if not already present
+  var hasEscape = raw.some(function (q) {
+    if (typeof q !== 'string') return false;
+    var lower = q.toLowerCase();
+    return lower.indexOf('something else') !== -1;
+  });
+  if (!hasEscape) raw.push('Something else \u2192');
+  return raw;
+}
+
 // ── ComplianceRunner ───────────────────────────────────────────────
 // Animated sequential compliance check display. Each check transitions
 // pending \u2192 running \u2192 (passed | autofixed) on a stagger.
@@ -9699,7 +9745,7 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
   const [builderStep, setBuilderStep] = useState(1);
   const [builderBusy, setBuilderBusy] = useState(false);
   const [builderInput, setBuilderInput] = useState('');
-  const [builderCampData, setBuilderCampData] = useState({ name: '', objective: '', card: '', partner: '', budget: '', flight: '', audience: '', trigger: '', creative: '' });
+  const [builderCampData, setBuilderCampData] = useState({ name: '', objective: '', card: '', partner: '', budget: '', flight: '', audience: '', audienceId: '', audienceSize: 0, holdout: 5, controlGroup: false, lalExpansion: 0, audienceConfigured: false, trigger: '', creative: '' });
   // Transition splash + new-campaign highlight state for builder \u2192 Campaigns handoff
   const [transitionState, setTransitionState] = useState(null); // { phase: 'fade-out' | 'splash' | 'land', campName }
   const [highlightCampId, setHighlightCampId] = useState(null);
@@ -9887,6 +9933,67 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
                   return /*#__PURE__*/React.createElement("span", { key: i, style: { fontSize: 9, padding: '2px 6px', borderRadius: 4, background: isWarn ? 'rgba(251,191,36,.08)' : 'rgba(74,222,128,.07)', border: '1px solid ' + (isWarn ? 'rgba(251,191,36,.25)' : 'rgba(74,222,128,.2)'), color: isWarn ? 'var(--amber)' : 'var(--green)', fontFamily: 'IBM Plex Mono, monospace' } }, c);
                 })
               )
+            )
+          );
+        }
+        if (card.type === 'audienceConfig') {
+          const baseSize = card.audSize || 0;
+          const holdoutPct = builderCampData.holdout || 0;
+          const lalPct = builderCampData.lalExpansion || 0;
+          const holdoutN = Math.round(baseSize * holdoutPct / 100);
+          const lalN = Math.round(baseSize * lalPct / 100);
+          const activatedN = baseSize - holdoutN + lalN;
+          return /*#__PURE__*/React.createElement("div", { key: ci, style: { background: 'rgba(8,8,15,.7)', border: '1px solid rgba(99,102,241,.35)', borderRadius: 9, padding: 16 } },
+            /* Header */
+            /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14, paddingBottom: 12, borderBottom: '1px solid rgba(99,102,241,.15)' } },
+              /*#__PURE__*/React.createElement("div", null,
+                /*#__PURE__*/React.createElement("div", { style: { fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--cyan-dim)', fontFamily: 'IBM Plex Mono, monospace', marginBottom: 4 } }, 'Activation Configuration'),
+                /*#__PURE__*/React.createElement("div", { style: { fontSize: 14, fontWeight: 700 } }, card.audName)
+              ),
+              /*#__PURE__*/React.createElement("div", { style: { textAlign: 'right' } },
+                /*#__PURE__*/React.createElement("div", { style: { fontSize: 22, fontWeight: 800, color: 'var(--cyan-dim)', fontFamily: 'IBM Plex Mono, monospace', lineHeight: 1 } }, baseSize.toLocaleString()),
+                /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--slate)', marginTop: 2 } }, 'qualified prospects')
+              )
+            ),
+            /* Holdout slider */
+            /*#__PURE__*/React.createElement("div", { style: { marginBottom: 14 } },
+              /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 6 } },
+                /*#__PURE__*/React.createElement("div", null,
+                  /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, fontWeight: 700, color: 'var(--text)' } }, '\uD83E\uDDEA Holdout for Incrementality'),
+                  /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--slate)', marginTop: 2 } }, 'Zero-touch baseline routed to Measurement Zone post-flight')
+                ),
+                /*#__PURE__*/React.createElement("div", { style: { fontSize: 20, fontWeight: 800, fontFamily: 'IBM Plex Mono, monospace', color: 'var(--cyan-dim)', lineHeight: 1 } }, holdoutPct + '%')
+              ),
+              /*#__PURE__*/React.createElement("input", { type: 'range', min: 0, max: 25, value: holdoutPct, onChange: (e) => setBuilderCampData(prev => ({ ...prev, holdout: parseInt(e.target.value) })), style: { width: '100%', accentColor: 'var(--cyan)' } }),
+              holdoutPct > 0 && /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--cyan-dim)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 4 } }, '\u2192 ' + holdoutN.toLocaleString() + ' withheld for incrementality measurement')
+            ),
+            /* Control group toggle */
+            /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, padding: '12px 0', borderTop: '1px solid rgba(99,102,241,.12)', borderBottom: '1px solid rgba(99,102,241,.12)' } },
+              /*#__PURE__*/React.createElement("div", null,
+                /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, fontWeight: 700, color: 'var(--text)' } }, '\uD83C\uDFAF Symmetric Control Group'),
+                /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--slate)', marginTop: 2 } }, 'Matched counterfactual cohort for true lift testing')
+              ),
+              /*#__PURE__*/React.createElement("label", { style: { display: 'inline-flex', alignItems: 'center', cursor: 'pointer', gap: 8 } },
+                /*#__PURE__*/React.createElement("input", { type: 'checkbox', checked: !!builderCampData.controlGroup, onChange: (e) => setBuilderCampData(prev => ({ ...prev, controlGroup: e.target.checked })), style: { accentColor: 'var(--cyan)', transform: 'scale(1.2)' } }),
+                /*#__PURE__*/React.createElement("span", { style: { fontSize: 11, fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace', color: builderCampData.controlGroup ? 'var(--cyan-dim)' : 'var(--slate)' } }, builderCampData.controlGroup ? 'ENABLED' : 'OFF')
+              )
+            ),
+            /* LAL expansion slider */
+            /*#__PURE__*/React.createElement("div", { style: { marginBottom: 14 } },
+              /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 6 } },
+                /*#__PURE__*/React.createElement("div", null,
+                  /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, fontWeight: 700, color: 'var(--text)' } }, '\u2728 Lookalike Expansion (LAL)'),
+                  /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--slate)', marginTop: 2 } }, 'LIG behavioural matching \u00b7 expand reach into modeled prospects')
+                ),
+                /*#__PURE__*/React.createElement("div", { style: { fontSize: 20, fontWeight: 800, fontFamily: 'IBM Plex Mono, monospace', color: 'var(--cyan-dim)', lineHeight: 1 } }, lalPct + '%')
+              ),
+              /*#__PURE__*/React.createElement("input", { type: 'range', min: 0, max: 30, value: lalPct, onChange: (e) => setBuilderCampData(prev => ({ ...prev, lalExpansion: parseInt(e.target.value) })), style: { width: '100%', accentColor: 'var(--cyan)' } }),
+              lalPct > 0 && /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--cyan-dim)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 4 } }, '\u2192 +' + lalN.toLocaleString() + ' modeled prospects \u00b7 87% match confidence')
+            ),
+            /* Effective activation summary */
+            /*#__PURE__*/React.createElement("div", { style: { marginTop: 6, paddingTop: 12, borderTop: '1px solid rgba(99,102,241,.25)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+              /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', textTransform: 'uppercase', letterSpacing: '.08em' } }, 'Effective Activation'),
+              /*#__PURE__*/React.createElement("div", { style: { fontSize: 22, fontWeight: 800, fontFamily: 'IBM Plex Mono, monospace', color: 'var(--green)', lineHeight: 1 } }, activatedN.toLocaleString())
             )
           );
         }
@@ -10113,18 +10220,38 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
         stepComplete: true, dataUpdate: { budget: bud, flight: data.isCoBrand ? _flightWindows.cobrand.full : _flightWindows.std.full }
       };
     }
-    // STEP 2 — Audience selection
+    // STEP 2 — Audience selection (phase 1: pick audience, show config card)
     if (step === 2 && !data.audience) {
-      const audName = text.includes('AUD-001') || text.includes('High-Intent') ? 'AUD-001 High-Intent Travel Rewards' : text.includes('AUD-002') ? 'AUD-002 Affluent Mobile-First Upgraders' : text;
-      const audShort = audName.includes('AUD-001') ? 'AUD-001 \xB7 52,400 \xB7 84% propensity' : 'AUD-002 \xB7 38,700 \xB7 79% propensity';
+      const isAud001 = text.includes('AUD-001') || text.toLowerCase().includes('high-intent');
+      const audId = isAud001 ? 'AUD-001' : 'AUD-002';
+      const audName = isAud001 ? 'AUD-001 High-Intent Travel Rewards' : 'AUD-002 Affluent Mobile-First Upgraders';
+      const audSize = isAud001 ? 52400 : 38700;
       return {
-        text: '\u2713 Audience locked: ' + audName + '\n\nStep 3 \xB7 Triggers \u2014 running 90-day MTA on ' + audName.split(' ')[0] + ' across 9,120 attributed conversions\u2026',
+        text: '\u2713 Audience selected: ' + audName + '\n\nNow set the activation parameters \u2014 holdout for incrementality, optional control group, and any lookalike expansion. Adjust the controls below, then continue when ready.',
+        cards: [{ type: 'audienceConfig', audId: audId, audName: audName, audSize: audSize }],
+        options: ['Continue to Triggers \u2192'],
+        dataUpdate: { audience: audName, audienceId: audId, audienceSize: audSize }
+        // No stepComplete \u2014 wait for user to confirm config
+      };
+    }
+    // STEP 2 — Audience configuration (phase 2: user clicked Continue to Triggers)
+    if (step === 2 && data.audience && !data.audienceConfigured && /^continue to triggers/i.test(text.trim())) {
+      const holdoutPct = data.holdout || 0;
+      const lalPct = data.lalExpansion || 0;
+      const activatedN = (data.audienceSize || 0) - Math.round((data.audienceSize || 0) * holdoutPct / 100) + Math.round((data.audienceSize || 0) * lalPct / 100);
+      const summaryBits = [];
+      if (holdoutPct > 0) summaryBits.push(holdoutPct + '% holdout');
+      if (data.controlGroup) summaryBits.push('control group on');
+      if (lalPct > 0) summaryBits.push(lalPct + '% LAL expansion');
+      const summary = summaryBits.length ? ' \xB7 ' + summaryBits.join(' \xB7 ') : ' \xB7 baseline (no holdout, no LAL)';
+      return {
+        text: '\u2713 Audience configured: ' + data.audience + summary + ' \xB7 ' + activatedN.toLocaleString() + ' active prospects\n\nStep 3 \xB7 Triggers \u2014 running 90-day MTA on ' + (data.audienceId || 'AUD-001') + ' across 9,120 attributed conversions\u2026',
         cards: [
           { type: 'trigger', id: 'TRG-001', name: 'Owned-First Travel Fast Path', taxonomy: 'Best for High-Intent Travel Rewards', cvr: '4.2%', channels: ['Email', 'Push', 'In-App', 'Paid Search', 'CTV', 'Apply'], pathDays: '8.3 days', freqCap: 'Email 2/wk \xB7 Push 1/day', attribution: '91% confidence', delta: '+0.8% CVR vs next best', compliance: ['TCPA \u2713', 'CAN-SPAM \u2713'], recommended: true },
           { type: 'trigger', id: 'TRG-002', name: 'High-Intent Conversion Sprint', taxonomy: 'Affluent Mobile-First Upgraders', cvr: '3.9%', channels: ['Email', 'Push+SMS', 'Paid Search', 'Display Retarget', 'Apply'], pathDays: '6.1 days', freqCap: 'Email 3/wk \xB7 Push 2/day', attribution: '87% confidence', delta: '', compliance: ['TCPA \u2713', 'CAN-SPAM \u2713'], recommended: false }
         ],
         options: ['Use TRG-001 \u2014 Owned-First Fast Path', 'Use TRG-002 instead', 'Build a custom sequence \u2192'],
-        stepComplete: true, dataUpdate: { audience: audShort + ' \u2713' }
+        stepComplete: true, dataUpdate: { audienceConfigured: true }
       };
     }
     // STEP 3 — Trigger selection
@@ -10407,10 +10534,27 @@ QUICK REPLIES — CRITICAL:
 
 Be direct, analytical, and specific. This is a professional tool, not a consumer product.`;
 
+  // Track whether the most recent assistant turn was generated in response to a fallback
+  // directive. resolveQuickReplies() reads this to suppress fallback synthesis if the model
+  // STILL fails to emit pills on the retry — preventing infinite loops.
+  const _fallbackRetryRef = React.useRef(false);
+
   const _ideaSend = async (text) => {
     const q = (text || ideaInput).trim();
     if (!q || _chatCtx.busy) return;
     setIdeaInput('');
+    // Fallback directive interception — meta-pills like "Tell me more" / "Skip this" /
+    // "Not sure" must NOT be echoed as user messages, because the model would then answer
+    // them literally (e.g. lecture about the question) instead of fixing the missing pills.
+    // Route them as hidden API-only directives via skipUserMsg + handoffNote so the user
+    // sees nothing in the transcript and the model is told to retry the question with
+    // proper quick_replies.
+    if (isFallbackDirective(q)) {
+      _fallbackRetryRef.current = true;
+      await _chatCtx.sendMessage('', { workspace: 'flight_deck', skipUserMsg: true, handoffNote: FALLBACK_DIRECTIVES[q] });
+      return;
+    }
+    _fallbackRetryRef.current = false;
     // Delegate to unified chat context — single-conversation thread, brief extraction handled in context
     await _chatCtx.sendMessage(q, { workspace: 'flight_deck' });
   };
@@ -10603,7 +10747,8 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
           /*#__PURE__*/React.createElement("div", { className: "chat-messages" },
             ideaMessages.map((m, i) => {
               const isLast = i === ideaMessages.length - 1;
-              const showQuickReplies = m.role === 'assistant' && !m.ready && Array.isArray(m.quickReplies) && m.quickReplies.length > 0 && isLast && !ideaBusy;
+              const effectiveQR = isLast ? resolveQuickReplies(m, _fallbackRetryRef.current) : (Array.isArray(m.quickReplies) ? m.quickReplies : []);
+              const showQuickReplies = m.role === 'assistant' && !m.ready && effectiveQR.length > 0 && isLast && !ideaBusy;
               return /*#__PURE__*/React.createElement("div", { key: i, className: 'msg ' + m.role },
                 /*#__PURE__*/React.createElement("div", {
                   style: { display: 'flex', flexDirection: 'column', gap: 10, flex: m.role === 'assistant' ? 1 : '0 1 auto', minWidth: 0, alignItems: m.role === 'user' ? 'flex-end' : 'stretch' }
@@ -10612,7 +10757,7 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
                   showQuickReplies && /*#__PURE__*/React.createElement("div", {
                     style: { display: 'flex', flexWrap: 'wrap', gap: 6 }
                   },
-                    m.quickReplies.map((qr, qi) => /*#__PURE__*/React.createElement("button", {
+                    effectiveQR.map((qr, qi) => /*#__PURE__*/React.createElement("button", {
                       key: qi,
                       onClick: () => _ideaSend(qr),
                       style: { fontSize: 12, color: 'var(--cyan-pale)', background: 'rgba(99,102,241,.08)', border: '1px solid var(--bdr)', padding: '6px 12px', borderRadius: 14, cursor: 'pointer', fontFamily: 'inherit', transition: 'all .15s' },
