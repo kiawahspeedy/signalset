@@ -4395,11 +4395,21 @@ async function buildUnifiedSystemPrompt(workspace, contextData) {
   } else {
     // Find the next WORKSPACE = block (or end of string)
     const nextWsIdx = all.indexOf('WORKSPACE = "', wsIdx + wsHeader.length);
-    const wsSection = nextWsIdx === -1 ? all.slice(wsIdx) : all.slice(wsIdx, nextWsIdx);
+    // Find the GENERAL RULES section — these rules apply to EVERY workspace (no markdown,
+    // options in quick_replies, JSON-only output, etc.) and were previously being cut off
+    // for any workspace that wasn't the last one in UNIFIED_BASE_SYS. That caused Triggers /
+    // Measurement / Audiences to leak markdown "Quick replies:" lists into prose.
+    const grIdx = all.indexOf('GENERAL RULES');
+    const grSectionStart = grIdx > -1 ? all.lastIndexOf('═', grIdx) - 65 : -1;  // walk back to header bar above
+    const generalRulesSection = grIdx > -1 ? all.slice(Math.max(0, grSectionStart)) : '';
+    // Workspace section ends at whichever comes first: next workspace OR GENERAL RULES
+    const candidates = [nextWsIdx, grIdx].filter(i => i > -1);
+    const wsSectionEnd = candidates.length ? Math.min(...candidates) : -1;
+    const wsSection = wsSectionEnd === -1 ? all.slice(wsIdx) : all.slice(wsIdx, wsSectionEnd);
     // Take the shared header (everything before the first WORKSPACE = block)
     const firstWsIdx = all.indexOf('WORKSPACE = "');
     const sharedHeader = firstWsIdx > -1 ? all.slice(0, firstWsIdx) : '';
-    prompt = `WORKSPACE: ${workspace}\n\n` + sharedHeader + '\n\n' + wsSection.trim();
+    prompt = `WORKSPACE: ${workspace}\n\n` + sharedHeader + '\n\n' + wsSection.trim() + '\n\n' + generalRulesSection.trim();
   }
   // Workspace-specific context decorators
   if (workspace === 'measurement' && typeof buildMzSystemPrompt === 'function') {
@@ -4503,9 +4513,23 @@ function ChatProvider({ children }) {
       if (ws === 'flight_deck' && parsed.brief && Object.keys(parsed.brief).some(k => parsed.brief[k] !== null)) {
         setBriefSoFar(prev => ({ ...(prev || {}), ...Object.fromEntries(Object.entries(parsed.brief).filter(([, v]) => v !== null)) }));
       }
+      // Defensive text resolution — handle empty/malformed model responses gracefully.
+      // Without this, an empty {} response renders the literal string "{}" in the chat
+      // (BUG-A/B from Apr 27 demo). Detect: if parsed.text is missing AND parsed has no
+      // other meaningful content (no quick_replies, followUps, brief, suggestions, etc.),
+      // surface a "no response" fallback instead of leaking raw JSON.
+      const hasStructuredContent = parsed && (
+        Array.isArray(parsed.quick_replies) && parsed.quick_replies.length > 0 ||
+        Array.isArray(parsed.followUps) && parsed.followUps.length > 0 ||
+        Array.isArray(parsed.suggestions) && parsed.suggestions.length > 0 ||
+        parsed.brief || parsed.audienceName || parsed.journeyName || parsed.nav
+      );
+      const cleanText = (typeof parsed.text === 'string' && parsed.text.trim())
+        ? parsed.text
+        : (hasStructuredContent ? '' : 'No response — try rephrasing your question.');
       const assistantMsg = {
         role: 'assistant',
-        text: parsed.text || raw,
+        text: cleanText,
         result: parsed,
         workspace: ws,
         quickReplies: Array.isArray(parsed.quick_replies) ? parsed.quick_replies.slice(0, 4)
@@ -9761,12 +9785,16 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
   const [builderInput, setBuilderInput] = useState('');
   const [builderCampData, setBuilderCampData] = useState({ name: '', objective: '', card: '', partner: '', budget: '', flight: '', audience: '', audienceId: '', audienceSize: 0, holdout: 5, controlGroup: false, lalExpansion: 0, audienceConfigured: false, trigger: '', creative: '' });
   // Phase 37(a) — Audience tactile UI state.
-  // audienceCompareMode: layout flips from stacked to side-by-side when 2+ audience cards are shown.
+  // audienceCompareSet: Set of audience IDs the user has marked for side-by-side compare.
+  //   When size >= 2, layout auto-flips to compare mode showing only those cards.
+  //   Default both AUD-001 + AUD-002 selected so the affordance is discoverable.
   // audienceExpandedId: which audience card has the "Why this audience?" reasoning panel open.
   // audienceHoveredCriterion: { audId, idx } — drives the hover tooltip on a specific criterion line.
-  const [audienceCompareMode, setAudienceCompareMode] = useState(false);
+  const [audienceCompareSet, setAudienceCompareSet] = useState(new Set(['AUD-001', 'AUD-002']));
   const [audienceExpandedId, setAudienceExpandedId] = useState(null);
   const [audienceHoveredCriterion, setAudienceHoveredCriterion] = useState(null);
+  // Derived: are we in compare mode? Yes iff 2+ audiences are checked.
+  const audienceCompareMode = audienceCompareSet.size >= 2;
   // Transition splash + new-campaign highlight state for builder \u2192 Campaigns handoff
   const [transitionState, setTransitionState] = useState(null); // { phase: 'fade-out' | 'splash' | 'land', campName }
   const [highlightCampId, setHighlightCampId] = useState(null);
@@ -10006,12 +10034,12 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
           const activatedN = baseSize - holdoutN + lalN;
           return /*#__PURE__*/React.createElement("div", { key: ci, style: { background: 'rgba(8,8,15,.7)', border: '1px solid rgba(99,102,241,.35)', borderRadius: 9, padding: 16 } },
             /* Header */
-            /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14, paddingBottom: 12, borderBottom: '1px solid rgba(99,102,241,.15)' } },
-              /*#__PURE__*/React.createElement("div", null,
+            /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14, paddingBottom: 12, borderBottom: '1px solid rgba(99,102,241,.15)', gap: 16 } },
+              /*#__PURE__*/React.createElement("div", { style: { minWidth: 0, flex: 1 } },
                 /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--cyan-dim)', fontFamily: 'IBM Plex Mono, monospace', marginBottom: 4 } }, 'Activation Configuration'),
                 /*#__PURE__*/React.createElement("div", { style: { fontSize: 14, fontWeight: 700 } }, card.audName)
               ),
-              /*#__PURE__*/React.createElement("div", { style: { textAlign: 'right' } },
+              /*#__PURE__*/React.createElement("div", { style: { textAlign: 'right', flexShrink: 0 } },
                 /*#__PURE__*/React.createElement("div", { style: { fontSize: 22, fontWeight: 800, color: 'var(--cyan-dim)', fontFamily: 'IBM Plex Mono, monospace', lineHeight: 1 } }, baseSize.toLocaleString()),
                 /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: 'var(--slate)', marginTop: 2 } }, 'qualified prospects')
               )
@@ -10063,17 +10091,38 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
           const isCompact = audienceCompareMode;
           const isExpanded = audienceExpandedId === card.id;
           const reasoning = AUDIENCE_REASONING[card.id];
-          return /*#__PURE__*/React.createElement("div", { key: ci, style: { background: 'rgba(8,8,15,.7)', border: '1px solid rgba(99,102,241,.25)', borderRadius: 9, padding: isCompact ? 12 : 14, opacity: card.recommended ? 1 : (isCompact ? 0.95 : 0.75), flex: isCompact ? '1 1 0' : 'auto', minWidth: 0, position: 'relative' } },
+          const isInCompareSet = audienceCompareSet.has(card.id);
+          const toggleCompare = () => setAudienceCompareSet(prev => {
+            const next = new Set(prev);
+            if (next.has(card.id)) { next.delete(card.id); } else { next.add(card.id); }
+            return next;
+          });
+          return /*#__PURE__*/React.createElement("div", { key: ci, style: { background: 'rgba(8,8,15,.7)', border: '1px solid ' + (isInCompareSet ? 'rgba(129,140,248,.55)' : 'rgba(99,102,241,.25)'), borderRadius: 9, padding: isCompact ? 12 : 14, opacity: card.recommended ? 1 : (isCompact ? 0.95 : 0.75), flex: isCompact ? '1 1 0' : 'auto', minWidth: 0, position: 'relative', transition: 'border-color .15s' } },
             /* Header */
-            /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 } },
+            /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10, gap: 12 } },
               /*#__PURE__*/React.createElement("div", { style: { minWidth: 0, flex: 1 } },
                 card.recommended && /*#__PURE__*/React.createElement("div", { style: { fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--cyan-dim)', fontFamily: 'IBM Plex Mono, monospace', marginBottom: 4 } }, '\u2605 Recommended'),
                 /*#__PURE__*/React.createElement("div", { style: { fontSize: isCompact ? 13 : 14, fontWeight: 700 } }, card.name),
                 /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 2 } }, card.id + ' \xB7 ' + card.taxonomy)
               ),
-              /*#__PURE__*/React.createElement("div", { style: { textAlign: 'right', marginLeft: 8, flexShrink: 0 } },
-                /*#__PURE__*/React.createElement("div", { style: { fontSize: isCompact ? 18 : 22, fontWeight: 800, color: 'var(--cyan-dim)', fontFamily: 'IBM Plex Mono, monospace', lineHeight: 1 } }, card.size),
-                /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: 'var(--slate)', marginTop: 2 } }, card.sizeLabel)
+              /*#__PURE__*/React.createElement("div", { style: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 } },
+                /* Compare checkbox — ecom pattern. 2+ checked auto-enters compare mode. */
+                /*#__PURE__*/React.createElement("label", {
+                  onClick: (e) => e.stopPropagation(),
+                  style: { display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 11, fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace', color: isInCompareSet ? 'var(--cyan-dim)' : 'var(--slate)', textTransform: 'uppercase', letterSpacing: '.05em', userSelect: 'none' }
+                },
+                  /*#__PURE__*/React.createElement("input", {
+                    type: 'checkbox',
+                    checked: isInCompareSet,
+                    onChange: toggleCompare,
+                    style: { accentColor: 'var(--cyan-dim)', cursor: 'pointer', margin: 0 }
+                  }),
+                  'Compare'
+                ),
+                /*#__PURE__*/React.createElement("div", { style: { textAlign: 'right' } },
+                  /*#__PURE__*/React.createElement("div", { style: { fontSize: isCompact ? 18 : 22, fontWeight: 800, color: 'var(--cyan-dim)', fontFamily: 'IBM Plex Mono, monospace', lineHeight: 1 } }, card.size),
+                  /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: 'var(--slate)', marginTop: 2 } }, card.sizeLabel)
+                )
               )
             ),
             /* Criteria — each line gets a hover tooltip if a detail entry exists */
@@ -10172,12 +10221,13 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
         return null;
       })
       ),
-      // Phase 37(a) — compare control sits BELOW cards, adjacent to selection pills (the decision moment)
-      isMultipleAudiences && /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'flex-end', alignItems: 'center', paddingTop: 4 } },
-        /*#__PURE__*/React.createElement("button", {
-          onClick: () => setAudienceCompareMode(prev => !prev),
-          style: { background: audienceCompareMode ? 'rgba(99,102,241,.15)' : 'transparent', border: '1px solid rgba(99,102,241,.35)', color: 'var(--cyan-pale)', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, cursor: 'pointer', padding: '6px 14px', borderRadius: 6 }
-        }, audienceCompareMode ? '\u21A9 Exit side-by-side compare' : '\u2194 Compare audiences side-by-side')
+      // Phase 37(a) — contextual hint when fewer than 2 audiences are selected for compare.
+      // The actual compare action is the per-card checkbox; this just teaches the affordance.
+      isMultipleAudiences && audienceCompareSet.size < 2 && /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'flex-end', alignItems: 'center', paddingTop: 4, fontSize: 12, color: 'var(--slate)', fontStyle: 'italic' } },
+        '\u2194 Tick \u201cCompare\u201d on 2+ audiences to view side-by-side'
+      ),
+      isMultipleAudiences && audienceCompareSet.size >= 2 && /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'flex-end', alignItems: 'center', paddingTop: 4, fontSize: 12, color: 'var(--cyan-pale)', fontWeight: 700 } },
+        '\u2194 Comparing ' + audienceCompareSet.size + ' audiences side-by-side \xB7 untick to exit'
       )
     );
   };
@@ -10408,7 +10458,7 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
         const sumLines = [data.name||'Campaign', data.objective||'New card acquisition', data.budget||'\$450K', data.flight||_flightWindows.std.full, data.audience||'Audience', data.trigger||'Trigger', crvName].join(' \xB7 ');
         return {
           text: '\u2713 Creative locked: ' + crvName + ' \xB7 auto-lint clear\n\nStep 5 \xB7 Summary & Approval\nAuto-compliance ran \u2014 16/16 checks passed, 2 issues auto-fixed by AI.\n\n' + sumLines + '\n\nI need your sign-off. Compliance review triggers automatically after you approve.',
-          options: ['\u2713 I approve \u2014 send to compliance', 'View compliance report \u2192', 'Request changes'],
+          options: ['\u2713 Sign off & Activate', 'View compliance report \u2192', 'Save as draft'],
           stepComplete: true, dataUpdate: { creative: crvName + ' \u2713' }
         };
       }
@@ -10417,7 +10467,7 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
         const sumLines = [data.name||'Campaign', data.objective||'New card acquisition', data.budget||'\$450K', data.flight||_flightWindows.std.full, data.audience||'Audience', data.trigger||'Trigger', crvName].join(' \xB7 ');
         return {
           text: '\u2713 Creative locked: ' + crvName + ' \xB7 auto-lint clear\n\nStep 5 \xB7 Summary & Approval\nAuto-compliance ran \u2014 16/16 checks passed, 2 issues auto-fixed by AI.\n\n' + sumLines + '\n\nI need your sign-off. Compliance review triggers automatically after you approve.',
-          options: ['\u2713 I approve \u2014 send to compliance', 'View compliance report \u2192', 'Request changes'],
+          options: ['\u2713 Sign off & Activate', 'View compliance report \u2192', 'Save as draft'],
           stepComplete: true, dataUpdate: { creative: crvName + ' \u2713' }
         };
       }
@@ -10426,7 +10476,7 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
         const sumLines = [data.name||'Campaign', data.objective||'New card acquisition', data.budget||'\$450K', data.flight||_flightWindows.std.full, data.audience||'Audience', data.trigger||'Trigger', crvName].join(' \xB7 ');
         return {
           text: '\u2713 Creative locked: ' + crvName + ' \xB7 auto-lint clear\n\nStep 5 \xB7 Summary & Approval\nAuto-compliance ran \u2014 16/16 checks passed, 2 issues auto-fixed by AI.\n\n' + sumLines + '\n\nI need your sign-off. Compliance review triggers automatically after you approve.',
-          options: ['\u2713 I approve \u2014 send to compliance', 'View compliance report \u2192', 'Request changes'],
+          options: ['\u2713 Sign off & Activate', 'View compliance report \u2192', 'Save as draft'],
           stepComplete: true, dataUpdate: { creative: crvName + ' \u2713' }
         };
       }
@@ -10465,14 +10515,19 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
       if (tl.includes('download report') || tl.includes('pdf')) {
         return {
           text: '\u2713 Compliance report queued for export.\n\nA PDF copy will be archived to the campaign\u2019s audit trail in the Campaigns workspace once you approve. You can also download it from the campaign detail view at any time.',
-          options: ['\u2713 I approve \u2014 send to compliance', 'Request changes']
+          options: ['\u2713 Sign off & Activate', 'Save as draft']
         };
       }
-      // Request changes
-      if (tl.includes('request changes')) {
-        return { text: 'What would you like to change?', options: ['Change audience', 'Change trigger', 'Change creative', 'Change budget / dates'] };
+      // Save as draft — exits the builder cleanly without activating
+      if (tl.includes('save as draft') || tl.includes('save draft')) {
+        const nm = data.name || (data.objective ? data.objective + ' Campaign' : 'New Campaign');
+        return {
+          text: '\u2713 Saved to drafts \u2014 ' + nm + '\n\nYou can resume this campaign anytime from the Campaigns workspace. No activation, no compliance trigger.\n\nWhat would you like to do next?',
+          options: ['View Campaigns \u2192', 'Build another campaign', 'Refine an audience'],
+          stepComplete: true, postApproval: true
+        };
       }
-      if (tl.includes('approve') || text.includes('\u2713')) {
+      if (tl.includes('approve') || tl.includes('sign off') || text.includes('\u2713')) {
         const nm = data.name || (data.objective ? data.objective + ' Campaign' : 'New Campaign');
         return {
           text: '\u2713 Approval logged \u2014 ' + nm + ' is queued for activation.\n\nCompliance review has been notified. Auto-activation kicks off as soon as compliance signs off (typically 2\u20134 hours).\n\nWhat would you like to do next?',
@@ -10480,8 +10535,12 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
           stepComplete: true, postApproval: true
         };
       }
-      // Request changes path (still step 5 — campaign not approved yet)
-      return { text: 'What would you like to change?', options: ['Change audience', 'Change trigger', 'Change creative', 'Change budget / dates'] };
+      // Catch-all at step 5: just re-prompt for sign-off rather than offering a generic
+      // change-list that has no real handler routing. Keeps the user pointed at the actual decision.
+      return {
+        text: 'Ready when you are \u2014 sign off to activate, or save as draft to come back later.',
+        options: ['\u2713 Sign off & Activate', 'View compliance report \u2192', 'Save as draft']
+      };
     }
     // STEP 6 — Post-approval (after stepComplete advanced from 5 → 6)
     if (step === 6) {
@@ -10929,14 +10988,15 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
               const isPostApproval = /Approval logged|queued for activation|All steps done/i.test(lastAssistantText);
               if (userTurns >= 2 && !readyAlreadyVisible && !ideaBusy && !builderMode && !isPostApproval) {
                 return /*#__PURE__*/React.createElement("div", {
-                  style: { padding: '10px 0 4px', alignSelf: 'stretch', display: 'flex', justifyContent: 'flex-start' }
+                  style: { padding: '4px 0 0', alignSelf: 'stretch', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8 }
                 },
+                  /*#__PURE__*/React.createElement("span", { style: { fontSize: 11, color: 'var(--slate)', fontStyle: 'italic' } }, 'Got enough?'),
                   /*#__PURE__*/React.createElement("button", {
                     onClick: () => { setBuilderMode(true); setDeskHub(false); window.scrollTo(0,0); },
-                    style: { padding: '8px 14px', fontSize: 12, fontWeight: 700, color: 'var(--cyan-pale)', background: 'transparent', border: '1px dashed rgba(99,102,241,.4)', borderRadius: 8, cursor: 'pointer', fontFamily: 'var(--font-b)', transition: 'all .15s' },
-                    onMouseEnter: e => { e.currentTarget.style.background = 'rgba(99,102,241,.1)'; e.currentTarget.style.borderColor = 'var(--cyan)'; e.currentTarget.style.borderStyle = 'solid'; },
-                    onMouseLeave: e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(99,102,241,.4)'; e.currentTarget.style.borderStyle = 'dashed'; }
-                  }, 'Skip ahead \u2014 launch builder with what we have \u2192')
+                    style: { padding: '4px 10px', fontSize: 11, fontWeight: 600, color: 'var(--cyan-pale)', background: 'transparent', border: 'none', borderBottom: '1px dashed rgba(99,102,241,.4)', borderRadius: 0, cursor: 'pointer', fontFamily: 'var(--font-b)', transition: 'all .15s' },
+                    onMouseEnter: e => { e.currentTarget.style.color = 'var(--cyan)'; e.currentTarget.style.borderBottomColor = 'var(--cyan)'; e.currentTarget.style.borderBottomStyle = 'solid'; },
+                    onMouseLeave: e => { e.currentTarget.style.color = 'var(--cyan-pale)'; e.currentTarget.style.borderBottomColor = 'rgba(99,102,241,.4)'; e.currentTarget.style.borderBottomStyle = 'dashed'; }
+                  }, 'Skip ahead to builder \u2192')
                 );
               }
               return null;
@@ -11126,7 +11186,7 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
             campaignName: m.complianceCheck.campaignName,
             onComplete: () => {
               // After animation finishes, mutate the message to surface approval options
-              setBuilderMessages(prev => prev.map((mm, mi) => mi === i ? { ...mm, options: ['\u2713 I approve \u2014 send to compliance', 'Request changes', 'Download report (PDF)'], complianceComplete: true } : mm));
+              setBuilderMessages(prev => prev.map((mm, mi) => mi === i ? { ...mm, options: ['\u2713 Sign off & Activate', 'Download report (PDF)', 'Save as draft'], complianceComplete: true } : mm));
             }
           }),
           m.role === 'assistant' && m.cards && _renderBuilderCards(m.cards),
@@ -19322,7 +19382,8 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     style: {
       flex: 1,
       height: 22,
-      background: '#EEF2F8',
+      background: 'rgba(99,102,241,.08)',
+      border: '1px solid rgba(99,102,241,.12)',
       borderRadius: 4,
       overflow: 'hidden',
       position: 'relative'
@@ -20014,8 +20075,8 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     }, "Optimization Actions"), /*#__PURE__*/React.createElement("div", {
       style: {
         padding: '12px 16px',
-        display: 'flex',
-        flexDirection: 'column',
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
         gap: 8
       }
     }, [{
@@ -20034,7 +20095,12 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
       key: i,
       className: "opt-action",
       style: {
-        padding: '10px 12px'
+        padding: '12px 14px',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        gap: 8,
+        minHeight: 78
       },
       onClick: () => {
         setOptimizeAction(opt.label);
@@ -20042,17 +20108,16 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
-        fontSize: 12,
+        fontSize: 13,
         fontWeight: 600,
-        color: 'var(--text)'
+        color: 'var(--text)',
+        lineHeight: 1.35
       }
     }, opt.label), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 13,
         fontWeight: 700,
-        color: 'var(--green)',
-        flexShrink: 0,
-        marginLeft: 10
+        color: 'var(--green)'
       }
     }, opt.impact))))))), /*#__PURE__*/React.createElement("div", {
       style: {
@@ -20124,10 +20189,11 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
         /*#__PURE__*/React.createElement("div", { style: { display: 'flex', flexWrap: 'wrap', gap: 4 } },
           (a.chips || []).map((c, i) => /*#__PURE__*/React.createElement("span", {
             key: i,
-            style: { fontSize: 12, padding: '2px 7px', borderRadius: 10, background: 'rgba(99,102,241,0.08)', color: 'var(--slate)', border: '1px solid var(--bdr)' }
+            title: c,
+            style: { fontSize: 12, padding: '2px 7px', borderRadius: 10, background: 'rgba(99,102,241,0.08)', color: 'var(--slate)', border: '1px solid var(--bdr)', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }
           }, c))
         ),
-        /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', fontStyle: 'italic' } }, a.meta),
+        /*#__PURE__*/React.createElement("div", { title: a.meta, style: { fontSize: 12, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', fontStyle: 'italic', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, a.meta),
         /*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 6, marginTop: 4 } },
           /*#__PURE__*/React.createElement("button", {
             className: "btn btn-secondary",
@@ -20169,7 +20235,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
                 ],
                 exploreLabel: "Partner Portal",
                 exploreScreen: () => { setCmnHub(false); setCmnTab('start'); window.scrollTo(0, 0); },
-                placeholder: "Describe the audience \u2014 behaviors, geography, overlaps\u2026",
+                placeholder: "Type a description, or pick a sample above\u2026",
                 resultRenderer: buildActionRenderer({
                   navMap: partnersNavMap,
                   onFollowUp: cmnOnFollowUp(cmnAudienceSendRef),
