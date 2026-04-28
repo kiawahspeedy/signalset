@@ -998,8 +998,9 @@ html:not(.screen-transitioning) body {
 .msg.user .bubble {
   background: var(--cyan); border: none;
   color: #FFFFFF; font-size: 15px; padding: 12px 20px; line-height: 1.68;
-  border-radius: 16px 16px 4px 16px; max-width: 78%;
+  border-radius: 16px 16px 4px 16px; max-width: 82%;
   min-width: 64px; text-align: center;
+  white-space: normal; overflow-wrap: anywhere; word-break: normal; hyphens: none;
 }
 .msg.assistant .bubble { flex: 1; font-size: 15px; line-height: 1.7; color: var(--text); background: transparent; padding: 4px 0; border-radius: 0; border: none; box-shadow: none; }
 
@@ -4548,10 +4549,25 @@ function ChatProvider({ children }) {
     setBusy(false);
   }, [messages, workspace, briefSoFar, busy]);
 
-  const resetChat = React.useCallback(() => {
-    setMessages([]);
-    setBriefSoFar(null);
-    setLastResultByWorkspace({});
+  const resetChat = React.useCallback((targetWorkspace) => {
+    if (targetWorkspace) {
+      // Per-workspace reset: keep messages from other workspaces, only clear the named one
+      setMessages(prev => prev.filter(m => m.workspace !== targetWorkspace));
+      setLastResultByWorkspace(prev => {
+        const next = { ...prev };
+        delete next[targetWorkspace];
+        return next;
+      });
+      // Brief is global to ideation — only clear when home/flight_deck reset
+      if (targetWorkspace === 'home' || targetWorkspace === 'flight_deck') {
+        setBriefSoFar(null);
+      }
+    } else {
+      // Global reset (legacy behavior)
+      setMessages([]);
+      setBriefSoFar(null);
+      setLastResultByWorkspace({});
+    }
   }, []);
 
   const value = React.useMemo(() => ({
@@ -4569,6 +4585,70 @@ function useChat() {
     return { messages: [], busy: false, workspace: 'home', briefSoFar: null, lastResultByWorkspace: {}, setWorkspace: () => {}, sendMessage: () => {}, resetChat: () => {} };
   }
   return ctx;
+}
+
+// ── Reusable chat reset button (Phase 38) ─────────────────────────
+// Small icon-only button placed in the top-right of every chat header.
+// First click shows a 2-second "Confirm reset?" inline state, second click
+// (or click on the confirm) performs the reset. Auto-cancels on outside click
+// or after 3 seconds of inactivity. Pass `workspace` to scope the reset; omit
+// for global reset. Optional `onReset` runs after the reset (use for surfaces
+// that own their own message state, e.g., builder).
+function ChatResetButton({ workspace, onReset, title }) {
+  const [confirming, setConfirming] = React.useState(false);
+  const _chatCtx = useChat();
+  React.useEffect(() => {
+    if (!confirming) return;
+    const t = setTimeout(() => setConfirming(false), 3000);
+    return () => clearTimeout(t);
+  }, [confirming]);
+  const handleClick = (e) => {
+    e.stopPropagation();
+    if (!confirming) { setConfirming(true); return; }
+    if (onReset) { onReset(); }
+    else { _chatCtx.resetChat(workspace); }
+    setConfirming(false);
+  };
+  if (confirming) {
+    return /*#__PURE__*/React.createElement("button", {
+      onClick: handleClick,
+      title: 'Click again to confirm reset',
+      style: {
+        display: 'inline-flex', alignItems: 'center', gap: 6,
+        height: 28, padding: '0 10px', borderRadius: 7,
+        background: 'rgba(248,113,113,.12)',
+        border: '1px solid rgba(248,113,113,.4)',
+        color: '#F87171',
+        fontFamily: 'var(--font-b)', fontSize: 11, fontWeight: 700,
+        cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0
+      }
+    }, '\u21BB Confirm reset');
+  }
+  return /*#__PURE__*/React.createElement("button", {
+    onClick: handleClick,
+    title: title || 'Reset chat',
+    'aria-label': title || 'Reset chat',
+    style: {
+      width: 28, height: 28, borderRadius: 7,
+      background: 'transparent',
+      border: '1px solid rgba(99,102,241,.22)',
+      color: 'var(--slate)',
+      cursor: 'pointer', display: 'inline-flex',
+      alignItems: 'center', justifyContent: 'center',
+      fontFamily: 'IBM Plex Mono, monospace', fontSize: 14, fontWeight: 700,
+      transition: 'all .15s', flexShrink: 0
+    },
+    onMouseEnter: e => {
+      e.currentTarget.style.background = 'rgba(99,102,241,.08)';
+      e.currentTarget.style.borderColor = 'var(--bdr-strong)';
+      e.currentTarget.style.color = 'var(--cyan-pale)';
+    },
+    onMouseLeave: e => {
+      e.currentTarget.style.background = 'transparent';
+      e.currentTarget.style.borderColor = 'rgba(99,102,241,.22)';
+      e.currentTarget.style.color = 'var(--slate)';
+    }
+  }, '\u21BB');
 }
 
 const AUDIENCE_SYS = `You are the Smart Audience Chatbot inside Flight Deck, built on the Living Identity Graph (LIG) at a major US financial institution. Primary use case: credit card acquisition and upgrade.
@@ -4911,7 +4991,7 @@ function buildActionRenderer(opts) {
             onClick: nav.onClick,
             style: navStyle
           }, nav.label + ' \u2192'),
-          followUps.map(function(q, i) {
+          followUps.slice(0, 5).map(function(q, i) {
             return React.createElement('button', {
               key: 'fu-' + i,
               onClick: function() { if (onFollowUp) onFollowUp(q); },
@@ -5209,8 +5289,18 @@ function Chatbot({
   // Expose send externally (used by followUp pills)
   React.useEffect(() => { if (sendRef) sendRef.current = send; }, [send, sendRef]);
   return /*#__PURE__*/React.createElement("div", {
-    className: `chat-wrap ${msgs.length === 0 ? 'chat-wrap-empty' : 'chat-wrap-active'}`
-  }, samples && msgs.length === 0 && input.trim().length === 0 && /*#__PURE__*/React.createElement("div", {
+    className: `chat-wrap ${msgs.length === 0 ? 'chat-wrap-empty' : 'chat-wrap-active'}`,
+    style: { position: 'relative' }
+  },
+  /* Reset button — top-right of the chat surface, only visible once there's a thread */
+  msgs.length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: { position: 'absolute', top: 8, right: 8, zIndex: 5 }
+  }, /*#__PURE__*/React.createElement(ChatResetButton, {
+    workspace: isUnified ? unifiedWorkspace : undefined,
+    onReset: isUnified ? undefined : () => { setLocalMsgs([]); setInput(''); },
+    title: 'Reset chat'
+  })),
+  samples && msgs.length === 0 && input.trim().length === 0 && /*#__PURE__*/React.createElement("div", {
     className: "sample-chips"
   }, samples.map(s => /*#__PURE__*/React.createElement("span", {
     key: s,
@@ -5786,14 +5876,26 @@ ATTRIBUTION METHODOLOGY: Owned channels (Email, Push) = deterministic hashed ide
 
 KEY RULES: Always cite specific BQ numbers above. If asked about MTA weights, rank channels by mta_w value. If asked about walled garden, always note the confidence limitation. Reference specific segment names and LTV/CAC ratios. Never say "I don't have access to" — use the data above.
 
-VISUAL PANELS AVAILABLE (reference these in followUps when relevant):
-- "Segment LTV vs CAC Map" — bubble chart plotting all 5 segments on LTV vs CAC axes
-- "Channel Attribution Waterfall" — owned vs paid vs clean room across 6 channels, 9,120 conversions
-- "Explorer Micro-Cohorts" — 12 sub-cohorts ranked by LTV/CAC efficiency
-- "Reveler Consumer Mix" — demographics, lifestyle indices, US geographic breakdown
-- "Clean Room Attribution" — identity-resolved across owned, paid, walled-garden channels
+VISUAL PANELS AVAILABLE — YOU CAN AND DO RENDER THESE. The application has rendered visualizations on the same page. When asked to "see", "show", "pull up", "visualize", "chart", "plot", or "open" any of these, include a navigate field — the page WILL route the user to the right view. The 5 panels you can route to are:
+- "Segment LTV vs CAC Map" (navigate: "ltv_cac") — bubble chart plotting all 5 segments on LTV vs CAC axes
+- "Channel Attribution Waterfall" (navigate: "waterfall") — owned vs paid vs clean room across 6 channels, 9,120 conversions
+- "Explorer Micro-Cohorts" (navigate: "explorer_cohorts") — 12 sub-cohorts ranked by LTV/CAC efficiency
+- "Reveler Consumer Mix" (navigate: "reveler_mix") — demographics, lifestyle indices, US geographic breakdown
+- "Clean Room Attribution" (navigate: "clean_room") — identity-resolved across owned, paid, walled-garden channels
 
-NAVIGATION: When the user asks to "see", "pull up", "show", or "open" any chart, OR when your analysis clearly points to a specific visual, include a "navigate" field in your JSON. The "navigate" value must be one of these exact strings: "waterfall", "ltv_cac", "explorer_cohorts", "reveler_mix", "clean_room". Example: {"text": "...", "followUps": [...], "navigate": "waterfall"}. Do NOT include "navigate" on general analysis questions — only when a specific chart is directly relevant to what was just discussed. At least one followUp per response should reference a specific chart by name.`;
+CRITICAL — DO NOT HALLUCINATE. You are FORBIDDEN from saying any of the following:
+- "I don't have a visualization engine"
+- "I can't render charts"
+- "I don't have access to visualizations"
+- "I'll generate a CSV" (you cannot — there is no CSV export)
+- "I'll export to a dashboard" (you cannot — there is no dashboard export)
+- "I'll send you a report" (you cannot — there is no email/report sender)
+- "Let me create a chart" or any phrasing implying you'll generate a NEW chart that doesn't already exist in the panel list above
+You CAN, and ONLY can, route the user to one of the 5 EXISTING panels listed above via the navigate field. If the user wants something not in that list, say so plainly and offer the closest existing panel.
+
+NAVIGATE FIELD: When the user asks to "see", "pull up", "show", or "open" any chart, OR when your analysis clearly points to a specific visual, include a navigate field in your JSON. The navigate value must be exactly one of: "ltv_cac", "waterfall", "explorer_cohorts", "reveler_mix", "clean_room". Example: {"text": "...", "followUps": [...], "navigate": "waterfall"}. Do NOT include navigate on general analysis questions — only when a specific chart is directly relevant.
+
+FOLLOW-UPS ARE MANDATORY ON EVERY TURN — NO EXCEPTIONS. The followUps array must always contain 2 to 4 short, specific, distinct follow-up questions. EMPTY followUps ARE FORBIDDEN. At least one followUp per response should reference a specific chart by name (e.g., "Show me the LTV/CAC map", "Drill into Explorer micro-cohorts", "Open the channel waterfall"). Each followUp should be a question or imperative the user could click to take their next step.`;
 
   } catch(e) {
     // Fallback to static if BQ unreachable
@@ -9790,7 +9892,7 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
   //   Default both AUD-001 + AUD-002 selected so the affordance is discoverable.
   // audienceExpandedId: which audience card has the "Why this audience?" reasoning panel open.
   // audienceHoveredCriterion: { audId, idx } — drives the hover tooltip on a specific criterion line.
-  const [audienceCompareSet, setAudienceCompareSet] = useState(new Set(['AUD-001', 'AUD-002']));
+  const [audienceCompareSet, setAudienceCompareSet] = useState(new Set());
   const [audienceExpandedId, setAudienceExpandedId] = useState(null);
   const [audienceHoveredCriterion, setAudienceHoveredCriterion] = useState(null);
   // Derived: are we in compare mode? Yes iff 2+ audiences are checked.
@@ -9916,7 +10018,9 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
         : builderBrief.card_type === 'in_house_standard' ? 'In-house standard'
         : builderBrief.card_type === 'in_house_cash_back' ? 'In-house cash back'
         : null;
-      const partnerLine = builderBrief.co_brand ? '\u2022 Co-brand partner: ' + builderBrief.co_brand : (cardTypeLabel ? '\u2022 Card type: ' + cardTypeLabel : null);
+      const partnerLine = builderBrief.co_brand
+        ? '\u2022 Co-brand partner: ' + builderBrief.co_brand
+        : (cardTypeLabel ? '\u2022 Card type: ' + cardTypeLabel : '\u2022 Card type: \u2014');
       const lines = [
         '\u2022 Campaign name: ' + campName,
         '\u2022 Objective: ' + (builderBrief.objective||'').replace(/_/g,' '),
@@ -10854,8 +10958,12 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
   },
   /* ── Flight Deck chat — mirrors home/measurement Chatbot pattern ── */
   /*#__PURE__*/React.createElement("div", {
-    style: { width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }
+    style: { width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }
   },
+    /* Reset button — top-right corner of the chat area */
+    ideaMessages.length > 0 && /*#__PURE__*/React.createElement("div", {
+      style: { position: 'absolute', top: 8, right: 8, zIndex: 5 }
+    }, /*#__PURE__*/React.createElement(ChatResetButton, { workspace: 'flight_deck', title: 'Reset Flight Deck chat' })),
     /* Chat wrap (sample chips when empty + chat shell + messages when active) */
     /*#__PURE__*/React.createElement("div", { className: "v11-home-chat-wrap" },
       /*#__PURE__*/React.createElement("div", { className: "home-chat-wrap" },
@@ -10982,8 +11090,9 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
             /* Escape hatch — show after 2+ user turns when no ready signal has fired */
             (() => {
               const userTurns = ideaMessages.filter(m => m.role === 'user').length;
+              // Check ALL messages for any ready/launchCta signal — not just the last flight_deck
+              const readyAlreadyVisible = ideaMessages.some(m => m.role === 'assistant' && (m.ready || m.launchCta));
               const lastFD = [...ideaMessages].reverse().find(m => m.role === 'assistant' && m.workspace === 'flight_deck');
-              const readyAlreadyVisible = lastFD?.ready;
               const lastAssistantText = String(lastFD?.text || '');
               const isPostApproval = /Approval logged|queued for activation|All steps done/i.test(lastAssistantText);
               if (userTurns >= 2 && !readyAlreadyVisible && !ideaBusy && !builderMode && !isPostApproval) {
@@ -11167,14 +11276,19 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
     /* LEFT: conversation */
     /*#__PURE__*/React.createElement("div", { style: { flex: '0 0 58%', display: 'flex', flexDirection: 'column', overflow: 'hidden' } },
       /* Chat header */
-      /*#__PURE__*/React.createElement("div", { style: { height: 56, padding: '0 20px', background: 'var(--card-alt)', borderBottom: '1px solid var(--bdr)', display: 'flex', alignItems: 'center', flexShrink: 0, boxSizing: 'border-box' } },
+      /*#__PURE__*/React.createElement("div", { style: { height: 56, padding: '0 20px', background: 'var(--card-alt)', borderBottom: '1px solid var(--bdr)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, boxSizing: 'border-box', gap: 10 } },
         /*#__PURE__*/React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 10 } },
           /*#__PURE__*/React.createElement("div", { style: { width: 8, height: 8, borderRadius: '50%', background: 'var(--green)' } }),
           /*#__PURE__*/React.createElement("div", null,
             /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, fontWeight: 700 } }, "Campaign Builder \xB7 AI Concierge"),
             /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, color: 'var(--slate)' } }, "Full LIG \xB7 Identity Graph \xB7 Measurement \xB7 Clean Room access")
           )
-        )
+        ),
+        /* Reset button — clears builder thread back to fresh state */
+        builderMessages.length > 0 && /*#__PURE__*/React.createElement(ChatResetButton, {
+          onReset: () => { setBuilderMessages([]); setBuilderStep(1); setBuilderCreativeIdx(0); setHubBriefReady(false); setBuilderCampData({name:'',objective:'',card:'',partner:'',budget:'',flight:'',audience:'',trigger:'',creative:''}); },
+          title: 'Reset builder chat'
+        })
       ),
       /* Messages */
       /*#__PURE__*/React.createElement("div", { ref: builderChatRef, style: { flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: 14, borderRight: '1px solid var(--bdr)' } },
@@ -11477,11 +11591,7 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
     /*#__PURE__*/React.createElement("div", {
       className: `cmn-tab ${tab === 'creative' ? 'active' : ''}`,
       onClick: () => setTab('creative')
-    }, "Creatives", /*#__PURE__*/React.createElement("span", { style: { fontSize: 12, fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace', padding: '1px 6px', borderRadius: 10, background: 'rgba(99,102,241,.15)', color: 'var(--cyan-dim)', marginLeft: 6 } }, mkLibraryCreatives.length + 5)),
-    /*#__PURE__*/React.createElement("div", {
-      className: `cmn-tab ${tab === 'summary' || tab === 'activate' ? 'active' : ''}`,
-      onClick: () => setTab('summary')
-    }, "Launch \u2197")
+    }, "Creatives", /*#__PURE__*/React.createElement("span", { style: { fontSize: 12, fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace', padding: '1px 6px', borderRadius: 10, background: 'rgba(99,102,241,.15)', color: 'var(--cyan-dim)', marginLeft: 6 } }, mkLibraryCreatives.length + 5))
   ),
   /*#__PURE__*/React.createElement("div", {
     className: `desk-cap ${tab === 'campaigns' ? 'active' : ''}`
@@ -15770,7 +15880,17 @@ function MeasurementIntro({
 
   function MZIntroResultRenderer(data, onFollowUp) {
     if (!data) return null;
-    const followUps = Array.isArray(data.followUps) ? data.followUps : [];
+    let followUps = Array.isArray(data.followUps) ? data.followUps.filter(q => q && String(q).trim().length > 0) : [];
+    // Never let measurement chat dead-end. If model returned empty followUps,
+    // hydrate sensible defaults that route into the existing visual panels.
+    if (followUps.length === 0) {
+      followUps = [
+        'Show me the LTV/CAC map',
+        'Open the channel waterfall',
+        'Drill into Explorer micro-cohorts',
+        'Compare clean room vs deterministic'
+      ];
+    }
     const navKey = data.navigate;
     const navLabel = navKey ? CHART_LABELS[navKey] : null;
     const navigateWithTransition = (ev, targetFn) => {
@@ -15794,7 +15914,7 @@ function MeasurementIntro({
       (followUps.length > 0 || navLabel) && /*#__PURE__*/React.createElement("div", {
         style: { display: 'flex', flexWrap: 'wrap', gap: 6, paddingTop: 6 }
       },
-        followUps.map((q, i) =>
+        followUps.slice(0, 5).map((q, i) =>
           /*#__PURE__*/React.createElement("button", {
             key: i,
             onClick: () => onFollowUp && onFollowUp(q),
@@ -16033,6 +16153,8 @@ function MeasurementZone({
   const [liveMzSys, setLiveMzSys] = useState(MZ_CHATBOT_SYS);
   const [mzScrollTarget, setMzScrollTarget] = useState(null);
   const [mzIntro, setMzIntro] = useState(true);
+  // Phase 38 — track when nav came from the intro chat so we can show a "← Return to chat" breadcrumb
+  const [mzCameFromChat, setMzCameFromChat] = useState(false);
   // Build live system prompt from BQ on mount
   React.useEffect(() => {
     buildMzSystemPrompt().then(sys => { if (sys) setLiveMzSys(sys); });
@@ -16322,17 +16444,32 @@ function MeasurementZone({
     return /*#__PURE__*/React.createElement("div", {
       className: "drill-container"
     }, /*#__PURE__*/React.createElement(MeasurementIntro, {
-      onEnter: (scrollTarget) => { if (scrollTarget) setMzScrollTarget(scrollTarget); setMzIntro(false); window.scrollTo(0,0); },
+      onEnter: (scrollTarget) => { if (scrollTarget) setMzScrollTarget(scrollTarget); setMzCameFromChat(true); setMzIntro(false); window.scrollTo(0,0); },
       setDrillLevel: setDrillLevel,
       setDrillSegment: setDrillSegment,
       liveMzSys: liveMzSys,
       liveCohorts: liveCohorts
     }));
   }
+  // Phase 38 — reusable Return-to-chat breadcrumb (shown when nav originated in chat)
+  const _returnToChat = mzCameFromChat ? /*#__PURE__*/React.createElement("button", {
+    onClick: () => { setMzCameFromChat(false); setDrillLevel(0); setDrillSegment(null); setDrillCohort(null); setStateDrill(null); setMzIntro(true); window.scrollTo(0, 0); },
+    style: {
+      display: 'inline-flex', alignItems: 'center', gap: 8,
+      margin: '14px 28px 0', padding: '8px 14px',
+      border: '1px solid var(--bdr)', background: 'rgba(99,102,241,.06)',
+      borderRadius: 7, color: 'var(--cyan-pale)',
+      fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-b)',
+      cursor: 'pointer', transition: 'all .15s'
+    },
+    onMouseEnter: e => { e.currentTarget.style.background = 'rgba(99,102,241,.12)'; e.currentTarget.style.borderColor = 'var(--bdr-strong)'; e.currentTarget.style.color = '#fff'; },
+    onMouseLeave: e => { e.currentTarget.style.background = 'rgba(99,102,241,.06)'; e.currentTarget.style.borderColor = 'var(--bdr)'; e.currentTarget.style.color = 'var(--cyan-pale)'; }
+  }, '\u2190 Return to chat') : null;
+
   if (drillLevel === 1 && drillSegment) {
     return /*#__PURE__*/React.createElement("div", {
       className: "drill-container"
-    }, /*#__PURE__*/React.createElement(MicroCohortScatter, {
+    }, _returnToChat, /*#__PURE__*/React.createElement(MicroCohortScatter, {
       segment: drillSegment,
       onSelectCohort: handleSelectCohort,
       onBack: () => {
@@ -16344,7 +16481,7 @@ function MeasurementZone({
   if (drillLevel === 2 && drillSegment && drillCohort) {
     return /*#__PURE__*/React.createElement("div", {
       className: "drill-container"
-    }, /*#__PURE__*/React.createElement(CohortConsumerMix, {
+    }, _returnToChat, /*#__PURE__*/React.createElement(CohortConsumerMix, {
       segment: drillSegment,
       cohort: drillCohort,
       onBack: () => {
@@ -16362,7 +16499,9 @@ function MeasurementZone({
   }
 
   // Level 0: Main insights view
-  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  return /*#__PURE__*/React.createElement("div", null,
+    _returnToChat,
+    /*#__PURE__*/React.createElement("div", {
     className: "hero"
   }, /*#__PURE__*/React.createElement("div", {
     className: "hero-eyebrow"
