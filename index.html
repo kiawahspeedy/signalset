@@ -9405,17 +9405,25 @@ function JourneyBuilderLightbox({ open, onClose, context, onSave }) {
 // indicators, return the string unchanged.
 function renderRichText(text) {
   if (typeof text !== 'string' || !text) return text;
-  // Cheap path: no markdown indicators → return unchanged (string passes through React fine).
+  // Cheap path: no markdown indicators or step prefix → return unchanged (string passes through React fine).
   var hasBold = text.indexOf('**') !== -1;
   var hasBullet = /(^|\n)\s*[-•]\s+/.test(text);
-  if (!hasBold && !hasBullet) return text;
+  var hasStep = /(^|\n)Step \d+\s*[·•]/.test(text);
+  if (!hasBold && !hasBullet && !hasStep) return text;
+  // Auto-bold "Step N · Label" prefix at the start of a line. The label runs
+  // until an em-dash or end-of-line. Wraps in **...** so parseInline handles it.
+  function autoBoldStepPrefix(line) {
+    var m = line.match(/^(Step \d+\s*[·•]\s*[^—\n]+?)(\s*—.*|\s*$)/);
+    if (!m) return line;
+    return '**' + m[1].replace(/\s+$/, '') + '**' + (m[2] || '');
+  }
   // Parse inline **bold** within a single line. Returns an array of strings/elements.
   function parseInline(line, keyPrefix) {
     if (line.indexOf('**') === -1) return [line];
     var parts = line.split(/(\*\*[^*]+\*\*)/g);
     return parts.filter(function (p) { return p !== ''; }).map(function (p, i) {
       if (p.length >= 4 && p.slice(0, 2) === '**' && p.slice(-2) === '**') {
-        return /*#__PURE__*/React.createElement('strong', { key: keyPrefix + '-b' + i, style: { fontWeight: 600 } }, p.slice(2, -2));
+        return /*#__PURE__*/React.createElement('strong', { key: keyPrefix + '-b' + i, style: { fontWeight: 600, color: 'var(--cyan-dim)' } }, p.slice(2, -2));
       }
       return p;
     });
@@ -9447,7 +9455,9 @@ function renderRichText(text) {
       }
       continue;
     }
-    nodes.push(/*#__PURE__*/React.createElement('div', { key: 'p-' + i }, parseInline(raw, 'p' + i)));
+    // Auto-bold step prefixes like "Step 2 · Audiences — running 90-day MTA..."
+    var processed = autoBoldStepPrefix(raw);
+    nodes.push(/*#__PURE__*/React.createElement('div', { key: 'p-' + i }, parseInline(processed, 'p' + i)));
   }
   flushBullets();
   return nodes;
@@ -11007,7 +11017,7 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
       /*#__PURE__*/React.createElement("div", { ref: builderChatRef, style: { flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: 14, borderRight: '1px solid var(--bdr)' } },
         builderMessages.map((m, i) => /*#__PURE__*/React.createElement("div", { key: i, style: { display: 'flex', flexDirection: 'column', alignItems: m.role === 'user' ? 'flex-end' : 'flex-start', gap: 6 } },
           /* Skip text bubble entirely when this is a compliance-runner message with empty text */
-          (m.text || !m.complianceCheck) && /*#__PURE__*/React.createElement("div", { style: { maxWidth: '88%', padding: '12px 16px', borderRadius: m.role === 'user' ? '16px 16px 4px 16px' : '4px 16px 16px 16px', background: m.role === 'user' ? 'var(--cyan)' : 'rgba(30,33,76,.98)', border: m.role === 'user' ? 'none' : '1px solid rgba(129,140,248,.4)', fontSize: 14, lineHeight: 1.65, color: m.role === 'user' ? '#fff' : '#F1F5F9', whiteSpace: 'pre-wrap', minWidth: m.role === 'user' ? 64 : 'auto', textAlign: m.role === 'user' ? 'center' : 'left' } }, m.text),
+          (m.text || !m.complianceCheck) && /*#__PURE__*/React.createElement("div", { style: { maxWidth: '88%', padding: '12px 16px', borderRadius: m.role === 'user' ? '16px 16px 4px 16px' : '4px 16px 16px 16px', background: m.role === 'user' ? 'var(--cyan)' : 'rgba(30,33,76,.98)', border: m.role === 'user' ? 'none' : '1px solid rgba(129,140,248,.4)', fontSize: 14, lineHeight: 1.65, color: m.role === 'user' ? '#fff' : '#F1F5F9', whiteSpace: 'pre-wrap', minWidth: m.role === 'user' ? 64 : 'auto', textAlign: m.role === 'user' ? 'center' : 'left' } }, m.role === 'assistant' ? renderRichText(m.text) : m.text),
           m.role === 'assistant' && m.complianceCheck && /*#__PURE__*/React.createElement(ComplianceRunner, {
             checks: m.complianceCheck.checks,
             campaignName: m.complianceCheck.campaignName,
