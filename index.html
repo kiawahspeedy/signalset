@@ -1612,10 +1612,81 @@ div:has(> .ig-layout) > .hero { display: none; }
 .mz-main { grid-column: 1; grid-row: 1 / span 2; display: grid; grid-template-rows: subgrid; gap: 16px; }
 .mz-sidebar { grid-column: 2; grid-row: 1 / span 2; display: grid; grid-template-rows: subgrid; gap: 14px; }
 .mz-main > *, .mz-sidebar > * { min-height: 0; }
-.mz-attr-panel { grid-column: 1; grid-row: 2; }
+.mz-attr-panel { grid-column: 1 / -1; grid-row: 2; }
 .mz-chat-panel { grid-column: 2; grid-row: 2; overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
 .bubble-panel { position: relative; }
 #mz-svg { width: 100%; height: 440px; background: var(--card); border-radius: var(--r); border: 1px solid var(--bdr); box-shadow: var(--shadow); }
+
+/* ── MEASUREMENT CHAT FAB (Phase 38b) ─────────────────────────────────
+   Floating action button bottom-right. Opens lightbox modal with the
+   Measurement chatbot. Replaces the persistent right-rail chat panel. */
+.mz-fab {
+  position: fixed; bottom: 28px; right: 28px;
+  width: 64px; height: 64px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--indigo, #6366F1), var(--cyan, #67E8F9));
+  border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 12px 40px rgba(99,102,241,.5), 0 0 0 4px rgba(99,102,241,.15);
+  z-index: 200; color: #fff;
+  font-family: 'IBM Plex Mono', monospace; font-size: 24px; font-weight: 800;
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+.mz-fab:hover { transform: scale(1.08); box-shadow: 0 16px 48px rgba(99,102,241,.65), 0 0 0 6px rgba(99,102,241,.2); }
+.mz-fab .mz-fab-pulse {
+  position: absolute; top: -4px; right: -4px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--cyan, #67E8F9); border: 2.5px solid var(--bg, #08080F);
+  box-shadow: 0 0 12px rgba(103,232,249,.6);
+  animation: mz-fab-pulse 1.8s ease-in-out infinite;
+}
+@keyframes mz-fab-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(1.15); opacity: .85; }
+}
+.mz-lightbox-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(8,8,15,.6); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  z-index: 300;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  animation: mz-fade-in .18s ease-out;
+}
+@keyframes mz-fade-in { from { opacity: 0; } to { opacity: 1; } }
+.mz-lightbox {
+  width: 100%; max-width: 720px; height: min(720px, 90vh);
+  background: var(--card, #16163A); border: 1px solid rgba(99,102,241,.5);
+  border-radius: 14px; overflow: hidden;
+  box-shadow: 0 32px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(99,102,241,.2);
+  display: flex; flex-direction: column;
+  animation: mz-slide-up .22s cubic-bezier(.2,.7,.2,1);
+}
+@keyframes mz-slide-up { from { transform: translateY(14px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.mz-lightbox-hdr {
+  padding: 14px 20px; border-bottom: 1px solid rgba(99,102,241,.14);
+  background: linear-gradient(180deg, rgba(99,102,241,.06), transparent);
+  display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+}
+.mz-lightbox-hdr-icon {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--indigo, #6366F1), var(--cyan, #67E8F9));
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-family: 'IBM Plex Mono', monospace; font-weight: 800; font-size: 16px;
+  flex-shrink: 0;
+}
+.mz-lightbox-hdr-title { flex: 1; min-width: 0; }
+.mz-lightbox-hdr-title h3 { margin: 0; font-size: 14px; font-weight: 800; letter-spacing: -.01em; color: var(--text); }
+.mz-lightbox-hdr-title .sub { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--slate); margin-top: 2px; }
+.mz-lightbox-icon-btn {
+  width: 32px; height: 32px; border-radius: 7px;
+  background: transparent; border: 1px solid rgba(99,102,241,.14);
+  color: var(--slate); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 700;
+  flex-shrink: 0; transition: all .15s;
+}
+.mz-lightbox-icon-btn:hover {
+  background: rgba(99,102,241,.08); color: var(--cyan-pale, #C7D2FE); border-color: rgba(99,102,241,.5);
+}
+.mz-lightbox-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 
 .cohort-tooltip {
   position: absolute; pointer-events: none;
@@ -1987,6 +2058,83 @@ div:has(> .ig-layout) > .hero { display: none; }
 .aud-card:hover { border-color: var(--cyan); box-shadow: 0 4px 20px rgba(0,180,230,.12); transform: translateY(-1px); }
 .aud-card.selected { border-color: var(--cyan); background: rgba(0,180,230,.03); }
 .aud-card-accent { position: absolute; top: 0; left: 0; width: 3px; height: 100%; border-radius: 12px 0 0 12px; }
+
+/* ── PHASE 38c · TACTILE AUDIENCE EDITOR ─────────────────────────────────
+   Compact criteria sliders + suppression toggles + refresh schedule below
+   the audience grid when a card is selected. */
+.tact-block { background: var(--card); border: 1px solid var(--bdr); border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; }
+.tact-block-hdr { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--slate-md, rgba(238,238,255,.45)); margin-bottom: 12px; }
+
+/* Slider row */
+.tact-slider-row { display: grid; grid-template-columns: 160px 1fr 80px; align-items: center; gap: 12px; padding: 8px 0; }
+.tact-slider-row + .tact-slider-row { border-top: 1px solid var(--bdr-soft, rgba(99,102,241,.14)); }
+.tact-slider-lab { font-size: 13px; color: var(--text); font-weight: 500; }
+.tact-slider-val { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--cyan-pale, #C7D2FE); text-align: right; font-weight: 700; }
+.tact-slider {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 4px; border-radius: 2px;
+  background: linear-gradient(90deg, var(--indigo, #6366F1), var(--cyan, #67E8F9));
+  outline: none; cursor: pointer;
+}
+.tact-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: #fff; border: 2px solid var(--indigo, #6366F1);
+  cursor: pointer; transition: transform .15s;
+  box-shadow: 0 2px 8px rgba(99,102,241,.4);
+}
+.tact-slider::-webkit-slider-thumb:hover { transform: scale(1.15); }
+.tact-slider::-moz-range-thumb {
+  width: 16px; height: 16px; border-radius: 50%;
+  background: #fff; border: 2px solid var(--indigo, #6366F1);
+  cursor: pointer; box-shadow: 0 2px 8px rgba(99,102,241,.4);
+}
+
+/* Suppression toggle row */
+.tact-supp-row { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; }
+.tact-supp-row + .tact-supp-row { border-top: 1px solid var(--bdr-soft, rgba(99,102,241,.14)); }
+.tact-supp-l { flex: 1; min-width: 0; }
+.tact-supp-name { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+.tact-supp-detail { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--slate); }
+.tact-toggle {
+  flex-shrink: 0; width: 32px; height: 18px; border-radius: 9px;
+  border: 1px solid var(--bdr); background: var(--card-alt);
+  cursor: pointer; position: relative; transition: all .2s;
+  padding: 0; margin-top: 2px;
+}
+.tact-toggle::after {
+  content: ''; position: absolute; top: 1px; left: 1px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--slate); transition: all .2s;
+}
+.tact-toggle.on { background: rgba(74,222,128,.2); border-color: rgba(74,222,128,.5); }
+.tact-toggle.on::after { background: var(--green, #4ADE80); transform: translateX(14px); }
+
+/* Refresh schedule radio rows */
+.tact-sched-row {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 10px 12px; border: 1px solid var(--bdr-soft, rgba(99,102,241,.14));
+  border-radius: 7px; background: transparent; width: 100%; text-align: left;
+  margin-bottom: 6px; cursor: pointer; font-family: var(--font-b); transition: all .15s;
+}
+.tact-sched-row:hover { background: rgba(99,102,241,.04); border-color: var(--bdr); }
+.tact-sched-row.on { background: rgba(99,102,241,.08); border-color: var(--indigo, #6366F1); }
+.tact-sched-radio {
+  flex-shrink: 0; width: 16px; height: 16px; border-radius: 50%;
+  border: 2px solid var(--slate); position: relative; margin-top: 1px;
+}
+.tact-sched-row.on .tact-sched-radio { border-color: var(--indigo, #6366F1); }
+.tact-sched-row.on .tact-sched-radio::after {
+  content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  width: 8px; height: 8px; border-radius: 50%; background: var(--indigo, #6366F1);
+}
+
+/* Side stat cards */
+.tact-side-card { background: var(--card); border: 1px solid var(--bdr); border-radius: 10px; padding: 14px 16px; }
+.tact-side-k { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--slate-md, rgba(238,238,255,.45)); margin-bottom: 6px; }
+.tact-side-v { font-size: 24px; font-weight: 800; letter-spacing: -.02em; color: var(--text); }
+.tact-side-d { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--slate); margin-top: 4px; }
+
 .trig-path { display: flex; align-items: center; gap: 3px; flex-wrap: wrap; padding-left: 10px; margin-bottom: 8px; }
 .trig-node { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 4px; background: var(--bg); border: 1px solid var(--bdr); color: var(--text); white-space: nowrap; }
 .trig-node.conversion { background: rgba(5,150,105,.1); border-color: rgba(5,150,105,.3); color: var(--green); }
@@ -9754,6 +9902,9 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
   const [complianceState, setComplianceState] = useState({});
   const [selectedAudCard, setSelectedAudCard] = useState(null);
   const [selectedTrigCard, setSelectedTrigCard] = useState(null);
+  // Phase 38c — Audiences tactile editor: per-audience-id editor state (sliders, suppressions, schedule).
+  // Lives in component state only for now; persistence to Supabase is deferred to Phase 9.
+  const [audienceEditorState, setAudienceEditorState] = useState({});
   const [audEditModal, setAudEditModal] = useState(null);
   const [trigEditModal, setTrigEditModal] = useState(null);
   const [audiences, setAudiences] = useState(DEFAULT_AUDIENCES);
@@ -12296,7 +12447,128 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
       opacity: .6
     },
     onClick: () => setSelectedAudCard(null)
-  }, "\xD7")))))), false && /*#__PURE__*/React.createElement("div", { style: { borderTop: '1px solid var(--bdr)', background: 'var(--card-alt)', padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: 10, flexShrink: 0 } },/*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },/*#__PURE__*/React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 10 } },/*#__PURE__*/React.createElement("span", { style: { fontSize: 12, fontWeight: 700, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '.07em', fontFamily: 'IBM Plex Mono, monospace' } }, "Step 2 of 6"),/*#__PURE__*/React.createElement("span", { style: { fontSize: 13, fontWeight: 700, color: 'var(--text)' } }, "Bind destinations for this audience"),/*#__PURE__*/React.createElement("span", { style: { fontSize: 13, fontFamily: 'IBM Plex Mono, monospace', padding: '2px 8px', background: moduleDests.audience.length > 0 ? 'rgba(74,222,128,.1)' : 'rgba(245,158,11,.1)', border: `1px solid ${moduleDests.audience.length > 0 ? 'rgba(74,222,128,.3)' : 'rgba(245,158,11,.3)'}`, borderRadius: 3, color: moduleDests.audience.length > 0 ? 'var(--green)' : 'var(--amber)', fontWeight: 600 } }, moduleDests.audience.length > 0 ? "COMPLIANCE ✓ PASS" : "COMPLIANCE ○ PENDING")),/*#__PURE__*/React.createElement("button", { disabled: moduleDests.audience.length === 0, onClick: () => { setModuleApproved(m => ({...m, audience: true})); goNextTab(); }, style: { padding: '8px 16px', background: moduleDests.audience.length > 0 ? 'var(--cyan)' : 'var(--card)', color: moduleDests.audience.length > 0 ? '#fff' : 'var(--slate-lt)', border: moduleDests.audience.length > 0 ? 'none' : '1px solid var(--bdr)', borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: moduleDests.audience.length > 0 ? 'pointer' : 'not-allowed' } }, moduleApproved.audience ? "✓ Approved · Continue to Triggers →" : "Approve & Continue to Triggers →")),/*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 6, flexWrap: 'wrap' } },DEST_CATALOG.map(d => { const on = moduleDests.audience.includes(d.id); return /*#__PURE__*/React.createElement("div", { key: d.id, onClick: () => toggleModuleDest('audience', d.id), role: "button", tabIndex: 0, style: { padding: '5px 10px', background: on ? 'rgba(99,102,241,.15)' : 'var(--card)', border: `1px solid ${on ? 'var(--cyan)' : 'var(--bdr)'}`, borderRadius: 14, fontSize: 13, color: on ? 'var(--cyan-pale)' : 'var(--slate)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'IBM Plex Mono, monospace', userSelect: 'none' } }, on ? "✓ " : "+ ", d.name, /*#__PURE__*/React.createElement("span", { style: { fontSize: 11, color: on ? 'var(--cyan-dim)' : 'var(--slate-lt)', marginLeft: 4 } }, d.match + "%")); })))), /*#__PURE__*/React.createElement("div", {
+  }, "\xD7")))))),
+  /* Phase 38c — Tactile editor (Audiences port from wireframe). Visible only when an audience is selected. */
+  selectedAudCard !== null && (() => {
+    const a = audiences[selectedAudCard];
+    if (!a) return null;
+    const editorState = audienceEditorState[a.id] || { txns: 4, sessions: 10, hhi: [140, 400], engagement: 72, suppressions: { signature: true, fraud: true, ccpa: true, hardship: false }, schedule: 'daily' };
+    const setEditorState = (patch) => setAudienceEditorState(prev => ({ ...prev, [a.id]: { ...editorState, ...patch } }));
+    const setSupp = (k) => setEditorState({ suppressions: { ...editorState.suppressions, [k]: !editorState.suppressions[k] } });
+    return /*#__PURE__*/React.createElement("div", {
+      style: { padding: '20px 24px', borderTop: '1px solid var(--bdr)', background: 'var(--bg)', display: 'grid', gridTemplateColumns: '1fr 280px', gap: 18 }
+    },
+      /* MAIN editor column */
+      /*#__PURE__*/React.createElement("div", null,
+        /*#__PURE__*/React.createElement("div", { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 } },
+          /*#__PURE__*/React.createElement("div", null,
+            /*#__PURE__*/React.createElement("div", { style: { fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--slate-md)' } }, "Tactile editor \xB7 " + a.id),
+            /*#__PURE__*/React.createElement("div", { style: { fontSize: 17, fontWeight: 800, letterSpacing: '-.015em', color: 'var(--text)', marginTop: 2 } }, a.name)
+          ),
+          /*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 8 } },
+            /*#__PURE__*/React.createElement("button", { className: "btn btn-secondary", style: { fontSize: 12 } }, "\u21BB Reset"),
+            /*#__PURE__*/React.createElement("button", { className: "btn btn-primary", style: { fontSize: 12 } }, "Save changes")
+          )
+        ),
+        /* Behavior signals · sliders */
+        /*#__PURE__*/React.createElement("div", { className: "tact-block" },
+          /*#__PURE__*/React.createElement("div", { className: "tact-block-hdr" }, "Behavior signals"),
+          [
+            { k: 'txns',       label: 'Travel txns / 90d',      min: 0,   max: 12,  step: 1,  fmt: v => '\u2265 ' + v },
+            { k: 'sessions',   label: 'Mobile sessions / wk',   min: 0,   max: 30,  step: 1,  fmt: v => '\u2265 ' + v },
+            { k: 'engagement', label: 'Engagement score',       min: 0,   max: 100, step: 1,  fmt: v => '\u2265 ' + v }
+          ].map(s => /*#__PURE__*/React.createElement("div", { key: s.k, className: "tact-slider-row" },
+            /*#__PURE__*/React.createElement("label", { className: "tact-slider-lab" }, s.label),
+            /*#__PURE__*/React.createElement("input", {
+              type: 'range', min: s.min, max: s.max, step: s.step,
+              value: editorState[s.k],
+              onChange: e => setEditorState({ [s.k]: parseInt(e.target.value, 10) }),
+              className: "tact-slider"
+            }),
+            /*#__PURE__*/React.createElement("span", { className: "tact-slider-val" }, s.fmt(editorState[s.k]))
+          )),
+          /* HHI proxy range — two-handle */
+          /*#__PURE__*/React.createElement("div", { className: "tact-slider-row" },
+            /*#__PURE__*/React.createElement("label", { className: "tact-slider-lab" }, "HHI proxy ($K)"),
+            /*#__PURE__*/React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8 } },
+              /*#__PURE__*/React.createElement("input", {
+                type: 'range', min: 0, max: 500, step: 10,
+                value: editorState.hhi[0],
+                onChange: e => { const lo = parseInt(e.target.value, 10); setEditorState({ hhi: [Math.min(lo, editorState.hhi[1] - 10), editorState.hhi[1]] }); },
+                className: "tact-slider", style: { flex: 1 }
+              }),
+              /*#__PURE__*/React.createElement("input", {
+                type: 'range', min: 0, max: 500, step: 10,
+                value: editorState.hhi[1],
+                onChange: e => { const hi = parseInt(e.target.value, 10); setEditorState({ hhi: [editorState.hhi[0], Math.max(hi, editorState.hhi[0] + 10)] }); },
+                className: "tact-slider", style: { flex: 1 }
+              })
+            ),
+            /*#__PURE__*/React.createElement("span", { className: "tact-slider-val" }, '$' + editorState.hhi[0] + '\u2013$' + editorState.hhi[1] + 'K')
+          )
+        ),
+        /* Suppression rules */
+        /*#__PURE__*/React.createElement("div", { className: "tact-block" },
+          /*#__PURE__*/React.createElement("div", { className: "tact-block-hdr" }, "Suppression rules"),
+          [
+            { k: 'signature', label: 'Existing Signature cardholders', detail: 'Excludes ~14,200 active cardholders' },
+            { k: 'fraud',     label: 'Active fraud / charge-off',      detail: 'Excludes accounts with open fraud flags' },
+            { k: 'ccpa',      label: 'CCPA / state privacy opt-outs',  detail: 'Honors opt-out across destinations' },
+            { k: 'hardship',  label: 'Customer hardship indicators',   detail: 'Excludes hardship-flagged accounts' }
+          ].map(s => /*#__PURE__*/React.createElement("div", { key: s.k, className: "tact-supp-row" },
+            /*#__PURE__*/React.createElement("button", {
+              className: "tact-toggle " + (editorState.suppressions[s.k] ? 'on' : 'off'),
+              onClick: () => setSupp(s.k),
+              "aria-pressed": editorState.suppressions[s.k]
+            }),
+            /*#__PURE__*/React.createElement("div", { className: "tact-supp-l" },
+              /*#__PURE__*/React.createElement("div", { className: "tact-supp-name" }, s.label),
+              /*#__PURE__*/React.createElement("div", { className: "tact-supp-detail" }, s.detail)
+            )
+          ))
+        ),
+        /* Refresh schedule */
+        /*#__PURE__*/React.createElement("div", { className: "tact-block" },
+          /*#__PURE__*/React.createElement("div", { className: "tact-block-hdr" }, "Refresh schedule"),
+          [
+            { k: 'realtime', label: 'Real-time',         detail: 'Re-evaluates on every signal event' },
+            { k: 'daily',    label: 'Daily \xB7 02:00 ET', detail: 'Standard cadence for active campaigns' },
+            { k: 'weekly',   label: 'Weekly \xB7 Mon 02:00 ET', detail: 'Cost-efficient for stable cohorts' },
+            { k: 'manual',   label: 'Manual',            detail: 'Membership locked until manually refreshed' }
+          ].map(s => /*#__PURE__*/React.createElement("button", {
+            key: s.k,
+            className: "tact-sched-row " + (editorState.schedule === s.k ? 'on' : ''),
+            onClick: () => setEditorState({ schedule: s.k })
+          },
+            /*#__PURE__*/React.createElement("span", { className: "tact-sched-radio" }),
+            /*#__PURE__*/React.createElement("div", { className: "tact-supp-l" },
+              /*#__PURE__*/React.createElement("div", { className: "tact-supp-name" }, s.label),
+              /*#__PURE__*/React.createElement("div", { className: "tact-supp-detail" }, s.detail)
+            )
+          ))
+        )
+      ),
+      /* SIDE column · live stats */
+      /*#__PURE__*/React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 12 } },
+        /*#__PURE__*/React.createElement("div", { className: "tact-side-card" },
+          /*#__PURE__*/React.createElement("div", { className: "tact-side-k" }, "Audience size"),
+          /*#__PURE__*/React.createElement("div", { className: "tact-side-v" }, a.size),
+          /*#__PURE__*/React.createElement("div", { className: "tact-side-d" }, "Within fair-lending threshold")
+        ),
+        /*#__PURE__*/React.createElement("div", { className: "tact-side-card" },
+          /*#__PURE__*/React.createElement("div", { className: "tact-side-k" }, "Conversion propensity"),
+          /*#__PURE__*/React.createElement("div", { className: "tact-side-v", style: { color: 'var(--cyan)' } }, (a.propensity || 0) + "%"),
+          /*#__PURE__*/React.createElement("div", { className: "tact-side-d" }, "SHAP-driven")
+        ),
+        /*#__PURE__*/React.createElement("div", { className: "tact-side-card" },
+          /*#__PURE__*/React.createElement("div", { className: "tact-side-k" }, "Fair-lending overlap"),
+          /*#__PURE__*/React.createElement("div", { className: "tact-side-v", style: { color: 'var(--green)', fontSize: 18 } }, "0.08"),
+          /*#__PURE__*/React.createElement("div", { className: "tact-side-d" }, "Threshold 0.15 \xB7 cleared")
+        )
+      )
+    );
+  })(),
+  false && /*#__PURE__*/React.createElement("div", { style: { borderTop: '1px solid var(--bdr)', background: 'var(--card-alt)', padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: 10, flexShrink: 0 } },/*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },/*#__PURE__*/React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 10 } },/*#__PURE__*/React.createElement("span", { style: { fontSize: 12, fontWeight: 700, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '.07em', fontFamily: 'IBM Plex Mono, monospace' } }, "Step 2 of 6"),/*#__PURE__*/React.createElement("span", { style: { fontSize: 13, fontWeight: 700, color: 'var(--text)' } }, "Bind destinations for this audience"),/*#__PURE__*/React.createElement("span", { style: { fontSize: 13, fontFamily: 'IBM Plex Mono, monospace', padding: '2px 8px', background: moduleDests.audience.length > 0 ? 'rgba(74,222,128,.1)' : 'rgba(245,158,11,.1)', border: `1px solid ${moduleDests.audience.length > 0 ? 'rgba(74,222,128,.3)' : 'rgba(245,158,11,.3)'}`, borderRadius: 3, color: moduleDests.audience.length > 0 ? 'var(--green)' : 'var(--amber)', fontWeight: 600 } }, moduleDests.audience.length > 0 ? "COMPLIANCE ✓ PASS" : "COMPLIANCE ○ PENDING")),/*#__PURE__*/React.createElement("button", { disabled: moduleDests.audience.length === 0, onClick: () => { setModuleApproved(m => ({...m, audience: true})); goNextTab(); }, style: { padding: '8px 16px', background: moduleDests.audience.length > 0 ? 'var(--cyan)' : 'var(--card)', color: moduleDests.audience.length > 0 ? '#fff' : 'var(--slate-lt)', border: moduleDests.audience.length > 0 ? 'none' : '1px solid var(--bdr)', borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: moduleDests.audience.length > 0 ? 'pointer' : 'not-allowed' } }, moduleApproved.audience ? "✓ Approved · Continue to Triggers →" : "Approve & Continue to Triggers →")),/*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 6, flexWrap: 'wrap' } },DEST_CATALOG.map(d => { const on = moduleDests.audience.includes(d.id); return /*#__PURE__*/React.createElement("div", { key: d.id, onClick: () => toggleModuleDest('audience', d.id), role: "button", tabIndex: 0, style: { padding: '5px 10px', background: on ? 'rgba(99,102,241,.15)' : 'var(--card)', border: `1px solid ${on ? 'var(--cyan)' : 'var(--bdr)'}`, borderRadius: 14, fontSize: 13, color: on ? 'var(--cyan-pale)' : 'var(--slate)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'IBM Plex Mono, monospace', userSelect: 'none' } }, on ? "✓ " : "+ ", d.name, /*#__PURE__*/React.createElement("span", { style: { fontSize: 11, color: on ? 'var(--cyan-dim)' : 'var(--slate-lt)', marginLeft: 4 } }, d.match + "%")); })))), /*#__PURE__*/React.createElement("div", {
     className: `desk-cap ${tab === 'journey' ? 'active three-col' : ''}`
   }, React.createElement(JourneyBuilderLightbox, {
     open: journeyBuilderOpen,
@@ -16155,6 +16427,15 @@ function MeasurementZone({
   const [mzIntro, setMzIntro] = useState(true);
   // Phase 38 — track when nav came from the intro chat so we can show a "← Return to chat" breadcrumb
   const [mzCameFromChat, setMzCameFromChat] = useState(false);
+  // Phase 38b — chat is now a FAB → lightbox modal instead of a persistent right-rail panel
+  const [mzFabOpen, setMzFabOpen] = useState(false);
+  // Close lightbox on ESC
+  React.useEffect(() => {
+    if (!mzFabOpen) return;
+    const onEsc = (e) => { if (e.key === 'Escape') setMzFabOpen(false); };
+    document.addEventListener('keydown', onEsc);
+    return () => document.removeEventListener('keydown', onEsc);
+  }, [mzFabOpen]);
   // Build live system prompt from BQ on mount
   React.useEffect(() => {
     buildMzSystemPrompt().then(sys => { if (sys) setLiveMzSys(sys); });
@@ -16662,39 +16943,6 @@ function MeasurementZone({
       fontSize: 13
     }
   }, row.join)))))), /*#__PURE__*/React.createElement("div", {
-    className: "panel mz-chat-panel",
-    style: {
-      overflow: 'hidden',
-      display: 'flex',
-      flexDirection: 'column'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "panel-hdr"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "panel-title"
-  }, "Measurement Intelligence \u2014 Ask Anything"), /*#__PURE__*/React.createElement("span", {
-    className: "badge badge-cyan"
-  }, "AI")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      flex: 1,
-      minHeight: 0,
-      display: 'flex',
-      flexDirection: 'column'
-    }
-  }, /*#__PURE__*/React.createElement(Chatbot, {
-    systemPrompt: liveMzSys,
-    unifiedWorkspace: "measurement",
-    samples: MZ_CHATBOT_SAMPLES,
-    placeholder: "Ask about cohort performance, attribution, or optimization\u2026",
-    resultRenderer: d => /*#__PURE__*/React.createElement("div", {
-      className: "bubble",
-      style: {
-        color: 'var(--text)',
-        fontSize: 15,
-        lineHeight: 1.7
-      }
-    }, d.text || JSON.stringify(d))
-  }))), /*#__PURE__*/React.createElement("div", {
     className: "mz-sidebar"
   }, /*#__PURE__*/React.createElement("div", {
     className: "cohort-detail panel"
@@ -16792,7 +17040,55 @@ function MeasurementZone({
       color: 'var(--slate)',
       textAlign: 'center'
     }
-  }, "Or click any bubble on the chart directly")))))));
+  }, "Or click any bubble on the chart directly")))))) ,
+    /* Phase 38b — FAB (replaces persistent right-rail chat panel) */
+    /*#__PURE__*/React.createElement("button", {
+      className: "mz-fab",
+      onClick: () => setMzFabOpen(true),
+      title: "Ask the Measurement agent",
+      "aria-label": "Open Measurement chat"
+    },
+      /*#__PURE__*/React.createElement("span", null, "\u29F1"),
+      /*#__PURE__*/React.createElement("span", { className: "mz-fab-pulse" })
+    ),
+    /* Phase 38b — lightbox modal (renders only when open) */
+    mzFabOpen && /*#__PURE__*/React.createElement("div", {
+      className: "mz-lightbox-backdrop",
+      onClick: () => setMzFabOpen(false)
+    },
+      /*#__PURE__*/React.createElement("div", {
+        className: "mz-lightbox",
+        onClick: e => e.stopPropagation()
+      },
+        /*#__PURE__*/React.createElement("div", { className: "mz-lightbox-hdr" },
+          /*#__PURE__*/React.createElement("div", { className: "mz-lightbox-hdr-icon" }, "\u29F1"),
+          /*#__PURE__*/React.createElement("div", { className: "mz-lightbox-hdr-title" },
+            /*#__PURE__*/React.createElement("h3", null,
+              "Measurement agent ",
+              /*#__PURE__*/React.createElement("span", { className: "badge badge-cyan", style: { fontSize: 9, marginLeft: 6 } }, "AI")
+            ),
+            /*#__PURE__*/React.createElement("div", { className: "sub" }, "Knows: cohort scatter \xB7 channel waterfall \xB7 micro-cohorts \xB7 LTV/CAC")
+          ),
+          /*#__PURE__*/React.createElement(ChatResetButton, { workspace: "measurement", title: "Reset chat" }),
+          /*#__PURE__*/React.createElement("button", {
+            className: "mz-lightbox-icon-btn",
+            onClick: () => setMzFabOpen(false),
+            title: "Close",
+            "aria-label": "Close chat"
+          }, "\u2715")
+        ),
+        /*#__PURE__*/React.createElement("div", { className: "mz-lightbox-body" },
+          /*#__PURE__*/React.createElement(Chatbot, {
+            systemPrompt: liveMzSys,
+            unifiedWorkspace: "measurement",
+            samples: MZ_CHATBOT_SAMPLES,
+            placeholder: "Ask about cohort performance, attribution, or optimization\u2026",
+            resultRenderer: (d, send) => MZIntroResultRenderer(d, send)
+          })
+        )
+      )
+    )
+  );
 }
 function SegmentContributionPanel({
   onOptimize,
