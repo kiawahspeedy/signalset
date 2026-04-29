@@ -3955,10 +3955,15 @@ function getCohortMix(segName, cohortId) {
     other: 2
   }];
   return {
-    purchaseFreq: (4.8 + seed * 0.4).toFixed(2),
-    spendPerPurchase: `$${(1.20 + seed * 0.18).toFixed(2)}`,
-    avgVolume: `${(1.2 + seed * 0.12).toFixed(2)}L`,
-    popularPack: ['375ml', '300ml', '500ml', '250ml', '1L'][seed % 5],
+    /* DATA-01 (Phase 38g.3): swapped beverage CPG signal generators for US FI equivalents.
+       Field names kept stable so existing render sites (lines 15394-15406, 15683, 15875)
+       continue to work; only the value scale and the labels (below in this same file) change.
+       Was: purchaseFreq (4.8/yr beverages), spendPerPurchase ($1.20), avgVolume (1.2L), popularPack (500ml)
+       Now: txns/mo (8.4-12.0), avg ticket ($42-$78), monthly spend ($1,260-$3,580), top category (Travel/Dining/etc) */
+    purchaseFreq: (8.4 + seed * 0.6).toFixed(1),
+    spendPerPurchase: `$${(42 + seed * 7.2).toFixed(0)}`,
+    avgVolume: `$${(1260 + seed * 460).toLocaleString('en-US', { maximumFractionDigits: 0 })}`,
+    popularPack: ['Travel', 'Dining', 'Grocery', 'Gas', 'Streaming'][seed % 5],
     ageData,
     incomeData,
     lifestyles: lifestyles[seed % 3].map((name, i) => ({
@@ -13170,7 +13175,7 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
           /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: "var(--text)" } }, t.name),
           /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, color: "var(--slate)", marginTop: 2 } }, t.id + " \u00b7 " + (t.segment || t.audience || "High-Intent Travelers"))
         ),
-        /*#__PURE__*/React.createElement("div", { style: { fontFamily: "var(--font-d)", fontSize: 20, fontWeight: 800, color: "var(--cyan)", lineHeight: 1 } }, t.projCVR || "4.2%"),
+        /*#__PURE__*/React.createElement("div", { style: { fontFamily: "var(--font-d)", fontSize: 20, fontWeight: 800, color: "var(--cyan)", lineHeight: 1 } }, t.projCVR || t.cvr || "—"), /* DATA-03 (Phase 38g.3): was reading only t.projCVR which only exists on newly-built journeys; DEFAULT_TRIGGERS uses t.cvr. Cards were all falling through to the literal "4.2%" default. Now reads t.cvr as fallback so saved triggers show their actual diversified CVRs (4.2/5.1/3.4/2.8). */
         /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: "var(--slate)" } }, "proj. CVR")
       ),
       /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: "var(--slate)", marginBottom: 10 } }, (t.channels || t.path && t.path.join(" \u2192 ") || "Email \u2192 Push \u2192 Apply")),
@@ -15390,19 +15395,19 @@ function CohortConsumerMix({
     className: "mix-kpi-grid"
   }, [{
     icon: '📅',
-    label: 'Annual Purchase Frequency',
+    label: 'Txns / Month', /* DATA-01 (Phase 38g.3): was 'Annual Purchase Frequency' (beverage); now monthly txn cadence (FI card behavior) */
     val: mix.purchaseFreq
   }, {
     icon: '💳',
-    label: 'Spend / Purchase',
+    label: 'Avg Ticket', /* DATA-01: was 'Spend / Purchase' (beverage); now avg transaction size */
     val: mix.spendPerPurchase
   }, {
     icon: '📦',
-    label: 'Avg Vol Purchase',
+    label: 'Monthly Spend', /* DATA-01: was 'Avg Vol Purchase' (beverage); now monthly card spend */
     val: mix.avgVolume
   }, {
     icon: '🏷',
-    label: 'Most Popular Pack',
+    label: 'Top Category', /* DATA-01: was 'Most Popular Pack' (beverage); now MCC category */
     val: mix.popularPack
   }].map(k => /*#__PURE__*/React.createElement("div", {
     key: k.label,
@@ -15680,7 +15685,7 @@ function CohortConsumerMix({
     style: {
       padding: '12px 16px'
     }
-  }, [['Avg. LTV', `$${cohort.ltv.toLocaleString()}`, 'var(--cyan)'], ['CAC', `$${cohort.cac}`, 'var(--text)'], ['LTV/CAC', `${(cohort.ltv / cohort.cac).toFixed(1)}×`, 'var(--green)'], ['Purchase Freq.', mix.purchaseFreq, 'var(--text)'], ['Spend/Purchase', mix.spendPerPurchase, 'var(--text)'], ['Avg Volume', mix.avgVolume, 'var(--text)']].map(([k, v, c]) => /*#__PURE__*/React.createElement("div", {
+  }, [['Avg. LTV', `$${cohort.ltv.toLocaleString()}`, 'var(--cyan)'], ['CAC', `$${cohort.cac}`, 'var(--text)'], ['LTV/CAC', `${(cohort.ltv / cohort.cac).toFixed(1)}×`, 'var(--green)'], ['Txns/Month', mix.purchaseFreq, 'var(--text)'], ['Avg Ticket', mix.spendPerPurchase, 'var(--text)'], ['Monthly Spend', mix.avgVolume, 'var(--text)']].map(([k, v, c]) => /*#__PURE__*/React.createElement("div", { /* DATA-01 (Phase 38g.3): beverage labels → FI labels */
     key: k,
     style: {
       display: 'flex',
@@ -23010,21 +23015,37 @@ function GeneralSettings() {
             /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: 'var(--slate)', marginTop: 2 } }, "Dark is the default. Light mode is WIP.")
           ),
           /*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 6, padding: 3, background: 'var(--bg)', border: '1px solid var(--bdr)', borderRadius: 8 } },
-            ['dark', 'light'].map(t => /*#__PURE__*/React.createElement("button", {
-              key: t,
-              onClick: () => setTheme(t),
-              style: {
-                padding: '6px 14px',
-                background: theme === t ? 'var(--card)' : 'transparent',
-                border: '1px solid ' + (theme === t ? 'var(--bdr)' : 'transparent'),
-                color: theme === t ? 'var(--text)' : 'var(--slate)',
-                fontSize: 12,
-                fontWeight: theme === t ? 700 : 500,
-                borderRadius: 6,
-                cursor: 'pointer',
-                textTransform: 'capitalize'
-              }
-            }, t))
+            /* COLOR-02 (Phase 38g.3): Light option locked with WIP badge — toggle existed but
+               selecting it visually broke the app (no light theme implemented). Now Light is
+               disabled at the button level (no onClick, disabled attr, reduced opacity, not-allowed
+               cursor) with an inline "WIP" badge so the future intent stays visible without the
+               broken interaction. Dark stays fully functional. */
+            ['dark', 'light'].map(t => {
+              const isWip = t === 'light';
+              return /*#__PURE__*/React.createElement("button", {
+                key: t,
+                onClick: isWip ? undefined : () => setTheme(t),
+                disabled: isWip,
+                title: isWip ? 'Light mode is in development' : undefined,
+                style: {
+                  padding: '6px 14px',
+                  background: theme === t ? 'var(--card)' : 'transparent',
+                  border: '1px solid ' + (theme === t ? 'var(--bdr)' : 'transparent'),
+                  color: isWip ? 'var(--slate-lt)' : (theme === t ? 'var(--text)' : 'var(--slate)'),
+                  fontSize: 12,
+                  fontWeight: theme === t ? 700 : 500,
+                  borderRadius: 6,
+                  cursor: isWip ? 'not-allowed' : 'pointer',
+                  textTransform: 'capitalize',
+                  opacity: isWip ? 0.55 : 1,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6
+                }
+              }, t, isWip && /*#__PURE__*/React.createElement("span", {
+                style: { fontSize: 9, fontFamily: 'IBM Plex Mono, monospace', fontWeight: 700, padding: '1px 5px', borderRadius: 3, background: 'rgba(99,102,241,.12)', color: 'var(--cyan-pale)', letterSpacing: '.06em', textTransform: 'none' }
+              }, "WIP"));
+            })
           )
         )
       )
