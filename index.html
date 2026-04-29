@@ -535,6 +535,41 @@ html:not(.screen-transitioning) body {
   .v11-home-pill { padding: 8px 14px; font-size: 12px; }
 }
 
+/* ENH-16 — Responsive chat containers for ultrawide monitors (27"/32"/43").
+   Chat input/messages get a max-width clamp + auto-center so input lines don't
+   stretch across an entire 1440+px screen. Sub-modals with their own narrower
+   max-widths take precedence (the smaller wins). */
+@media (min-width: 1440px) {
+  .chat-shell,
+  .chat-wrap-active .chat-messages,
+  .sample-chips {
+    max-width: 860px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+@media (min-width: 1920px) {
+  .chat-shell,
+  .chat-wrap-active .chat-messages,
+  .sample-chips {
+    max-width: 1024px;
+  }
+}
+@media (min-width: 2560px) {
+  .chat-shell,
+  .chat-wrap-active .chat-messages,
+  .sample-chips {
+    max-width: 1200px;
+  }
+  /* Dashboard home — cap the dash content so workspace tile grid + campaigns list
+     don't pull apart at 27"+ */
+  .dash-home {
+    max-width: 1440px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
 /* ─────────────────────────────────────────────────────────────────
    HOME (Phase 38) — 4 workspace tiles + campaigns list + ask bar.
    Marketer-only landing. Phase 38.x will gate Partners by role.
@@ -1035,11 +1070,28 @@ html:not(.screen-transitioning) body {
   cursor: pointer;
   transition: all .15s;
   font-family: var(--font-b);
+  /* ENH-pill-hover-global — ellipsis truncation for long chip text. Pair with title attr at the render site for full-text-on-hover. */
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .chip:hover {
   color: var(--text);
   border-color: rgba(99,102,241,.45);
   background: rgba(99,102,241,.14);
+}
+/* ENH-pill-hover-global — same ellipsis treatment applied to other pill-like surfaces site-wide.
+   Each renders short labels at default content but long taxonomy strings, criteria, etc. would
+   otherwise wrap or push layout. Use title attr at render sites for the full-text tooltip. */
+.v11-home-pill,
+.cmn-tab,
+.chat-model-pill,
+.chat-pill {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .explore-link-btn { flex-shrink: 0; background: none; border: none; color: var(--cyan); font-size: 12px; font-weight: 700; cursor: pointer; padding: 4px 0; letter-spacing: .02em; opacity: .85; transition: opacity .15s; }
 .explore-link-btn:hover { opacity: 1; text-decoration: underline; }
@@ -5467,6 +5519,7 @@ function Chatbot({
   }, samples.map(s => /*#__PURE__*/React.createElement("span", {
     key: s,
     className: "chip",
+    title: s,
     onClick: () => send(s)
   }, s.length > 60 ? s.slice(0, 60) + '…' : s))), /*#__PURE__*/React.createElement("div", {
     className: "chat-shell"
@@ -8011,7 +8064,7 @@ function CreativeBuilderChat({ onTriggerBuilder }) {
       React.createElement('div', { style: { fontSize: 12, color: 'var(--slate)', marginBottom: 4 } }, 'Select one or type your goal below.'),
       React.createElement('div', { style: { display: 'flex', flexWrap: 'wrap', gap: 8 } },
         ['CVR Lift', 'Improve ROAS', 'Boost VTR', 'Increase CTR'].map(function(opt) {
-          return React.createElement('span', { key: opt, className: 'chip', onClick: () => send(opt) }, opt);
+          return React.createElement('span', { key: opt, className: 'chip', title: opt, onClick: () => send(opt) }, opt);
         }),
         React.createElement('span', { key: 'other', className: 'chip', style: { opacity: 0.7 }, onClick: () => { const ta = document.querySelector('.chat-shell textarea'); if (ta) ta.focus(); } }, 'Something else \u2192')
       )
@@ -8857,7 +8910,7 @@ function AudienceBuilderChat({ onTriggerBuilder }) {
 
   return React.createElement('div', { className: 'chat-wrap ' + (msgs.length === 0 ? 'chat-wrap-empty' : 'chat-wrap-active'), style: { display: 'flex', flexDirection: 'column', height: '100%' } },
     msgs.length === 0 && input.trim().length === 0 && React.createElement('div', { className: 'sample-chips' },
-      SAMPLES.map(function(s) { return React.createElement('span', { key: s, className: 'chip', onClick: function() { send(s); } }, s); })
+      SAMPLES.map(function(s) { return React.createElement('span', { key: s, className: 'chip', title: s, onClick: function() { send(s); } }, s); })
     ),
     msgs.length > 0 && React.createElement('div', { style: { padding: '8px 20px', borderBottom: '1px solid var(--bdr)', background: 'var(--card-alt)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
       React.createElement('span', { style: { fontSize: 13, color: 'var(--slate)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6 } }, Icon('target', 15, 'var(--slate)'), 'Audience Builder Chat'),
@@ -9054,7 +9107,7 @@ function JourneyBuilderChat({ onTriggerBuilder }) {
 
   return React.createElement('div', { className: 'chat-wrap ' + (msgs.length === 0 ? 'chat-wrap-empty' : 'chat-wrap-active'), style: { display: 'flex', flexDirection: 'column', height: '100%' } },
     msgs.length === 0 && input.trim().length === 0 && React.createElement('div', { className: 'sample-chips' },
-      SAMPLES.map(function(s) { return React.createElement('span', { key: s, className: 'chip', onClick: function() { send(s); } }, s); })
+      SAMPLES.map(function(s) { return React.createElement('span', { key: s, className: 'chip', title: s, onClick: function() { send(s); } }, s); })
     ),
     msgs.length > 0 && React.createElement('div', { style: { padding: '8px 20px', borderBottom: '1px solid var(--bdr)', background: 'var(--card-alt)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
       React.createElement('span', { style: { fontSize: 13, color: 'var(--slate)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6 } }, Icon('lightning', 15, 'var(--slate)'), 'Journey Builder Chat'),
@@ -10651,7 +10704,11 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
           const lalPct = builderCampData.lalExpansion || 0;
           const holdoutN = Math.round(baseSize * holdoutPct / 100);
           const lalN = Math.round(baseSize * lalPct / 100);
-          const activatedN = baseSize - holdoutN + lalN;
+          // DEFER-I — Symmetric Control Group is a separate cohort matched 1:1 to the holdout
+          // for true-lift attribution. When enabled, subtract another holdoutN from activation.
+          const controlGroupOn = !!builderCampData.controlGroup;
+          const controlN = controlGroupOn ? holdoutN : 0;
+          const activatedN = baseSize - holdoutN - controlN + lalN;
           return /*#__PURE__*/React.createElement("div", { key: ci, style: { background: 'rgba(8,8,15,.7)', border: '1px solid rgba(99,102,241,.35)', borderRadius: 9, padding: 16 } },
             /* Header */
             /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14, paddingBottom: 12, borderBottom: '1px solid rgba(99,102,241,.15)', gap: 16 } },
@@ -10700,9 +10757,14 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
               lalPct > 0 && /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: 'var(--cyan-dim)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 4 } }, '\u2192 +' + lalN.toLocaleString() + ' modeled prospects \u00b7 87% match confidence')
             ),
             /* Effective activation summary */
-            /*#__PURE__*/React.createElement("div", { style: { marginTop: 6, paddingTop: 12, borderTop: '1px solid rgba(99,102,241,.25)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
-              /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', textTransform: 'uppercase', letterSpacing: '.08em' } }, 'Effective Activation'),
-              /*#__PURE__*/React.createElement("div", { style: { fontSize: 22, fontWeight: 800, fontFamily: 'IBM Plex Mono, monospace', color: 'var(--green)', lineHeight: 1 } }, activatedN.toLocaleString())
+            /*#__PURE__*/React.createElement("div", { style: { marginTop: 6, paddingTop: 12, borderTop: '1px solid rgba(99,102,241,.25)' } },
+              /*#__PURE__*/React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+                /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', textTransform: 'uppercase', letterSpacing: '.08em' } }, 'Effective Activation'),
+                /*#__PURE__*/React.createElement("div", { style: { fontSize: 22, fontWeight: 800, fontFamily: 'IBM Plex Mono, monospace', color: 'var(--green)', lineHeight: 1 } }, activatedN.toLocaleString())
+              ),
+              controlGroupOn && controlN > 0 && /*#__PURE__*/React.createElement("div", {
+                style: { fontSize: 12, color: 'var(--cyan-dim)', fontFamily: 'IBM Plex Mono, monospace', marginTop: 6 }
+              }, '\u2192 ' + controlN.toLocaleString() + ' matched control \xB7 paired to holdout for true-lift attribution')
             )
           );
         }
@@ -11498,6 +11560,7 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
             ].map(s => /*#__PURE__*/React.createElement("span", {
               key: s,
               className: "chip",
+              title: s,
               onClick: () => _ideaSend(s)
             }, s.length > 60 ? s.slice(0, 60) + '\u2026' : s))
           ),
@@ -21791,9 +21854,14 @@ ${JSON.stringify({
   const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
   // Workspace tile definitions
-  const workspaces = [
+  // ENH-24 — Each tile declares which roles can see it. Until Phase 9 Supabase auth lands,
+  // role is read from window._signalsetUserRole (default 'fi_admin' so demo shows all 4 tiles).
+  // When Phase 9 ships, swap this for a Supabase profiles.role lookup.
+  const userRole = (typeof window !== 'undefined' && window._signalsetUserRole) || 'fi_admin';
+  const allWorkspaces = [
     {
       id: 'identity', name: 'Identity Graph',
+      roles: ['fi_admin', 'marketer'],
       icon: /*#__PURE__*/React.createElement(Ico, { name: 'dna', size: 16, color: 'currentColor' }),
       stats: [
         { html: '<span class="accent">' + nodeCount.toLocaleString() + '</span> resolved nodes' },
@@ -21802,6 +21870,7 @@ ${JSON.stringify({
     },
     {
       id: 'measurement', name: 'Measurement',
+      roles: ['fi_admin', 'marketer'],
       icon: /*#__PURE__*/React.createElement(Ico, { name: 'chart', size: 16, color: 'currentColor' }),
       stats: [
         { html: '<span class="accent">' + cohorts.length + '</span> behavioral segments · <span class="accent">$' + (totalSpend / 1000).toFixed(0) + 'K</span> attributed' },
@@ -21810,6 +21879,7 @@ ${JSON.stringify({
     },
     {
       id: 'desk', name: 'Flight Deck',
+      roles: ['fi_admin', 'marketer'],
       icon: /*#__PURE__*/React.createElement(Ico, { name: 'layers', size: 16, color: 'currentColor' }),
       stats: [
         { html: '<span class="accent">' + activeCampaigns.length + '</span> active campaigns · 1 brief in progress' },
@@ -21820,6 +21890,7 @@ ${JSON.stringify({
     },
     {
       id: 'cmn', name: 'Partners',
+      roles: ['fi_admin', 'partner_limited'],
       icon: /*#__PURE__*/React.createElement(Ico, { name: 'store', size: 16, color: 'currentColor' }),
       stats: [
         { html: '<span class="accent">' + partnerSlots.length + '</span> retailer relationships' },
@@ -21827,6 +21898,7 @@ ${JSON.stringify({
       ]
     }
   ];
+  const workspaces = allWorkspaces.filter(ws => ws.roles.includes(userRole));
 
   return /*#__PURE__*/React.createElement("div", { className: "dash-home" },
     // Greeting
