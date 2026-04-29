@@ -980,7 +980,15 @@ html:not(.screen-transitioning) body {
 .chat-wrap-empty { justify-content: center; }
 .chat-wrap-empty .chat-messages { display: none; }
 .chat-wrap-empty .sample-chips { order: 1; margin-bottom: 10px; }
-.chat-wrap-empty .chat-shell { order: 2; }
+.chat-wrap-empty .chat-shell {
+  order: 2;
+  /* B4 (Phase 38g.2): explicit width on empty-state composer prevents placeholder wrap.
+     Was inheriting auto width which collapsed to ~280px content width and wrapped placeholders
+     like "Ask about cohort performance, attribution, or segment efficiency…" across 3 lines. */
+  width: min(640px, calc(100vw - 80px));
+  min-width: 420px;
+  margin: 0 auto;
+}
 
 /* ACTIVE STATE — sample chips hidden, composer shell pins as viewport footer (claude.ai) */
 .chat-wrap-active .chat-messages { order: 1; flex: 0 0 auto; overflow: visible; min-height: 0; padding-bottom: 160px; }
@@ -4606,6 +4614,7 @@ GENERAL RULES
   The prose lists the OPTIONS in the wrong version. The right version puts options in the array and asks the question cleanly.
 - EVERY question turn MUST include quick_replies. If you are asking ANY question — open-ended, choice, confirmation, clarification — you MUST emit at least 2 quick_replies. The only time quick_replies may be empty is for a final summary or launch CTA where there is no question.
 - Quick replies (when present): 2-4 short clickable answers, max 8 words each. If you have 4+ candidate answers, pick the 3 most likely and reserve the 4th slot for "Something else →" so the user always has an escape hatch. Never exceed 4 — anything past slot 4 is dropped by the client.
+- PARALLEL GRAMMAR IN QUICK REPLIES. All options in a single quick_replies array must share the same grammatical shape — all noun phrases, OR all verb phrases, OR all timeframe phrases. Never mix. WRONG: ["Q2 2026 launch", "Summer season", "Q3 back-to-school"] (mixes calendar-quarter+verb / season-noun / quarter+event). RIGHT: ["Q2 launch", "Summer launch", "Back-to-school launch"] (all "<window> launch" pattern) OR ["Q2 2026", "Summer 2026", "Q3 2026"] (all calendar windows). The user reads the row left-to-right; inconsistent shapes make options feel un-comparable.
 - Be direct, analytical, specific. This is a professional tool.
 - If the conversation has prior turns, treat them as continuous context — do not restart.`;
 
@@ -4859,27 +4868,32 @@ function ChatResetButton({ workspace, onReset, title }) {
     title: title || 'Reset chat',
     'aria-label': title || 'Reset chat',
     style: {
-      /* COLOR-03 + LAYOUT-02 (Phase 38g): bumped to 32×32 (a11y tap-target baseline)
-         and default color upgraded from var(--slate) to var(--cyan-pale) for at-rest contrast.
-         Hover keeps the brighter accent. */
+      /* B2 (Phase 38g.2): kept 32×32 for a11y tap-target, but at-rest visual weight
+         dramatically reduced — the icon was crowding adjacent header content (especially
+         in Builder where it sits at the right edge of the left panel, immediately
+         adjacent to the right rail's "Campaign in Progress" header). Now reads as a
+         ghost button that only reveals full prominence on hover. */
       width: 32, height: 32, borderRadius: 7,
       background: 'transparent',
-      border: '1px solid rgba(99,102,241,.32)',
-      color: 'var(--cyan-pale)',
+      border: '1px solid rgba(99,102,241,.14)',
+      color: 'var(--slate-lt)',
       cursor: 'pointer', display: 'inline-flex',
       alignItems: 'center', justifyContent: 'center',
-      fontFamily: 'IBM Plex Mono, monospace', fontSize: 15, fontWeight: 700,
-      transition: 'all .15s', flexShrink: 0
+      fontFamily: 'IBM Plex Mono, monospace', fontSize: 14, fontWeight: 700,
+      transition: 'all .15s', flexShrink: 0,
+      opacity: 0.6
     },
     onMouseEnter: e => {
       e.currentTarget.style.background = 'rgba(99,102,241,.12)';
       e.currentTarget.style.borderColor = 'var(--bdr-strong)';
-      e.currentTarget.style.color = 'var(--text)';
+      e.currentTarget.style.color = 'var(--cyan-pale)';
+      e.currentTarget.style.opacity = '1';
     },
     onMouseLeave: e => {
       e.currentTarget.style.background = 'transparent';
-      e.currentTarget.style.borderColor = 'rgba(99,102,241,.32)';
-      e.currentTarget.style.color = 'var(--cyan-pale)';
+      e.currentTarget.style.borderColor = 'rgba(99,102,241,.14)';
+      e.currentTarget.style.color = 'var(--slate-lt)';
+      e.currentTarget.style.opacity = '0.6';
     }
   }, '↻'); /* TYPO-03 (Phase 38g): literal UTF-8 char instead of \u21BB escape */
 }
@@ -10891,7 +10905,15 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
                 onClick: () => setAudienceExpandedId(prev => prev === card.id ? null : card.id),
                 style: { background: 'transparent', border: 'none', color: 'var(--cyan-pale)', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 6 }
               }, isExpanded ? '\u25B4' : '\u25BE', ' Why this audience?'),
-              isExpanded && /*#__PURE__*/React.createElement("div", { style: { marginTop: 10, padding: '14px 16px', background: 'rgba(99,102,241,.05)', border: '1px solid rgba(99,102,241,.2)', borderRadius: 7 } },
+              isExpanded && /*#__PURE__*/React.createElement("div", {
+                /* B3 (Phase 38g.2): in compare mode, cap reasoning panel height with internal scroll
+                   so cards stay at predictable heights. Was causing left card to grow tall, sibling
+                   right card content scrolled out of view and only its bottom toggle was visible —
+                   appearing as orphaned. In single-card mode (non-compact) panel expands fully. */
+                style: isCompact
+                  ? { marginTop: 10, padding: '14px 16px', background: 'rgba(99,102,241,.05)', border: '1px solid rgba(99,102,241,.2)', borderRadius: 7, maxHeight: 360, overflowY: 'auto' }
+                  : { marginTop: 10, padding: '14px 16px', background: 'rgba(99,102,241,.05)', border: '1px solid rgba(99,102,241,.2)', borderRadius: 7 }
+              },
                 /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 12 } }, reasoning.title),
                 /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginBottom: 8 } }, 'Model contribution \u2014 how each signal weighted into the score'),
                 /*#__PURE__*/React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 } },
@@ -10926,7 +10948,7 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
           /* Channel sequence */
           /*#__PURE__*/React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', margin: '10px 0', padding: '8px 10px', background: 'rgba(99,102,241,.06)', borderRadius: 6 } },
             card.channels.map((ch, i) => /*#__PURE__*/React.createElement("div", { key: i, style: { display: 'flex', alignItems: 'center', gap: 4 } },
-              /*#__PURE__*/React.createElement("div", { style: { padding: '3px 9px', borderRadius: 5, background: i === card.channels.length - 1 ? 'rgba(74,222,128,.1)' : 'rgba(99,102,241,.12)', border: '1px solid ' + (i === card.channels.length - 1 ? 'rgba(74,222,128,.3)' : 'rgba(99,102,241,.22)'), color: i === card.channels.length - 1 ? 'var(--green)' : 'var(--text)', fontSize: 13, fontWeight: 700 } }, ch),
+              /*#__PURE__*/React.createElement("div", { style: { padding: '3px 9px', borderRadius: 5, background: i === card.channels.length - 1 ? 'rgba(74,222,128,.2)' : 'rgba(99,102,241,.12)', border: '1px solid ' + (i === card.channels.length - 1 ? 'rgba(74,222,128,.55)' : 'rgba(99,102,241,.22)'), color: i === card.channels.length - 1 ? 'var(--green)' : 'var(--text)', fontSize: 13, fontWeight: 700 } }, ch), /* B6 (Phase 38g.2): bumped Apply pill bg .1→.2, border .3→.55 for green-on-green AA contrast */
               i < card.channels.length - 1 && /*#__PURE__*/React.createElement("span", { style: { color: 'var(--slate)', fontSize: 13 } }, '\u2192')
             ))
           ),
@@ -11298,7 +11320,7 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
     setTimeout(() => {
       if (resp.dataUpdate) setBuilderCampData(prev => ({ ...prev, ...resp.dataUpdate }));
       if (resp.stepComplete) setBuilderStep(prev => Math.min(prev + 1, 6));
-      setBuilderMessages(prev => [...prev, { role: 'assistant', text: resp.text, options: resp.options, cards: resp.cards || null, complianceCheck: resp.complianceCheck || null }]);
+      setBuilderMessages(prev => [...prev, { role: 'assistant', text: resp.text, options: resp.options, cards: resp.cards || null, complianceCheck: resp.complianceCheck || null, inlineLink: resp.inlineLink || null }]); /* B1 (Phase 38g.2): added inlineLink propagation — was dropped from response→message mapping, breaking FLOW-01 inline compliance link */
       setBuilderBusy(false);
       // Approval just landed — create the campaign behind the scenes, stay in chat
       if (resp.postApproval) {
@@ -11943,7 +11965,7 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
               // or post-approval menu (those have their own change-flow handlers).
               const opts = m.options.slice();
               const alreadyHas = opts.some(o => /something else/i.test(o));
-              const isApprovalStep = opts.some(o => /I approve|send to compliance/i.test(o));
+              const isApprovalStep = opts.some(o => /I approve|send to compliance|Sign off/i.test(o)); /* B1 followon (Phase 38g.2): added 'Sign off' to recognize Step 5 approval pills, prevents 'Something else →' from being auto-appended on the approval row */
               const isPostApproval = opts.some(o => /View Campaigns|Build another campaign/i.test(o));
               const isChangeMenu = opts.every(o => /Change /i.test(o));
               if (!alreadyHas && !isApprovalStep && !isPostApproval && !isChangeMenu) {
