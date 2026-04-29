@@ -9905,6 +9905,8 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
   // Phase 38c — Audiences tactile editor: per-audience-id editor state (sliders, suppressions, schedule).
   // Lives in component state only for now; persistence to Supabase is deferred to Phase 9.
   const [audienceEditorState, setAudienceEditorState] = useState({});
+  // Phase 38c — flash key for "Saved" toast on the editor (auto-clears after 2.4s)
+  const [audienceFlash, setAudienceFlash] = useState(null);
   const [audEditModal, setAudEditModal] = useState(null);
   const [trigEditModal, setTrigEditModal] = useState(null);
   const [audiences, setAudiences] = useState(DEFAULT_AUDIENCES);
@@ -12452,9 +12454,52 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
   selectedAudCard !== null && (() => {
     const a = audiences[selectedAudCard];
     if (!a) return null;
-    const editorState = audienceEditorState[a.id] || { txns: 4, sessions: 10, hhi: [140, 400], engagement: 72, suppressions: { signature: true, fraud: true, ccpa: true, hardship: false }, schedule: 'daily' };
+    const DEFAULTS = { txns: 4, sessions: 10, hhi: [140, 400], engagement: 72, suppressions: { signature: true, fraud: true, ccpa: true, hardship: false }, schedule: 'daily' };
+    const editorState = audienceEditorState[a.id] || DEFAULTS;
     const setEditorState = (patch) => setAudienceEditorState(prev => ({ ...prev, [a.id]: { ...editorState, ...patch } }));
     const setSupp = (k) => setEditorState({ suppressions: { ...editorState.suppressions, [k]: !editorState.suppressions[k] } });
+
+    /* Live recompute — mock but reasonable. Sliders tighten the audience; suppressions further trim. */
+    const baseSize = parseInt(String(a.size || '0').replace(/[^\d]/g, ''), 10) || 48200;
+    const tFactor = 1 - Math.min(editorState.txns, 12) / 24;       // 0–12 → 1.00–0.50
+    const sFactor = 1 - Math.min(editorState.sessions, 30) / 60;   // 0–30 → 1.00–0.50
+    const eFactor = 1 - Math.min(editorState.engagement, 100) / 200;// 0–100 → 1.00–0.50
+    const hhiSpan = Math.max(10, editorState.hhi[1] - editorState.hhi[0]);
+    const hFactor = Math.min(1, hhiSpan / 500);                    // narrower band → smaller pool
+    const suppCount = Object.values(editorState.suppressions).filter(Boolean).length;
+    const suppFactor = suppCount === 0 ? 1 : (1 - 0.04 * suppCount); // each suppression trims ~4%
+    const liveSize = Math.max(0, Math.round(baseSize * tFactor * sFactor * eFactor * hFactor * suppFactor));
+    const liveSizeStr = liveSize >= 1000 ? Math.round(liveSize / 1000) + 'K' : String(liveSize);
+    const sizeDelta = liveSize - baseSize;
+    const sizeDeltaPct = baseSize > 0 ? Math.round((sizeDelta / baseSize) * 100) : 0;
+
+    const basePropensity = a.propensity || 75;
+    const tightnessPct = ((editorState.txns / 12) + (editorState.sessions / 30) + (editorState.engagement / 100)) / 3;
+    const livePropensity = Math.min(98, Math.round(basePropensity + tightnessPct * 18));
+
+    const baseFL = 0.08;
+    const liveFL = Math.min(0.15, baseFL + tightnessPct * 0.04);
+    const flCleared = liveFL < 0.15;
+
+    const flashKey = 'aud_' + a.id;
+    const isFlashing = audienceFlash === flashKey;
+
+    const handleReset = () => {
+      setAudienceEditorState(prev => {
+        const next = { ...prev };
+        delete next[a.id];
+        return next;
+      });
+    };
+    const handleSave = () => {
+      const newSizeFmt = liveSize >= 1000 ? (liveSize / 1000).toFixed(1).replace(/\.0$/, '') + 'K' : String(liveSize);
+      setAudiences(prev => prev.map((aud, i) => i === selectedAudCard
+        ? { ...aud, size: newSizeFmt, propensity: livePropensity, edit_state: editorState }
+        : aud));
+      setAudienceFlash(flashKey);
+      setTimeout(() => setAudienceFlash(prev => prev === flashKey ? null : prev), 2400);
+    };
+
     return /*#__PURE__*/React.createElement("div", {
       style: { padding: '20px 24px', borderTop: '1px solid var(--bdr)', background: 'var(--bg)', display: 'grid', gridTemplateColumns: '1fr 280px', gap: 18 }
     },
@@ -12465,9 +12510,21 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
             /*#__PURE__*/React.createElement("div", { style: { fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--slate-md)' } }, "Tactile editor \xB7 " + a.id),
             /*#__PURE__*/React.createElement("div", { style: { fontSize: 17, fontWeight: 800, letterSpacing: '-.015em', color: 'var(--text)', marginTop: 2 } }, a.name)
           ),
-          /*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 8 } },
-            /*#__PURE__*/React.createElement("button", { className: "btn btn-secondary", style: { fontSize: 12 } }, "\u21BB Reset"),
-            /*#__PURE__*/React.createElement("button", { className: "btn btn-primary", style: { fontSize: 12 } }, "Save changes")
+          /*#__PURE__*/React.createElement("div", { style: { display: 'flex', gap: 8, alignItems: 'center' } },
+            isFlashing && /*#__PURE__*/React.createElement("span", {
+              style: { fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, fontWeight: 700, color: 'var(--green)', padding: '4px 10px', background: 'rgba(74,222,128,.1)', border: '1px solid rgba(74,222,128,.3)', borderRadius: 6, letterSpacing: '.04em' }
+            }, "\u2713 Saved"),
+            /*#__PURE__*/React.createElement("button", {
+              className: "btn btn-secondary",
+              style: { fontSize: 12 },
+              onClick: handleReset,
+              disabled: !audienceEditorState[a.id]
+            }, "\u21BB Reset"),
+            /*#__PURE__*/React.createElement("button", {
+              className: "btn btn-primary",
+              style: { fontSize: 12 },
+              onClick: handleSave
+            }, "Save changes")
           )
         ),
         /* Behavior signals · sliders */
@@ -12552,18 +12609,20 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
       /*#__PURE__*/React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 12 } },
         /*#__PURE__*/React.createElement("div", { className: "tact-side-card" },
           /*#__PURE__*/React.createElement("div", { className: "tact-side-k" }, "Audience size"),
-          /*#__PURE__*/React.createElement("div", { className: "tact-side-v" }, a.size),
-          /*#__PURE__*/React.createElement("div", { className: "tact-side-d" }, "Within fair-lending threshold")
+          /*#__PURE__*/React.createElement("div", { className: "tact-side-v" }, liveSizeStr),
+          /*#__PURE__*/React.createElement("div", { className: "tact-side-d", style: { color: sizeDeltaPct < 0 ? 'var(--amber)' : 'var(--slate)' } },
+            sizeDeltaPct === 0 ? "Matches base audience" : (sizeDeltaPct > 0 ? "+" : "") + sizeDeltaPct + "% vs base"
+          )
         ),
         /*#__PURE__*/React.createElement("div", { className: "tact-side-card" },
           /*#__PURE__*/React.createElement("div", { className: "tact-side-k" }, "Conversion propensity"),
-          /*#__PURE__*/React.createElement("div", { className: "tact-side-v", style: { color: 'var(--cyan)' } }, (a.propensity || 0) + "%"),
-          /*#__PURE__*/React.createElement("div", { className: "tact-side-d" }, "SHAP-driven")
+          /*#__PURE__*/React.createElement("div", { className: "tact-side-v", style: { color: 'var(--cyan)' } }, livePropensity + "%"),
+          /*#__PURE__*/React.createElement("div", { className: "tact-side-d" }, "SHAP-driven \xB7 " + (livePropensity >= basePropensity ? "+" : "") + (livePropensity - basePropensity) + " vs base")
         ),
         /*#__PURE__*/React.createElement("div", { className: "tact-side-card" },
           /*#__PURE__*/React.createElement("div", { className: "tact-side-k" }, "Fair-lending overlap"),
-          /*#__PURE__*/React.createElement("div", { className: "tact-side-v", style: { color: 'var(--green)', fontSize: 18 } }, "0.08"),
-          /*#__PURE__*/React.createElement("div", { className: "tact-side-d" }, "Threshold 0.15 \xB7 cleared")
+          /*#__PURE__*/React.createElement("div", { className: "tact-side-v", style: { color: flCleared ? 'var(--green)' : 'var(--red)', fontSize: 18 } }, liveFL.toFixed(2)),
+          /*#__PURE__*/React.createElement("div", { className: "tact-side-d" }, "Threshold 0.15 \xB7 " + (flCleared ? "cleared" : "EXCEEDED"))
         )
       )
     );
@@ -17803,7 +17862,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     samples: ["Launch a new campaign", "Build an audience of high-intent travelers", "Show me last week's results"],
     exploreLabel: "Partner Portal",
     exploreScreen: () => { setCmnHub(false); window.scrollTo(0,0); },
-    placeholder: "What do you want to do? (start a campaign, build an audience, analyze results\u2026)",
+    placeholder: "What would you like to build or review?",
     sendRef: cmnHomeSendRef,
     resultRenderer: buildActionRenderer({
       navMap: partnersNavMap,
@@ -17831,7 +17890,7 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     name: "store",
     size: 14,
     color: "white"
-  }), " Explore Partner Portal \u2192"), /*#__PURE__*/React.createElement("div", { className: "v11-home-pills", style: { marginTop: 18, justifyContent: "center" } }, /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('manage'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'layers', size: 13, color: 'currentColor' })), 'Campaigns'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('audiences'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'target', size: 13, color: 'currentColor' })), 'Audiences'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('creatives'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'palette', size: 13, color: 'currentColor' })), 'Creatives'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('results'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'chart', size: 13, color: 'currentColor' })), 'Results'))), /*#__PURE__*/React.createElement("div", {
+  }), " Explore Partner Portal \u2192"), /*#__PURE__*/React.createElement("div", { className: "v11-home-pills", style: { marginTop: 18, justifyContent: "center" } }, /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('manage'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'layers', size: 13, color: 'currentColor' })), 'Campaigns'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('results'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'chart', size: 13, color: 'currentColor' })), 'Results'), /*#__PURE__*/React.createElement("div", { className: 'v11-home-pill', onClick: () => { setCmnHub(false); setCmnTab('results'); window.scrollTo(0, 0); }, role: 'button', tabIndex: 0 }, /*#__PURE__*/React.createElement("span", { className: 'v11-home-pill-ico' }, /*#__PURE__*/React.createElement(Ico, { name: 'sync', size: 13, color: 'currentColor' })), 'Collaboration'))), /*#__PURE__*/React.createElement("div", {
     className: "camp-hub-right"
   }, /*#__PURE__*/React.createElement("div", {
     style: {
