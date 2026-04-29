@@ -1081,18 +1081,10 @@ html:not(.screen-transitioning) body {
   border-color: rgba(99,102,241,.45);
   background: rgba(99,102,241,.14);
 }
-/* ENH-pill-hover-global — same ellipsis treatment applied to other pill-like surfaces site-wide.
-   Each renders short labels at default content but long taxonomy strings, criteria, etc. would
-   otherwise wrap or push layout. Use title attr at render sites for the full-text tooltip. */
-.v11-home-pill,
-.cmn-tab,
-.chat-model-pill,
-.chat-pill {
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+/* TYPO-01 (Phase 38g) — ENH-pill-hover-global was over-scoped to .v11-home-pill, .cmn-tab,
+   .chat-model-pill, .chat-pill, causing user-message bubbles to wrap single words mid-character
+   ("Sov a", "Explor ers"). Reverted to .chip only. Long taxonomy chips still get the ellipsis
+   treatment via the .chip rule above. */
 .explore-link-btn { flex-shrink: 0; background: none; border: none; color: var(--cyan); font-size: 12px; font-weight: 700; cursor: pointer; padding: 4px 0; letter-spacing: .02em; opacity: .85; transition: opacity .15s; }
 .explore-link-btn:hover { opacity: 1; text-decoration: underline; }
 
@@ -1689,6 +1681,44 @@ div:has(> .ig-layout) > .hero { display: none; }
   background: var(--cyan, #67E8F9); border: 2.5px solid var(--bg, #08080F);
   box-shadow: 0 0 12px rgba(103,232,249,.6);
   animation: mz-fab-pulse 1.8s ease-in-out infinite;
+}
+/* LAYOUT-04 (Phase 38g): persistent visible label chip beside the FAB. Was hover-only via
+   title attribute; now sits at rest as a pill on the FAB's left side with a caret pointing
+   toward the icon. Clickable — fires same open handler. */
+.mz-fab-label {
+  position: fixed; bottom: 44px; right: 104px;
+  background: rgba(15,15,28,.92);
+  border: 1px solid rgba(99,102,241,.4);
+  border-radius: 18px;
+  padding: 7px 14px;
+  font-size: 12px; font-weight: 700;
+  color: var(--cyan-pale, #C7D2FE);
+  white-space: nowrap;
+  z-index: 200;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(0,0,0,.35);
+  display: flex; align-items: center; gap: 8px;
+  transition: background .15s, border-color .15s, color .15s;
+}
+.mz-fab-label::after {
+  content: '';
+  position: absolute;
+  right: -6px; top: 50%; transform: translateY(-50%);
+  width: 0; height: 0;
+  border-left: 6px solid rgba(99,102,241,.4);
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+}
+.mz-fab-label:hover {
+  background: rgba(20,22,45,.98);
+  border-color: rgba(99,102,241,.65);
+  color: #fff;
+}
+.mz-fab-label .mz-fab-label-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--cyan, #67E8F9);
+  box-shadow: 0 0 8px rgba(103,232,249,.6);
+  flex-shrink: 0;
 }
 @keyframes mz-fab-pulse {
   0%, 100% { transform: scale(1); opacity: 1; }
@@ -4822,33 +4852,36 @@ function ChatResetButton({ workspace, onReset, title }) {
         fontFamily: 'var(--font-b)', fontSize: 11, fontWeight: 700,
         cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0
       }
-    }, '\u21BB Confirm reset');
+    }, '↻ Confirm reset'); /* TYPO-03 (Phase 38g): was '\u21BB Confirm reset' — escape sequence rendered as literal 'u' in some code paths; switched to literal UTF-8 character */
   }
   return /*#__PURE__*/React.createElement("button", {
     onClick: handleClick,
     title: title || 'Reset chat',
     'aria-label': title || 'Reset chat',
     style: {
-      width: 28, height: 28, borderRadius: 7,
+      /* COLOR-03 + LAYOUT-02 (Phase 38g): bumped to 32×32 (a11y tap-target baseline)
+         and default color upgraded from var(--slate) to var(--cyan-pale) for at-rest contrast.
+         Hover keeps the brighter accent. */
+      width: 32, height: 32, borderRadius: 7,
       background: 'transparent',
-      border: '1px solid rgba(99,102,241,.22)',
-      color: 'var(--slate)',
+      border: '1px solid rgba(99,102,241,.32)',
+      color: 'var(--cyan-pale)',
       cursor: 'pointer', display: 'inline-flex',
       alignItems: 'center', justifyContent: 'center',
-      fontFamily: 'IBM Plex Mono, monospace', fontSize: 14, fontWeight: 700,
+      fontFamily: 'IBM Plex Mono, monospace', fontSize: 15, fontWeight: 700,
       transition: 'all .15s', flexShrink: 0
     },
     onMouseEnter: e => {
-      e.currentTarget.style.background = 'rgba(99,102,241,.08)';
+      e.currentTarget.style.background = 'rgba(99,102,241,.12)';
       e.currentTarget.style.borderColor = 'var(--bdr-strong)';
-      e.currentTarget.style.color = 'var(--cyan-pale)';
+      e.currentTarget.style.color = 'var(--text)';
     },
     onMouseLeave: e => {
       e.currentTarget.style.background = 'transparent';
-      e.currentTarget.style.borderColor = 'rgba(99,102,241,.22)';
-      e.currentTarget.style.color = 'var(--slate)';
+      e.currentTarget.style.borderColor = 'rgba(99,102,241,.32)';
+      e.currentTarget.style.color = 'var(--cyan-pale)';
     }
-  }, '\u21BB');
+  }, '↻'); /* TYPO-03 (Phase 38g): literal UTF-8 char instead of \u21BB escape */
 }
 
 const AUDIENCE_SYS = `You are the Smart Audience Chatbot inside Flight Deck, built on the Living Identity Graph (LIG) at a major US financial institution. Primary use case: credit card acquisition and upgrade.
@@ -8118,7 +8151,7 @@ function CreativeBuilderChat({ onTriggerBuilder }) {
       React.createElement('textarea', {
         className: 'chat-input',
         rows: 2,
-        placeholder: 'Build a new creative or ask about existing ones\u2026',
+        placeholder: 'Describe a creative\u2026', /* TYPO-02 (Phase 38g): shortened from 'Build a new creative or ask about existing ones…' to fit narrow composer */
         value: input,
         onChange: e => setInput(e.target.value),
         onKeyDown: e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } },
@@ -8937,7 +8970,7 @@ function AudienceBuilderChat({ onTriggerBuilder }) {
     ),
     React.createElement('div', { className: 'chat-shell' },
       React.createElement(ChatPlusPopover, { onUpload: function() {}, onDrive: function() {} }),
-      React.createElement('textarea', { className: 'chat-input', rows: 2, placeholder: 'Describe your target audience\u2026', value: input, onChange: function(e) { setInput(e.target.value); }, onKeyDown: function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }, disabled: loading }),
+      React.createElement('textarea', { className: 'chat-input', rows: 2, placeholder: 'Describe an audience\u2026', value: input, onChange: function(e) { setInput(e.target.value); }, onKeyDown: function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }, disabled: loading }), /* TYPO-02 (Phase 38g): shortened from 'Describe your target audience…' to fit narrow composer column without wrapping */
       React.createElement('div', { className: 'chat-bar' },
         React.createElement('span', { className: 'chat-model-pill' }, 'Sonnet 4 \u2304'),
         React.createElement('button', { className: 'send-btn', onClick: function() { send(); }, disabled: loading }, loading ? '\u2026' : '\u2191')
@@ -9134,7 +9167,7 @@ function JourneyBuilderChat({ onTriggerBuilder }) {
     ),
     React.createElement('div', { className: 'chat-shell' },
       React.createElement(ChatPlusPopover, { onUpload: function() {}, onDrive: function() {} }),
-      React.createElement('textarea', { className: 'chat-input', rows: 2, placeholder: 'Describe your journey or optimization goal\u2026', value: input, onChange: function(e) { setInput(e.target.value); }, onKeyDown: function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }, disabled: loading }),
+      React.createElement('textarea', { className: 'chat-input', rows: 2, placeholder: 'Describe a trigger or goal\u2026', value: input, onChange: function(e) { setInput(e.target.value); }, onKeyDown: function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }, disabled: loading }), /* TYPO-02 (Phase 38g): shortened from 'Describe your journey or optimization goal…' to fit narrow composer */
       React.createElement('div', { className: 'chat-bar' },
         React.createElement('span', { className: 'chat-model-pill' }, 'Sonnet 4 \u2304'),
         React.createElement('button', { className: 'send-btn', onClick: function() { send(); }, disabled: loading }, loading ? '\u2026' : '\u2191')
@@ -10578,7 +10611,7 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
       const campName = builderBrief.name || (builderBrief.co_brand ? builderBrief.co_brand + ' Campaign' : 'New Campaign');
       const budNum = _parseBudgetToNumber(builderBrief.budget);
       const budStr = _formatBudget(budNum) || (builderBrief.budget ? String(builderBrief.budget) : 'TBD');
-      setBuilderCampData({ name: campName, objective: (builderBrief.objective||'').replace(/_/g,' '), budget: budStr + (builderBrief.flight ? ' \xB7 ' + builderBrief.flight : ''), flight: builderBrief.flight||'', audience: '', trigger: '', creative: '' });
+      setBuilderCampData({ name: campName, objective: (builderBrief.objective||'').replace(/_/g,' '), card: '', partner: '', budget: budStr + (builderBrief.flight ? ' \xB7 ' + builderBrief.flight : ''), flight: builderBrief.flight||'', audience: '', trigger: '', creative: '' }); /* COLOR-01 (Phase 38g): added card:'' and partner:'' — were omitted, causing builderCampData.card to be undefined and rendering 'Card: undefined' in summary */
       // Land at STEP 1 with a confirmation card — agent confirms before advancing.
       // The agent makes every decision in the builder; the brief informs but does not pre-decide.
       setBuilderStep(1);
@@ -10608,9 +10641,12 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
     } else {
       const _now = new Date();
       const _q = 'Q' + (Math.floor(_now.getMonth() / 3) + 1) + ' ' + _now.getFullYear();
-      setBuilderMessages([{ role: 'assistant', text: "Let\u2019s build your campaign. I\u2019ll pull live data from the LIG at each step \u2014 audiences from real propensity scores, triggers from 90-day MTA, creatives ranked by audience fit with auto-lint.\n\nStep 1 of 5 \xB7 Setup\nWhat\u2019s the campaign name?", options: ['New Card Acquisition ' + _q, 'Custom name \u2192'] }]);
+      /* LAYOUT-01 (Phase 38g): broader greeting + pill suggestions matching standalone concierge.
+         Was a name-only prompt that read as a dead-end; now seeds 4 common build paths plus
+         the existing custom-name escape. */
+      setBuilderMessages([{ role: 'assistant', text: "Let\u2019s build your campaign. I\u2019ll pull live data from the LIG at each step \u2014 audiences from real propensity scores, triggers from 90-day MTA, creatives ranked by audience fit with auto-lint.\n\nStep 1 of 5 \xB7 Setup\nWhat are we building?", options: ['New card acquisition', 'Co-brand marketing', 'Offer & promotion', 'Retention', 'Custom name \u2192'] }]);
     }
-  }, [builderMode]);
+  }, [builderMode, builderMessages.length]); /* LAYOUT-01 (Phase 38g): added builderMessages.length to deps so when reset clears messages without toggling mode, the greeting re-fires (was producing empty Step 1 chat after reset) */
 
   const [builderCreativeIdx, setBuilderCreativeIdx] = useState(0);
 
@@ -10821,7 +10857,9 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
                   /*#__PURE__*/React.createElement("span", { style: { color: 'var(--cyan-dim)', fontWeight: 700 } }, '\xB7'),
                   /*#__PURE__*/React.createElement("span", null, c),
                   isHovered && /*#__PURE__*/React.createElement("div", {
-                    style: { position: 'absolute', top: 'calc(100% + 6px)', left: 0, maxWidth: 360, padding: '12px 14px', background: 'rgba(15,15,28,.98)', border: '1px solid var(--cyan-dim)', borderRadius: 7, fontSize: 13, lineHeight: 1.55, color: 'var(--text)', boxShadow: '0 8px 24px rgba(0,0,0,.6)', zIndex: 9999, pointerEvents: 'none', whiteSpace: 'normal' }
+                    style: { position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: isCompact ? 0 : 'auto', maxWidth: isCompact ? '100%' : 360, padding: '12px 14px', background: 'rgba(15,15,28,.98)', border: '1px solid var(--cyan-dim)', borderRadius: 7, fontSize: 13, lineHeight: 1.55, color: 'var(--text)', boxShadow: '0 8px 24px rgba(0,0,0,.6)', zIndex: 9999, pointerEvents: 'none', whiteSpace: 'normal' }
+                    /* LAYOUT-06 (Phase 38g): in compare mode (isCompact), constrain tooltip to card width
+                       (right:0 + maxWidth 100%) so 360px tooltip can't overflow into sibling card. */
                   }, AUDIENCE_CRITERIA_DETAILS[c])
                 );
               })
@@ -11140,7 +11178,8 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
         const sumLines = [data.name||'Campaign', data.objective||'New card acquisition', data.budget||'\$450K', data.flight||_flightWindows.std.full, data.audience||'Audience', data.trigger||'Trigger', crvName].join(' \xB7 ');
         return {
           text: '\u2713 Creative locked: ' + crvName + ' \xB7 auto-lint clear\n\nStep 5 \xB7 Summary & Approval\nAuto-compliance ran \u2014 16/16 checks passed, 2 issues auto-fixed by AI.\n\n' + sumLines + '\n\nI need your sign-off. Compliance review triggers automatically after you approve.',
-          options: ['\u2713 Sign off & Activate', 'View compliance report \u2192', 'Save as draft'],
+          options: ['\u2713 Sign off & Activate', 'Save as draft'],
+          inlineLink: { label: 'View compliance report \u2192', action: 'View compliance report \u2192' }, /* FLOW-01 (Phase 38g): pulled out of options row, rendered as inline text-link inside message bubble per spec */
           stepComplete: true, dataUpdate: { creative: crvName + ' \u2713' }
         };
       }
@@ -11149,7 +11188,8 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
         const sumLines = [data.name||'Campaign', data.objective||'New card acquisition', data.budget||'\$450K', data.flight||_flightWindows.std.full, data.audience||'Audience', data.trigger||'Trigger', crvName].join(' \xB7 ');
         return {
           text: '\u2713 Creative locked: ' + crvName + ' \xB7 auto-lint clear\n\nStep 5 \xB7 Summary & Approval\nAuto-compliance ran \u2014 16/16 checks passed, 2 issues auto-fixed by AI.\n\n' + sumLines + '\n\nI need your sign-off. Compliance review triggers automatically after you approve.',
-          options: ['\u2713 Sign off & Activate', 'View compliance report \u2192', 'Save as draft'],
+          options: ['\u2713 Sign off & Activate', 'Save as draft'],
+          inlineLink: { label: 'View compliance report \u2192', action: 'View compliance report \u2192' }, /* FLOW-01 (Phase 38g) */
           stepComplete: true, dataUpdate: { creative: crvName + ' \u2713' }
         };
       }
@@ -11158,7 +11198,8 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
         const sumLines = [data.name||'Campaign', data.objective||'New card acquisition', data.budget||'\$450K', data.flight||_flightWindows.std.full, data.audience||'Audience', data.trigger||'Trigger', crvName].join(' \xB7 ');
         return {
           text: '\u2713 Creative locked: ' + crvName + ' \xB7 auto-lint clear\n\nStep 5 \xB7 Summary & Approval\nAuto-compliance ran \u2014 16/16 checks passed, 2 issues auto-fixed by AI.\n\n' + sumLines + '\n\nI need your sign-off. Compliance review triggers automatically after you approve.',
-          options: ['\u2713 Sign off & Activate', 'View compliance report \u2192', 'Save as draft'],
+          options: ['\u2713 Sign off & Activate', 'Save as draft'],
+          inlineLink: { label: 'View compliance report \u2192', action: 'View compliance report \u2192' }, /* FLOW-01 (Phase 38g) */
           stepComplete: true, dataUpdate: { creative: crvName + ' \u2713' }
         };
       }
@@ -11213,7 +11254,7 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
         const nm = data.name || (data.objective ? data.objective + ' Campaign' : 'New Campaign');
         return {
           text: '\u2713 Approval logged \u2014 ' + nm + ' is queued for activation.\n\nCompliance review has been notified. Auto-activation kicks off as soon as compliance signs off (typically 2\u20134 hours).\n\nWhat would you like to do next?',
-          options: ['View Campaigns \u2192', 'Build another campaign', 'Refine an audience', 'Plan a trigger flow', 'Review creatives', 'See results'],
+          options: ['View Campaigns \u2192', 'Build another campaign', 'Refine an audience', 'Plan a trigger flow', 'Review creatives'], /* followup-cap (Phase 38g): dropped 'See results' — was 6th pill wrapping to 2 rows. View Campaigns destination already exposes results path. */
           stepComplete: true, postApproval: true
         };
       }
@@ -11221,7 +11262,8 @@ function MarketingDesk({ jumpTab, onTabConsumed }) {
       // change-list that has no real handler routing. Keeps the user pointed at the actual decision.
       return {
         text: 'Ready when you are \u2014 sign off to activate, or save as draft to come back later.',
-        options: ['\u2713 Sign off & Activate', 'View compliance report \u2192', 'Save as draft']
+        options: ['\u2713 Sign off & Activate', 'Save as draft'],
+        inlineLink: { label: 'View compliance report \u2192', action: 'View compliance report \u2192' } /* FLOW-01 (Phase 38g) */
       };
     }
     // STEP 6 — Post-approval (after stepComplete advanced from 5 → 6)
@@ -11873,7 +11915,17 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
       /*#__PURE__*/React.createElement("div", { ref: builderChatRef, style: { flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: 14, borderRight: '1px solid var(--bdr)' } },
         builderMessages.map((m, i) => /*#__PURE__*/React.createElement("div", { key: i, style: { display: 'flex', flexDirection: 'column', alignItems: m.role === 'user' ? 'flex-end' : 'flex-start', gap: 6 } },
           /* Skip text bubble entirely when this is a compliance-runner message with empty text */
-          (m.text || !m.complianceCheck) && /*#__PURE__*/React.createElement("div", { style: { maxWidth: '88%', padding: '12px 16px', borderRadius: m.role === 'user' ? '16px 16px 4px 16px' : '4px 16px 16px 16px', background: m.role === 'user' ? 'var(--cyan)' : 'rgba(30,33,76,.98)', border: m.role === 'user' ? 'none' : '1px solid rgba(129,140,248,.4)', fontSize: 14, lineHeight: 1.65, color: m.role === 'user' ? '#fff' : '#F1F5F9', whiteSpace: 'pre-wrap', minWidth: m.role === 'user' ? 64 : 'auto', textAlign: m.role === 'user' ? 'center' : 'left' } }, m.role === 'assistant' ? renderRichText(m.text) : m.text),
+          (m.text || !m.complianceCheck) && /*#__PURE__*/React.createElement("div", { style: { maxWidth: '88%', padding: '12px 16px', borderRadius: m.role === 'user' ? '16px 16px 4px 16px' : '4px 16px 16px 16px', background: m.role === 'user' ? 'var(--cyan)' : 'rgba(30,33,76,.98)', border: m.role === 'user' ? 'none' : '1px solid rgba(129,140,248,.4)', fontSize: 14, lineHeight: 1.65, color: m.role === 'user' ? '#fff' : '#F1F5F9', whiteSpace: 'pre-wrap', minWidth: m.role === 'user' ? 64 : 'auto', textAlign: m.role === 'user' ? 'center' : 'left' } },
+            m.role === 'assistant' ? renderRichText(m.text) : m.text,
+            /* FLOW-01 (Phase 38g): inline text-link inside assistant bubble — used for compliance
+               report and other secondary actions that shouldn't compete with primary CTA pills */
+            m.role === 'assistant' && m.inlineLink && /*#__PURE__*/React.createElement("div", { style: { marginTop: 8, paddingTop: 8, borderTop: '1px dashed rgba(129,140,248,.3)' } },
+              /*#__PURE__*/React.createElement("button", {
+                onClick: () => _builderSend(m.inlineLink.action),
+                style: { background: 'transparent', border: 'none', padding: 0, color: 'var(--cyan-pale)', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 2 }
+              }, m.inlineLink.label)
+            )
+          ),
           m.role === 'assistant' && m.complianceCheck && /*#__PURE__*/React.createElement(ComplianceRunner, {
             checks: m.complianceCheck.checks,
             campaignName: m.complianceCheck.campaignName,
@@ -12053,7 +12105,7 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
         /* Summary card */
         /*#__PURE__*/React.createElement("div", { style: { background: 'var(--card)', border: '1px solid var(--bdr-soft)', borderRadius: 9, padding: '12px 14px' } },
           /*#__PURE__*/React.createElement("div", { style: { fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--slate)', fontFamily: 'IBM Plex Mono, monospace', marginBottom: 8 } }, "Campaign Summary"),
-          [['Name', builderCampData.name], ['Objective',builderCampData.objective], ['Card', builderCampData.card + (builderCampData.partner ? ' (' + builderCampData.partner + ')' : '')], ['Budget',builderCampData.budget],['Flight',builderCampData.flight],['Audience',builderCampData.audience],['Trigger',builderCampData.trigger],['Creative',builderCampData.creative]].map(([lbl,val]) =>
+          [['Name', builderCampData.name], ['Objective',builderCampData.objective], ['Card', (builderCampData.card || '') + (builderCampData.partner ? ' (' + builderCampData.partner + ')' : '')], ['Budget',builderCampData.budget],['Flight',builderCampData.flight],['Audience',builderCampData.audience],['Trigger',builderCampData.trigger],['Creative',builderCampData.creative]].map(([lbl,val]) => /* COLOR-01 (Phase 38g): (card || '') prevents 'undefined' literal from string concat when field is unset; pairs with val || 'Pending' fallback below to render muted-italic Pending */
             /*#__PURE__*/React.createElement("div", { key: lbl, style: { display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', borderBottom: '1px solid var(--bdr-soft)' } },
               /*#__PURE__*/React.createElement("span", { style: { color: 'var(--slate)', flexShrink: 0 } }, lbl),
               /*#__PURE__*/React.createElement("span", { style: { fontWeight: 700, fontSize: 12, color: val ? (val.includes('\u2713') ? 'var(--green)' : 'var(--text)') : 'var(--slate)', fontStyle: val ? 'normal' : 'italic', textAlign: 'right', maxWidth: '55%' } }, val || 'Pending')
@@ -12162,11 +12214,11 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
     /*#__PURE__*/React.createElement("div", {
       className: `cmn-tab ${tab === 'audience' ? 'active' : ''}`,
       onClick: () => setTab('audience')
-    }, "Audiences", /*#__PURE__*/React.createElement("span", { style: { fontSize: 12, fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace', padding: '1px 6px', borderRadius: 10, background: 'rgba(99,102,241,.15)', color: 'var(--cyan-dim)', marginLeft: 6 } }, "AI")),
+    }, "Audiences", /*#__PURE__*/React.createElement("span", { style: { fontSize: 12, fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace', padding: '1px 6px', borderRadius: 10, background: 'rgba(99,102,241,.15)', color: 'var(--cyan-dim)', marginLeft: 6 } }, audiences.length)), /* TYPO-04 (Phase 38g): was hardcoded 'AI' — show real count to match Campaigns + Creatives badges */
     /*#__PURE__*/React.createElement("div", {
       className: `cmn-tab ${tab === 'journey' ? 'active' : ''}`,
       onClick: () => setTab('journey')
-    }, "Triggers", /*#__PURE__*/React.createElement("span", { style: { fontSize: 12, fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace', padding: '1px 6px', borderRadius: 10, background: 'rgba(99,102,241,.15)', color: 'var(--cyan-dim)', marginLeft: 6 } }, "AI")),
+    }, "Triggers", /*#__PURE__*/React.createElement("span", { style: { fontSize: 12, fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace', padding: '1px 6px', borderRadius: 10, background: 'rgba(99,102,241,.15)', color: 'var(--cyan-dim)', marginLeft: 6 } }, triggers.length)), /* TYPO-04 (Phase 38g): was hardcoded 'AI' — show real count to match Campaigns + Creatives badges */
     /*#__PURE__*/React.createElement("div", {
       className: `cmn-tab ${tab === 'creative' ? 'active' : ''}`,
       onClick: () => setTab('creative')
@@ -12945,7 +12997,7 @@ Do NOT return JSON. Plain conversational text only. No markdown.`;
               style: { fontSize: 12 },
               onClick: handleReset,
               disabled: !audienceEditorState[a.id]
-            }, "\u21BB Reset"),
+            }, "↻ Reset"), /* TYPO-03 (Phase 38g): literal UTF-8 char instead of \u21BB escape */
             /*#__PURE__*/React.createElement("button", {
               className: "btn btn-primary",
               style: { fontSize: 12 },
@@ -14789,7 +14841,7 @@ function StateDMADrill({
       color: 'var(--green)',
       fontWeight: 600
     }
-  }, dmaData.filter(d => d.priority === 'high').length, " priority zones"), /*#__PURE__*/React.createElement("button", {
+  }, new Set(dmaData.map(d => d.priority)).size, " priority bands"), /* DATA-02 (Phase 38g): was '${high.length} priority zones' which read as '2 priority zones' but table showed 3 distinct bands (Priority/Monitor/Deprioritize). Now counts distinct priority values from dmaData. */ /*#__PURE__*/React.createElement("button", {
     style: {
       background: 'none',
       border: 'none',
@@ -17527,6 +17579,18 @@ function MeasurementZone({
     }
   }, "Or click any bubble on the chart directly")))))) ,
     /* Phase 38b — FAB (replaces persistent right-rail chat panel) */
+    /* LAYOUT-04 (Phase 38g): persistent visible label chip — was hover-only via title attr.
+       Sits to the left of the FAB with caret pointing toward the icon; clicking either opens
+       the lightbox. The chip is aria-hidden because the FAB already announces the action. */
+    !mzFabOpen && /*#__PURE__*/React.createElement("button", {
+      className: "mz-fab-label",
+      onClick: () => setMzFabOpen(true),
+      tabIndex: -1,
+      "aria-hidden": "true"
+    },
+      /*#__PURE__*/React.createElement("span", { className: "mz-fab-label-dot" }),
+      "Ask the agent"
+    ),
     /*#__PURE__*/React.createElement("button", {
       className: "mz-fab",
       onClick: () => setMzFabOpen(true),
@@ -19918,9 +19982,11 @@ function CommerceMedia({ jumpTab, onTabConsumed }) {
     }).join(' ');
     const areaD = pathD + ' L580,110 L20,110 Z';
     return /*#__PURE__*/React.createElement("div", {
-      style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 10, padding: 22, display: 'flex', flexDirection: 'column', gap: 18, overflowY: 'auto' }
+      /* LAYOUT-05 (Phase 38g): tightened gap from 18→12 and padding from 22→18 to remove
+         excessive vertical space between KPI strip and performance graph */
+      style: { background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 10, padding: 18, display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto' }
     }, /*#__PURE__*/React.createElement("div", {
-      style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: 14, borderBottom: '1px solid var(--bdr-soft)' }
+      style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: 12, borderBottom: '1px solid var(--bdr-soft)' }
     }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       style: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }
     }, /*#__PURE__*/React.createElement("span", {
